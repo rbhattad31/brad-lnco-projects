@@ -3,25 +3,20 @@ import openpyxl
 import pywintypes
 from win32com import client
 import os.path
-
 import Sourcecode.Comparatives.Purchase_type_wise_comparatives as ptcomp
 import Sourcecode.Comparatives.Month_Wise_comparatives as mwcomp
 import Sourcecode.Comparatives.Plant_wise_comparatives as pwcomp
 import Sourcecode.Comparatives.DomImp_wise_sheet_comparatives as dicomp
-import Sourcecode.Comparatives.VendorTypeWiseComparitives as vtwc
-
 import Sourcecode.Concentrations.PurcahseTypewiseConcentration as ptconc
 import Sourcecode.Concentrations.MonthWiseConcentration as mwconc
 import Sourcecode.Concentrations.PlantWiseConcentration as pwconc
 import Sourcecode.Concentrations.DomAndImportConcentration as diconc
-import Sourcecode.Concentrations.VendorWiseConcentration as vwc
-
 import Sourcecode.DuplicationofVendorNumbers as duplication
 import Sourcecode.averagedaypurchase as averagedaypurchase
 import Sourcecode.SameMaterialPurchasesfromDVDP as smpdvdp
 import Sourcecode.Unit_Price_Comparsion as upc
-import Sourcecode.Inventory_Mapping as im
-
+import Sourcecode.Comparatives.VendorTypeWiseComparitives as vtwc
+import Sourcecode.Concentrations.VendorWiseConcentration as vwc
 import xlsxwriter
 import pandas as pd
 
@@ -336,27 +331,14 @@ print("*******************************************")
 print("Executing Unit Price Comparison code")
 
 try:
-    config_Inventory_mapping = reading_sheet_config_data_to_dict(
+    config_unit_price = reading_sheet_config_data_to_dict(
         sheet_name=config_sheets_dict["Unit_Price_Comparison_sheetname"])
-    upc.create_unit_price(config_Inventory_mapping)
+    upc.create_unit_price(config_unit_price)
 
 except Exception as e:
     print("Exception caught for Process: Unit Price Comparison code ", e)
 
 print("*******************************************")
-
-print("Executing Inventory Mapping code")
-
-try:
-    config_Inventory_mapping = reading_sheet_config_data_to_dict(
-        sheet_name=config_sheets_dict["Inventory_Mapping_Sheetname"])
-    im.create_Inventory_Mapping_sheet(config_Inventory_mapping)
-
-except Exception as e:
-    print("Exception caught for Process: Inventory mapping code ", e)
-
-print("*******************************************")
-
 
 final_output_file = openpyxl.load_workbook(output_file_path)
 if 'Sheet1' in final_output_file.sheetnames:
