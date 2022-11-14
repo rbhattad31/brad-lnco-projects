@@ -30,42 +30,22 @@ def send_mail(to, cc, subject, body):
         return error
 
 
-def same_mat_dvp(in_config, present_quarter_pd):
+def same_mat_dvp(main_config, in_config, present_quarter_pd):
     try:
         read_present_quarter_pd = present_quarter_pd
-        present_quarter_columns = read_present_quarter_pd.columns
-        if in_config["purchase_register_1st_column_name"] in present_quarter_columns and \
-                in_config["purchase_register_2nd_column_name"] in present_quarter_columns:
-            print("Present Quarter file - The data is starting from first row only")
-            pass
-
-        else:
-            print("Present Quarter file - The data is not starting from first row ")
-            for index, row in read_present_quarter_pd.iterrows():
-                if row[0] != in_config["purchase_register_1st_column_name"]:
-                    read_present_quarter_pd.drop(index, axis=0, inplace=True)
-                else:
-                    break
-            new_header = read_present_quarter_pd.iloc[0]
-            read_present_quarter_pd = read_present_quarter_pd[1:]
-            read_present_quarter_pd.columns = new_header
-            read_present_quarter_pd.reset_index(drop=True, inplace=True)
-            read_present_quarter_pd.columns.name = None
-        read_present_quarter_pd = read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
-
         input_file = read_present_quarter_pd[read_present_quarter_pd["Material No."].notna()]
         unit_price = read_present_quarter_pd[read_present_quarter_pd["unit price"].notna()]
 
         if read_present_quarter_pd.shape[0] == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Subject_mail"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Subject_mail"],
                       body=in_config["Body_mail"])
             raise BusinessException("Sheet is empty")
         elif len(unit_price) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Unit_price"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Unit_price"],
                       body=in_config["Unit_price_body"])
             raise BusinessException("unit price column is empty")
         elif len(input_file) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Document is empty"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Document is empty"],
                       body=in_config["Doc_body"])
             raise BusinessException("file is empty")
         else:
@@ -98,11 +78,11 @@ def same_mat_dvp(in_config, present_quarter_pd):
         # com_file[col_name[4]].values[-1] = grand_total
         com_file = com_file.rename(columns={col_name[3]: "Max of uint price"})
         com_file = com_file.rename(columns={col_name[4]: "Min of uint price"})
-        with pd.ExcelWriter(in_config["Out_file"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            com_file.to_excel(writer, sheet_name=in_config["out_sheet"], index=False, startrow=21)
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+            com_file.to_excel(writer, sheet_name=main_config["Output_Same_Material_Purchases_DVDP_sheetname"], index=False, startrow=21)
 
-        wb = load_workbook(in_config["Out_file"])
-        ws = wb[in_config["out_sheet"]]
+        wb = load_workbook(main_config["Output_File_Path"])
+        ws = wb[main_config["Output_Same_Material_Purchases_DVDP_sheetname"]]
 
         for cell in ws['D']:
             cell.number_format = "#,###.##"
@@ -162,9 +142,9 @@ def same_mat_dvp(in_config, present_quarter_pd):
         ws.merge_cells('A14:E14')
 
         # Headers implementation
-        ws['A1'] = in_config['A1']
-        ws['A2'] = in_config['A2']
-        ws['A3'] = in_config['A3']
+        ws['A1'] = main_config['CompanyName']
+        ws['A2'] = main_config['StatutoryAuditQuarter']
+        ws['A3'] = main_config['FinancialYear']
         ws['A4'] = in_config['A4']
         ws['A5'] = in_config['A5']
         ws['A7'] = in_config['A7']
@@ -205,31 +185,31 @@ def same_mat_dvp(in_config, present_quarter_pd):
 
         ws.sheet_view.showGridLines = False
         print(wb.sheetnames)
-        wb.save(in_config["Out_file"])
+        wb.save(main_config["Output_File_Path"])
         wb.close()
 
         return com_file
     except FileNotFoundError as f_error:
         print("sent a mail file not found")
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["File_N"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["File_N"],
                   body=in_config["File_N_body"])
         print("Exception: ", f_error)
         return f_error
     except NameError as n_error:
         print("Name Error")
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Name_E"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Name_E"],
                   body=in_config["Name_E_body"])
         print("Exception: ", n_error)
         return n_error
     except KeyError as k_error:
         print("KeyError")
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Key"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Key"],
                   body=in_config["Key_body"])
         print("Exception: ", k_error)
         return k_error
     except ValueError as v_error:
         print("ValueError")
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Value_E"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Value_E"],
                   body=in_config["Value_E_body"])
         print("Exception: ", v_error)
         return v_error
@@ -239,8 +219,9 @@ def same_mat_dvp(in_config, present_quarter_pd):
 
 
 config = {}
+main_config = {}
 present_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(same_mat_dvp(config, present_quarter_pd))
+    print(same_mat_dvp(main_config, config, present_quarter_pd))
 
 

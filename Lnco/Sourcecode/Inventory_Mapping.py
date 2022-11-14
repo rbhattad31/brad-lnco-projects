@@ -28,15 +28,17 @@ def send_mail(to, cc, subject, body):
         return error
 
 
-def create_Inventory_Mapping_sheet(in_config):
+def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd):
     try:
         # Reading Purchase register File
-        read_excel_data = pd.read_excel(in_config["ExcelPath1"], sheet_name=in_config["Sheet_Name1"], skiprows=3)
+        # read_excel_data = pd.read_excel(in_config["ExcelPath1"], sheet_name=in_config["Sheet_Name1"], skiprows=6)
+        read_excel_data = present_quarter_pd
         read_excel_data = read_excel_data.loc[:, ~read_excel_data.columns.duplicated(keep='first')]
 
+        # print(read_excel_data.head(5))
         # Check Exception
         if read_excel_data.shape[0] == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["subject_mail"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
             raise BusinessException("Sheet is empty")
 
@@ -47,19 +49,19 @@ def create_Inventory_Mapping_sheet(in_config):
                 body = in_config["Purchase_ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
 
-                send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
                 raise BusinessException(col + " Column is missing")
         # Filter Rows
         GR_Document_Number_pd = read_excel_data[read_excel_data['GR Document Number'].notna()]
         Gr_Qty_pd = read_excel_data[read_excel_data['GR Qty'].notna()]
 
         if len(GR_Document_Number_pd) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["GR Document_Number_subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["GR Document_Number_subject"],
                       body=in_config["GR Document_Number_Body"])
             raise BusinessException("GR Document Number Column is empty")
 
         elif len(Gr_Qty_pd) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Gr Qty_Subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr Qty_Subject"],
                       body=in_config["Gr Qty_Body"])
             raise BusinessException("GR Qty Column is empty")
         else:
@@ -73,11 +75,33 @@ def create_Inventory_Mapping_sheet(in_config):
 
 
         # Reading MB 51 File
-        read_excel_data_2 = pd.read_excel(in_config["ExcelPath2"], sheet_name=in_config["Sheet_Name2"], skiprows=8)
+        read_excel_data_2 = pd.read_excel(main_config["MB51_FilePath"], sheet_name=main_config["MB51SheetName"])
+        read_excel_data_2 = read_excel_data_2.loc[:,
+                                  ~read_excel_data_2.columns.duplicated(keep='first')]
+        columns = read_excel_data_2.columns
+        if main_config["MB51_first_column"] in columns and \
+                main_config["MB51_second_column"] in columns:
+            print("MB51 - The data is starting from first row only")
+            pass
 
+        else:
+            print("MB51 - The data is not starting from first row ")
+            for index, row in read_excel_data_2.iterrows():
+                if row[0] != main_config["MB51_first_column"]:
+                    read_excel_data_2.drop(index, axis=0, inplace=True)
+                else:
+                    break
+            new_header = read_excel_data_2.iloc[0]
+            read_excel_data_2 = read_excel_data_2[1:]
+            read_excel_data_2.columns = new_header
+            read_excel_data_2.reset_index(drop=True, inplace=True)
+            read_excel_data_2.columns.name = None
+        read_excel_data_2 = read_excel_data_2.loc[:,
+                                  ~read_excel_data_2.columns.duplicated(keep='first')]
+        # print(read_excel_data_2.head(5))
         # Check Exception
         if read_excel_data_2.shape[0] == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["subject_mail"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
             raise BusinessException("Sheet is empty")
 
@@ -88,7 +112,7 @@ def create_Inventory_Mapping_sheet(in_config):
                 body = in_config["MB51_ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
 
-                send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
                 raise BusinessException(col + " Column is missing")
 
 
@@ -97,12 +121,12 @@ def create_Inventory_Mapping_sheet(in_config):
         Qty_unit_of_entry_pd = read_excel_data_2[read_excel_data_2['Qty in unit of entry'].notna()]
 
         if len(Material_Document_pd) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Material_Document_subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Material_Document_subject"],
                       body=in_config["Material_Document_Body"])
             raise BusinessException("Material Document Column is empty")
 
         elif len(Qty_unit_of_entry_pd) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Qty_unit_of_entry_Subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Qty_unit_of_entry_Subject"],
                       body=in_config["Qty_unit_of_entry_Body"])
             raise BusinessException("Qty in unit of entry Column is empty")
         else:
@@ -116,11 +140,14 @@ def create_Inventory_Mapping_sheet(in_config):
                                    aggfunc=numpy.sum)
         pivot2_df = pivot2_df.reset_index()
         pivot2_df = pivot2_df.rename(columns={'Material Document': 'GR Document Number'})
-
+        pivot1_df = pivot1_df.reset_index()
+        # print(pivot1_df)
+        # print(pivot2_df)
 
         # Merging 2 Pivots
         merge_pd = pd.merge(pivot1_df, pivot2_df, how="inner", on=["GR Document Number"])
-
+        # print("at merging")
+        # print(merge_pd.head(10))
         columns_list = merge_pd.columns.values.tolist()
 
         # create a new column - Success
@@ -143,7 +170,6 @@ def create_Inventory_Mapping_sheet(in_config):
                 CHECK = False
 
             merge_pd['Check'][index] = CHECK
-        # print(merge_pd)
 
         # Renaming Columns
         Inventory_Mapping_file = merge_pd.rename(
@@ -159,13 +185,13 @@ def create_Inventory_Mapping_sheet(in_config):
 
 
         # Creating Output File
-        with pd.ExcelWriter(in_config["OutputPath_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            Inventory_Mapping_file.to_excel(writer, sheet_name=in_config["OutputSheet"],
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+            Inventory_Mapping_file.to_excel(writer, sheet_name=main_config["Output_Inventory_Mapping_Sheetname"],
                                         index=False, startrow=9)
 
         # Opening and Reading Output File.
-        wb = openpyxl.load_workbook(in_config["OutputPath_Path"])
-        ws = wb[in_config["OutputSheet"]]
+        wb = openpyxl.load_workbook(main_config["Output_File_Path"])
+        ws = wb[main_config["Output_Inventory_Mapping_Sheetname"]]
 
         # Header
         font_style = Font(name="Cambria", size=12, bold=True, color="000000")
@@ -181,7 +207,7 @@ def create_Inventory_Mapping_sheet(in_config):
                 break
         ws["C10"].fill = PatternFill("solid", fgColor="ffff00")
 
-        # Adding Auto Filter Option
+        # # Adding Auto Filter Option
         FullRange = "A10:D" + str(ws.max_row)
         ws.auto_filter.ref = FullRange
 
@@ -206,13 +232,14 @@ def create_Inventory_Mapping_sheet(in_config):
 
 
         # Saving the File
-        wb.save(in_config["OutputPath_Path"])
+        print(wb.sheetnames)
+        wb.save(main_config["Output_File_Path"])
 
         return create_Inventory_Mapping_sheet
 
     # Excepting Errors here
     except FileNotFoundError as notfound_error:
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["subject_file_not_found"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["subject_file_not_found"],
                   body=in_config["body_file_not_found"])
         print("Inventory Mapping Process-", notfound_error)
         return notfound_error
@@ -220,7 +247,7 @@ def create_Inventory_Mapping_sheet(in_config):
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(V_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Inventory Mapping Process-", V_error)
         return V_error
     except BusinessException as business_error:
@@ -230,32 +257,34 @@ def create_Inventory_Mapping_sheet(in_config):
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(type_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Inventory Mapping Process-", type_error)
         return type_error
     except (OSError, ImportError, MemoryError, RuntimeError, Exception) as error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Inventory Mapping Process-", error)
         return error
     except KeyError as key_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(key_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Inventory Mapping Process-", key_error)
         return key_error
     except PermissionError as file_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(file_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Please close the file")
         return file_error
 
 
 config = {}
+main_config = {}
+present_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    create_Inventory_Mapping_sheet(config)
+    create_Inventory_Mapping_sheet(config, present_quarter_pd=present_quarter_pd)

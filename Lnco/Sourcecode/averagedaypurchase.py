@@ -8,7 +8,6 @@ from win32com import client
 from openpyxl.styles import Border, Side, PatternFill, Alignment, Font
 
 
-config = {}
 
 
 def send_mail(to, cc, subject, body):
@@ -33,33 +32,14 @@ def send_mail(to, cc, subject, body):
 #  Function produce average day purchase output sheet
 
 
-def average_day_purchase(in_config, present_quarter_pd):
-    to_ = in_config["To_Address"]
-    cc_ = in_config["CC_Address"]
+def average_day_purchase(main_config, in_config, present_quarter_pd):
+    to_ = main_config["To_Mail_Address"]
+    cc_ = main_config["CC_Mail_Address"]
 
     try:
 
         # Reading the data from excel
         read_present_quarter_pd = present_quarter_pd
-        present_quarter_columns = read_present_quarter_pd.columns
-        if in_config["purchase_register_1st_column_name"] in present_quarter_columns and \
-                in_config["purchase_register_2nd_column_name"] in present_quarter_columns:
-            print("Present Quarter file - The data is starting from first row only")
-            pass
-
-        else:
-            print("Present Quarter file - The data is not starting from first row ")
-            for index, row in read_present_quarter_pd.iterrows():
-                if row[0] != in_config["purchase_register_1st_column_name"]:
-                    read_present_quarter_pd.drop(index, axis=0, inplace=True)
-                else:
-                    break
-            new_header = read_present_quarter_pd.iloc[0]
-            read_present_quarter_pd = read_present_quarter_pd[1:]
-            read_present_quarter_pd.columns = new_header
-            read_present_quarter_pd.reset_index(drop=True, inplace=True)
-            read_present_quarter_pd.columns.name = None
-        read_present_quarter_pd = read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
 
         # Empty data check
         if read_present_quarter_pd.empty:
@@ -119,16 +99,15 @@ def average_day_purchase(in_config, present_quarter_pd):
         pivot_q4.sort_values(by='Percentage', inplace=True)
 
         # Save pivot table to Excel file
-        with pd.ExcelWriter(in_config["output path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            pivot_q4.to_excel(writer, sheet_name=in_config['output_sheet'], startrow=24, index=False)
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+            pivot_q4.to_excel(writer, sheet_name=main_config['Output_Average_Day_Purchase_sheetname'], startrow=24, index=False)
 
         #   Formatting and styling the Excel data
-
         # Load excel file
-        workbook = openpyxl.load_workbook(in_config['output path'])
+        workbook = openpyxl.load_workbook(main_config['Output_File_Path'])
 
         # Load sheet
-        worksheet = workbook[in_config['output_sheet']]
+        worksheet = workbook[main_config['Output_Average_Day_Purchase_sheetname']]
 
         # Assign max row value to variable
         m_row = worksheet.max_row
@@ -225,9 +204,9 @@ def average_day_purchase(in_config, present_quarter_pd):
         worksheet.merge_cells('A22:E22')
 
         # Headers implementation
-        worksheet['A1'] = in_config['A1']
-        worksheet['A2'] = in_config['A2']
-        worksheet['A3'] = in_config['A3']
+        worksheet['A1'] = main_config['CompanyName']
+        worksheet['A2'] = main_config['StatutoryAuditQuarter']
+        worksheet['A3'] = main_config['FinancialYear']
         worksheet['A4'] = in_config['A4']
         worksheet['A5'] = in_config['A5']
         worksheet['A7'] = in_config['A7']
@@ -273,10 +252,9 @@ def average_day_purchase(in_config, present_quarter_pd):
 
         worksheet.auto_filter.ref = "A25:E" + str(m_row)
 
-        workbook.save(in_config['output path'])
-
+        workbook.save(main_config['Output_File_Path'])
         # Empty cell check
-        wb = xlrd.open_workbook(in_config['output path'])
+        wb = xlrd.open_workbook(main_config['Output_File_Path'])
         wb_sheet = wb.sheet_by_index(0)
 
         for row in range(25, wb_sheet.nrows):
@@ -284,9 +262,10 @@ def average_day_purchase(in_config, present_quarter_pd):
                 if wb_sheet.cell_value(row, column) == "":
                     print('row', row+1, 'col', column+1, 'is empty')
                     raise RuntimeError
-        wb = openpyxl.load_workbook(in_config['output path'])
+
+        wb = openpyxl.load_workbook(main_config['Output_File_Path'])
         print(wb.sheetnames)
-        wb.save(in_config['output path'])
+        wb.save(main_config['Output_File_Path'])
 
     #  Exceptions handling
     except FileNotFoundError:
@@ -354,7 +333,10 @@ def average_day_purchase(in_config, present_quarter_pd):
     finally:
             print("Process is over")
 
+
+config = {}
+main_config = {}
 present_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(average_day_purchase(config, present_quarter_pd))
+    print(average_day_purchase(main_config, config, present_quarter_pd))
 

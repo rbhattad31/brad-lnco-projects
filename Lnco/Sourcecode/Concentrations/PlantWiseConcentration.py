@@ -29,37 +29,15 @@ def send_mail(to, cc, subject, body):
         return error
 
 
-def purchase_type(in_config, present_quarter_pd):
+def purchase_type(main_config, in_config, present_quarter_pd):
     try:
 
         # Read Purchase Register Sheets
         read_present_quarter_pd = present_quarter_pd
-        present_quarter_columns = read_present_quarter_pd.columns
-        if in_config["purchase_register_1st_column_name"] in present_quarter_columns and \
-                in_config["purchase_register_2nd_column_name"] in present_quarter_columns:
-            print("Present Quarter file - The data is starting from first row only")
-            pass
-
-        else:
-            print("Present Quarter file - The data is not starting from first row ")
-            for index, row in read_present_quarter_pd.iterrows():
-                if row[0] != in_config["purchase_register_1st_column_name"]:
-                    read_present_quarter_pd.drop(index, axis=0, inplace=True)
-                else:
-                    break
-            new_header = read_present_quarter_pd.iloc[0]
-            read_present_quarter_pd = read_present_quarter_pd[1:]
-            read_present_quarter_pd.columns = new_header
-            read_present_quarter_pd.reset_index(drop=True, inplace=True)
-            read_present_quarter_pd.columns.name = None
-        read_present_quarter_pd = read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
-
-
-
 
         # Fetch To Address
-        to_address = in_config["To_Address"]
-        cc_address = in_config["CC_Address"]
+        to_address = main_config["To_Mail_Address"]
+        cc_address = main_config["CC_Mail_Address"]
 
         # Check Exception
         if read_present_quarter_pd.shape[0] == 0:
@@ -137,14 +115,14 @@ def purchase_type(in_config, present_quarter_pd):
             pivot_sheet['Variance'][index] = variance
 
         # Change Column names of Q4
-        pivot_sheet = pivot_sheet.rename(columns={col_name[1]: in_config["PresentQuarterColumn"]})
+        pivot_sheet = pivot_sheet.rename(columns={col_name[1]: main_config["PresentQuarterColumnName"]})
 
         # Log Sheet
-        with pd.ExcelWriter(in_config["Plant_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            pivot_sheet.to_excel(writer, sheet_name=in_config["PlantSheet"], index=False,  startrow=16)
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+            pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Concentrations_Plant_sheetname"], index=False,  startrow=16)
 
         # Check outfile creation
-        if os.path.exists(in_config["Plant_Path"]):
+        if os.path.exists(main_config["Output_File_Path"]):
             print("Plant Wise Concentration Logged")
         else:
             subject = in_config["OutputNotFound_Subject"]
@@ -153,8 +131,8 @@ def purchase_type(in_config, present_quarter_pd):
             raise BusinessException("Output file not generated")
 
         # Load Sheet in openpyxl
-        wb = openpyxl.load_workbook(in_config["Plant_Path"])
-        ws = wb[in_config["PlantSheet"]]
+        wb = openpyxl.load_workbook(main_config["Output_File_Path"])
+        ws = wb[main_config["Output_Concentrations_Plant_sheetname"]]
 
         # Format Q4 & Q3
         for cell in ws['B']:
@@ -223,9 +201,9 @@ def purchase_type(in_config, present_quarter_pd):
         ws.merge_cells('A14:E14')
 
         # Headers implementation
-        ws['A1'] = in_config['A1']
-        ws['A2'] = in_config['A2']
-        ws['A3'] = in_config['A3']
+        ws['A1'] = main_config['CompanyName']
+        ws['A2'] = main_config['StatutoryAuditQuarter']
+        ws['A3'] = main_config['FinancialYear']
         ws['A4'] = in_config['A4']
         ws['A5'] = in_config['A5']
         ws['A7'] = in_config['A7']
@@ -258,21 +236,21 @@ def purchase_type(in_config, present_quarter_pd):
         ws.sheet_view.showGridLines = False
         print(wb.sheetnames)
         # Save File
-        wb.save(in_config["Plant_Path"])
+        wb.save(main_config["Output_File_Path"])
         return ws
 
     except PermissionError as file_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(file_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Concentration Plant Wise Process-", end="")
         print("Please close the file")
         return file_error
     except FileNotFoundError as notfound_error:
         subject = in_config["FileNotFound_Subject"]
         body = in_config["FileNotFound_Body"]
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Concentration Plant Wise Process-", end="")
         return notfound_error
     except BusinessException as business_error:
@@ -282,35 +260,36 @@ def purchase_type(in_config, present_quarter_pd):
         subject = in_config["SheetMiss_Subject"]
         body = in_config["SheetMiss_Body"]
         body = body.replace("ValueError +", str(value_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Concentration Plant Wise Process-", end="")
         return value_error
     except TypeError as type_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(type_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Concentration Plant Wise Process-", end="")
         return type_error
     except (OSError, ImportError, MemoryError, RuntimeError, Exception) as error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Concentration Plant Wise Process-", end="")
         return error
     except KeyError as key_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(key_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Concentration Plant Wise Process-", end="")
         return key_error
 
 
 # Read config details and parse to dictionary
 config = {}
+main_config = {}
 present_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(purchase_type(config, present_quarter_pd))
+    print(purchase_type(main_config, config, present_quarter_pd))
 

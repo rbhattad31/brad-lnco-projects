@@ -34,50 +34,15 @@ def send_mail(to, cc, subject, body):
 
 
 # Defining a Function
-def Create_Vendor_Wise(in_config, present_quarter_pd, previous_quarter_pd):
+def Create_Vendor_Wise(main_config, in_config, present_quarter_pd, previous_quarter_pd):
     try:
         read_present_quarter_pd = present_quarter_pd
-
-        present_quarter_columns = read_present_quarter_pd.columns
-        if in_config["purchase_register_1st_column_name"] in present_quarter_columns and in_config["purchase_register_2nd_column_name"] in present_quarter_columns:
-            pass
-        else:
-            for index, row in read_present_quarter_pd.iterrows():
-                if row[0] != in_config["purchase_register_1st_column_name"]:
-                    read_present_quarter_pd.drop(index, axis=0, inplace=True)
-                else:
-                    break
-            new_header = read_present_quarter_pd.iloc[0]
-            read_present_quarter_pd = read_present_quarter_pd[1:]
-            read_present_quarter_pd.columns = new_header
-            read_present_quarter_pd.reset_index(drop=True, inplace=True)
-            read_present_quarter_pd.columns.name = None
-        read_present_quarter_pd = read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
-        read_present_quarter_pd = read_present_quarter_pd[["Vendor No.", "Vendor Name", "GR Amt.in loc.cur."]]
-
         read_previous_quarter_pd = previous_quarter_pd
-        previous_quarter_columns = read_previous_quarter_pd.columns
-        if in_config["purchase_register_1st_column_name"] in previous_quarter_columns and in_config["purchase_register_2nd_column_name"] in previous_quarter_columns:
-            pass
-        else:
-            for index, row in read_previous_quarter_pd.iterrows():
-                if row[0] != in_config["purchase_register_1st_column_name"]:
-                    read_previous_quarter_pd.drop(index, axis=0, inplace=True)
-                else:
-                    break
-            new_header = read_previous_quarter_pd.iloc[0]
-            read_previous_quarter_pd = read_previous_quarter_pd[1:]
-            read_previous_quarter_pd.columns = new_header
-            read_previous_quarter_pd.reset_index(level=0, drop=True, inplace=True)
-            read_previous_quarter_pd.columns.name = None
-        read_previous_quarter_pd = read_previous_quarter_pd.loc[:, ~read_previous_quarter_pd.columns.duplicated(keep='first')]
-
-        read_previous_quarter_pd = read_previous_quarter_pd[["Vendor No.", "Vendor Name", "GR Amt.in loc.cur."]]
-
         # Checking Exception starts here
         # present quarter
         if read_present_quarter_pd.shape[0] == 0:
-            send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=in_config["subject_mail"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
             raise BusinessException("Input Sheet Data is empty")
 
@@ -88,7 +53,8 @@ def Create_Vendor_Wise(in_config, present_quarter_pd, previous_quarter_pd):
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
 
-                send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject,
+                          body=body)
                 raise BusinessException(col + " Column is missing")
 
         # Filter Rows
@@ -97,17 +63,18 @@ def Create_Vendor_Wise(in_config, present_quarter_pd, previous_quarter_pd):
         Gr_Amt_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
         if len(Vendor_No_pd) == 0:
-            send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Vendor No._subject"],
                       body=in_config["Vendor No._Body"])
             raise BusinessException("Vendor No. Column is empty")
         elif len(Vendor_Name_pd) == 0:
-            send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Vendor Name_Subject"],
                       body=in_config["Vendor Name_Body"])
             raise BusinessException("Vendor Name Column is empty")
         elif len(Gr_Amt_pd) == 0:
-            send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=in_config["Gr Amt_Subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
             raise BusinessException("GR Amt Column is empty")
         else:
@@ -116,7 +83,8 @@ def Create_Vendor_Wise(in_config, present_quarter_pd, previous_quarter_pd):
         # present quarter exceptions ends here
         # previous quarter exceptions starts here
         if read_previous_quarter_pd.shape[0] == 0:
-            send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=in_config["subject_mail"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
             raise BusinessException("Input Sheet Data is empty")
 
@@ -127,7 +95,8 @@ def Create_Vendor_Wise(in_config, present_quarter_pd, previous_quarter_pd):
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
 
-                send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject,
+                          body=body)
                 raise BusinessException(col + " Column is missing")
 
         # Filter Rows
@@ -136,30 +105,29 @@ def Create_Vendor_Wise(in_config, present_quarter_pd, previous_quarter_pd):
         Vendor_Name_pd = read_previous_quarter_pd[read_previous_quarter_pd['Vendor Name'].notna()]
         Gr_Amt_pd = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
-
         if len(Vendor_No_pd) == 0:
 
-            send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Vendor No._subject"],
                       body=in_config["Vendor No._Body"])
             raise BusinessException("Vendor No. Column is empty")
 
 
         elif len(Vendor_Name_pd) == 0:
-            send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Vendor Name_Subject"],
                       body=in_config["Vendor Name_Body"])
             raise BusinessException("Vendor Name Column is empty")
 
         elif len(Gr_Amt_pd) == 0:
-            send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=in_config["Gr Amt_Subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
             raise BusinessException("GR Amt Column is empty")
         else:
             pass
 
         # exception ends here
-
 
         # create pivot table
 
@@ -222,30 +190,28 @@ def Create_Vendor_Wise(in_config, present_quarter_pd, previous_quarter_pd):
                 Percentage = Variance_row_value / Previous_quarter_row_value
             merge_pd['Percentage'][index] = Percentage
         Vendor_wise_comparatives_pd = merge_pd.rename(
-            columns={Col_List[2]: in_config["Present_quarter_Column_Name"]})
+            columns={Col_List[2]: main_config["PresentQuarterColumnName"]})
         Vendor_wise_comparatives_pd = Vendor_wise_comparatives_pd.rename(
-            columns={Col_List[3]: in_config["Previous_quarter_Column_Name"]})
+            columns={Col_List[3]: main_config["PreviousQuarterColumnName"]})
 
-        present_quarter_subtotal = Vendor_wise_comparatives_pd[in_config["Present_quarter_Column_Name"]].sum()
+        present_quarter_subtotal = Vendor_wise_comparatives_pd[main_config["PresentQuarterColumnName"]].sum()
         # print(present_quarter_subtotal)
-        previous_quarter_subtotal = Vendor_wise_comparatives_pd[in_config["Previous_quarter_Column_Name"]].sum()
+        previous_quarter_subtotal = Vendor_wise_comparatives_pd[main_config["PreviousQuarterColumnName"]].sum()
         # print(previous_quarter_subtotal)
         variance_subtotal = present_quarter_subtotal - previous_quarter_subtotal
         # print(variance_subtotal)
-
-        with pd.ExcelWriter(in_config["Output_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="replace") as writer:
             Vendor_wise_comparatives_pd.to_excel(writer,
-                                             sheet_name=in_config["Vendor_Wise_Sheet_Name"], startrow=17,
-                                             index=False)
-
-        wb = openpyxl.load_workbook(in_config["Output_Path"])
-        ws = wb[in_config["Vendor_Wise_Sheet_Name"]]
-
+                                                 sheet_name=main_config[
+                                                     "Output_Comparatives_Vendor_sheetname"], index=False,startrow=17)
+        wb = openpyxl.load_workbook(main_config["Output_File_Path"])
+        ws = wb[main_config["Output_Comparatives_Vendor_sheetname"]]
         m_row = ws.max_row
 
-        ws['C17'] = '=SUBTOTAL(9,C19:C'+str(m_row)+')'
-        ws['D17'] = '=SUBTOTAL(9,D19:D'+str(m_row)+')'
-        ws['E17'] = '=SUBTOTAL(9,E19:E'+str(m_row)+')'
+        ws['C17'] = '=SUBTOTAL(9,C19:C' + str(m_row) + ')'
+        ws['D17'] = '=SUBTOTAL(9,D19:D' + str(m_row) + ')'
+        ws['E17'] = '=SUBTOTAL(9,E19:E' + str(m_row) + ')'
 
         font_style = Font(name="Cambria", size=12, bold=True, color="000000")
         for c in ascii_uppercase:
@@ -317,9 +283,9 @@ def Create_Vendor_Wise(in_config, present_quarter_pd, previous_quarter_pd):
         ws.merge_cells('A14:F14')
 
         # Headers implementation
-        ws['A1'] = in_config['A1']
-        ws['A2'] = in_config['A2']
-        ws['A3'] = in_config['A3']
+        ws['A1'] = main_config['CompanyName']
+        ws['A2'] = main_config['StatutoryAuditQuarter']
+        ws['A3'] = main_config['FinancialYear']
         ws['A4'] = in_config['A4']
         ws['A5'] = in_config['A5']
         ws['A7'] = in_config['A7']
@@ -351,13 +317,14 @@ def Create_Vendor_Wise(in_config, present_quarter_pd, previous_quarter_pd):
 
         ws.sheet_view.showGridLines = False
         print(wb.sheetnames)
-        wb.save(in_config["Output_Path"])
+        wb.save(main_config["Output_File_Path"])
 
         return Vendor_wise_comparatives_pd
 
     # Excepting Errors here
     except PermissionError as file_error:
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=in_config["SystemE_Subject"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                  subject=in_config["SystemE_Subject"],
                   body=in_config["SystemE_Body"])
         print("Please close the file")
         print("Exception: ", file_error)
@@ -365,45 +332,45 @@ def Create_Vendor_Wise(in_config, present_quarter_pd, previous_quarter_pd):
     except FileNotFoundError as notfound_error:
         subject = in_config["FileNotFound_Subject"]
         body = in_config["FileNotFound_Body"]
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
-        print("Vendor Wise Comparitives Process", notfound_error)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
+        print("Vendor Wise comparatives Process", notfound_error)
         return notfound_error
     except BusinessException as business_error:
-        print("Vendor Wise Comparitives Process-", business_error)
+        print("Vendor Wise comparatives Process-", business_error)
         return business_error
     except ValueError as value_error:
         subject = in_config["SheetMiss_Subject"]
         body = in_config["SheetMiss_Body"]
         body = body.replace("ValueError +", str(value_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
-        print("Vendor Wise Comparitives Process-", value_error)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
+        print("Vendor Wise comparatives Process-", value_error)
         return value_error
     except TypeError as type_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(type_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
-        print("Vendor Wise Comparitives Process-", type_error)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
+        print("Vendor Wise comparatives Process-", type_error)
         return type_error
     except (OSError, ImportError, MemoryError, RuntimeError, Exception) as error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
-        print("Vendor Wise Comparitives Process-", error)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
+        print("Vendor Wise comparatives Process-", error)
         return error
     except KeyError as key_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(key_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
-        print("Vendor Wise Comparitives Process-", key_error)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
+        print("Vendor Wise comparatives Process-", key_error)
         return key_error
 
 
 config = {}
+main_config = {}
 present_quarter_pd = pd.DataFrame()
 previous_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(Create_Vendor_Wise(config, present_quarter_pd, previous_quarter_pd))
-
+    print(Create_Vendor_Wise(main_config, config, present_quarter_pd, previous_quarter_pd))

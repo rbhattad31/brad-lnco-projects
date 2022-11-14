@@ -32,14 +32,14 @@ def send_mail(to, cc, subject, body, pywintypes=None):
         return error
 
 
-def create_unit_price(in_config):
+def create_unit_price(main_config, in_config):
     try:
-        Excel_data = pd.read_excel(in_config["ExcelPath"], sheet_name=in_config["Q4 Sheet"],
+        Excel_data = pd.read_excel(main_config["InputFilePath"], sheet_name=main_config["PresentQuarterSheetName"],
                                    skiprows=in_config["Skiprow_Q4"])
 
         # Fetch To Address
-        to_address = in_config["To_Address"]
-        cc_address = in_config["CC_Address"]
+        to_address = main_config["To_Mail_Address"]
+        cc_address = main_config["CC_Mail_Address"]
 
         # Check Exception
         if Excel_data.shape[0] == 0:
@@ -92,7 +92,7 @@ def create_unit_price(in_config):
                              "GR Qty1", "Unit Price1"]]
 
         # Q3 Pivot
-        Excel_data = pd.read_excel(in_config["ExcelPath"], sheet_name=in_config["Q3 Sheet"],
+        Excel_data = pd.read_excel(main_config["InputFilePath"], sheet_name=main_config["PreviousQuarterSheetName"],
                                    skiprows=in_config["Skiprow_Q3"])
 
         # Check Exception
@@ -282,11 +282,11 @@ def create_unit_price(in_config):
             columns={columns[11]: "Unit Price"})
         Unit_Price = Unit_Price.drop(columns=["index"])
 
-        with pd.ExcelWriter(in_config["Unit_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            Unit_Price.to_excel(writer, sheet_name=in_config["Unit_Sheet"], startrow=24, index=False)
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+            Unit_Price.to_excel(writer, sheet_name=main_config["Output_Unit_Price_Comparison_sheetname"], startrow=24, index=False)
 
-        wb = load_workbook(in_config["Unit_Path"])
-        ws = wb[in_config["Unit_Sheet"]]
+        wb = load_workbook(main_config["Output_File_Path"])
+        ws = wb[main_config["Output_Unit_Price_Comparison_sheetname"]]
 
         cell = ws['F24']
         cell.value = 'Current Quarter Q4'
@@ -398,9 +398,9 @@ def create_unit_price(in_config):
         ws.merge_cells('A14:E14')
 
         # Headers implementation
-        ws['A1'] = in_config['A1']
-        ws['A2'] = in_config['A2']
-        ws['A3'] = in_config['A3']
+        ws['A1'] = main_config['CompanyName']
+        ws['A2'] = main_config['StatutoryAuditQuarter']
+        ws['A3'] = main_config['FinancialYear']
         ws['A4'] = in_config['A4']
         ws['A5'] = in_config['A5']
         ws['A7'] = in_config['A7']
@@ -432,7 +432,7 @@ def create_unit_price(in_config):
 
         ws.sheet_view.showGridLines = False
         print(wb.sheetnames)
-        wb.save(in_config["Unit_Path"])
+        wb.save(main_config["Output_File_Path"])
         wb.close()
 
         return Unit_Price
@@ -441,13 +441,13 @@ def create_unit_price(in_config):
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(file_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Please close the file")
         return file_error
     except FileNotFoundError as notfound_error:
         subject = in_config["FileNotFound_Subject"]
         body = in_config["FileNotFound_Body"]
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Unit Price Comparison Process-", end="")
         return notfound_error
     except BusinessException as business_error:
@@ -457,33 +457,33 @@ def create_unit_price(in_config):
         subject = in_config["SheetMiss_Subject"]
         body = in_config["SheetMiss_Body"]
         body = body.replace("ValueError +", str(value_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Unit Price Comparison Process-", end="")
         return value_error
     except TypeError as type_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(type_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Unit Price Comparison Process-", end="")
         return type_error
     except (OSError, ImportError, MemoryError, RuntimeError, Exception) as error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Unit Price Comparison Process-", end="")
         return error
     except KeyError as key_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(key_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Unit Price Comparison Process-", end="")
         return key_error
 
 
 config = {}
-
+main_config = {}
 if __name__ == "__main__":
-    print(create_unit_price(config))
+    print(create_unit_price(main_config, config))

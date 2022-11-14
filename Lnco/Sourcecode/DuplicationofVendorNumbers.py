@@ -28,15 +28,14 @@ def send_mail(to, cc, subject, body):
         return error
 
 
-def vendor_numbers_duplication(in_config):
+def vendor_numbers_duplication(main_config, in_config):
     try:
         # Read Purchase Register Sheets
-        vendor_data = pd.read_excel(in_config["ExcelPath"], sheet_name=in_config["Sheet"])
-
+        vendor_data = pd.read_excel(main_config["VendorMasterFilePath"], sheet_name=main_config["VendorMasterSheetName"])
 
         # Fetch To Address
-        to_address = in_config["To_Address"]
-        cc_address = in_config["CC_Address"]
+        to_address = main_config["To_Mail_Address"]
+        cc_address = main_config["CC_Mail_Address"]
 
         # Check data in input sheet
         if vendor_data.shape[0] == 0:
@@ -118,11 +117,11 @@ def vendor_numbers_duplication(in_config):
         pivot_sheet = pivot_sheet.sort_values(by='Vendor', ascending=True)
 
         # Log Sheet
-        with pd.ExcelWriter(in_config["DuplicationResult_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            pivot_sheet.to_excel(writer, sheet_name=in_config["DuplicationSheet"], index=False)
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+            pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Duplication_of_Vendor_sheetname"], index=False)
 
         # Check outfile creation
-        if os.path.exists(in_config["DuplicationResult_Path"]):
+        if os.path.exists(main_config["Output_File_Path"]):
             print("Duplication of vendor numbers logged successfully")
         else:
             subject = in_config["OutputNotFound_Subject"]
@@ -131,8 +130,8 @@ def vendor_numbers_duplication(in_config):
             raise BusinessException("Output file not generated")
 
         # Load Sheet in openpyxl
-        wb = openpyxl.load_workbook(in_config["DuplicationResult_Path"])
-        ws = wb[in_config["DuplicationSheet"]]
+        wb = openpyxl.load_workbook(main_config["Output_File_Path"])
+        ws = wb[main_config["Output_Duplication_of_Vendor_sheetname"]]
 
         # Header Fill
         format_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
@@ -167,21 +166,21 @@ def vendor_numbers_duplication(in_config):
 
         # Save File
         print(wb.sheetnames)
-        wb.save(in_config["DuplicationResult_Path"])
+        wb.save(main_config["Output_File_Path"])
         return ws
 
     except PermissionError as file_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(file_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Duplication Process-", end="")
         print("Please close the file")
         return file_error
     except FileNotFoundError as notfound_error:
         subject = in_config["FileNotFound_Subject"]
         body = in_config["FileNotFound_Body"]
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Duplication Process-", end="")
         return notfound_error
     except BusinessException as business_error:
@@ -191,7 +190,7 @@ def vendor_numbers_duplication(in_config):
         subject = in_config["SheetMiss_Subject"]
         body = in_config["SheetMiss_Body"]
         body = body.replace("ValueError +", str(value_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Duplication Process-", end="")
         return value_error
     except TypeError as type_error:
@@ -201,14 +200,14 @@ def vendor_numbers_duplication(in_config):
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Duplication Process-", end="")
         return error
     except KeyError as key_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(key_error))
-        send_mail(to=in_config["To_Address"], cc=in_config["CC_Address"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Duplication Process-", end="")
         print("Please check the given keyword is correct")
         return key_error
@@ -216,7 +215,8 @@ def vendor_numbers_duplication(in_config):
 
 # Read config details and parse to dictionary
 config = {}
+main_config = {}
 
 if __name__ == "__main__":
-    print(vendor_numbers_duplication(config))
+    print(vendor_numbers_duplication(main_config, config))
 

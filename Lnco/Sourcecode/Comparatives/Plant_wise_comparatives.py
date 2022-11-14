@@ -29,58 +29,14 @@ def send_mail(to, cc, subject, body):
         return error
 
 
-def create_plant_wise_sheet(in_config, present_quarter_pd, previous_quarter_pd):
+def create_plant_wise_sheet(main_config, in_config, present_quarter_pd, previous_quarter_pd):
     try:
         read_present_quarter_pd = present_quarter_pd
-        present_quarter_columns = read_present_quarter_pd.columns
-        if in_config["purchase_register_1st_column_name"] in present_quarter_columns and \
-                in_config["purchase_register_2nd_column_name"] in present_quarter_columns:
-            print("Present Quarter file - The data is starting from first row only")
-            read_present_quarter_pd = read_present_quarter_pd[["Plant", "GR Amt.in loc.cur."]]
-            pass
-
-        else:
-            print("Present Quarter file - The data is not starting from first row ")
-            for index, row in read_present_quarter_pd.iterrows():
-                if row[0] != in_config["purchase_register_1st_column_name"]:
-                    read_present_quarter_pd.drop(index, axis=0, inplace=True)
-                else:
-                    break
-            new_header = read_present_quarter_pd.iloc[0]
-            read_present_quarter_pd = read_present_quarter_pd[1:]
-            read_present_quarter_pd.columns = new_header
-            read_present_quarter_pd = read_present_quarter_pd[["Plant", "GR Amt.in loc.cur."]]
-            read_present_quarter_pd.reset_index(drop=True, inplace=True)
-            read_present_quarter_pd.columns.name = None
-        read_present_quarter_pd = read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
-
         read_previous_quarter_pd = previous_quarter_pd
-        previous_quarter_columns = read_previous_quarter_pd.columns
-        if in_config["purchase_register_1st_column_name"] in previous_quarter_columns and \
-                in_config["purchase_register_2nd_column_name"] in previous_quarter_columns:
-            print("Previous Quarter file - The data is starting from first row only")
-            read_previous_quarter_pd = read_previous_quarter_pd[["Plant", "GR Amt.in loc.cur."]]
-            pass
-
-        else:
-            print("Previous Quarter file - The data is not starting from first row ")
-            for index, row in read_previous_quarter_pd.iterrows():
-                if row[0] != in_config["purchase_register_1st_column_name"]:
-                    read_previous_quarter_pd.drop(index, axis=0, inplace=True)
-                else:
-                    break
-            new_header = read_previous_quarter_pd.iloc[0]
-            read_previous_quarter_pd = read_previous_quarter_pd[1:]
-            read_previous_quarter_pd.columns = new_header
-            read_previous_quarter_pd = read_previous_quarter_pd[["Plant", "GR Amt.in loc.cur."]]
-            read_previous_quarter_pd.reset_index(drop=True, inplace=True)
-            read_previous_quarter_pd.columns.name = None
-
-        read_previous_quarter_pd = read_previous_quarter_pd.loc[:, ~read_previous_quarter_pd.columns.duplicated(keep='first')]
 
         # Check Exception
         if read_present_quarter_pd.shape[0] == 0 or read_previous_quarter_pd.shape[0] == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["subject_mail"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
             raise BusinessException("Sheet is empty")
 
@@ -91,7 +47,7 @@ def create_plant_wise_sheet(in_config, present_quarter_pd, previous_quarter_pd):
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
 
-                send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
                 raise BusinessException(col + " Column is missing")
 
         PresentQuarterSheet_col = read_present_quarter_pd.columns.values.tolist()
@@ -101,7 +57,7 @@ def create_plant_wise_sheet(in_config, present_quarter_pd, previous_quarter_pd):
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
 
-                send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
                 raise BusinessException(col + " Column is missing")
 
         # Filter Rows
@@ -109,12 +65,12 @@ def create_plant_wise_sheet(in_config, present_quarter_pd, previous_quarter_pd):
         Gr_Amt_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
         if len(Plant_pd) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Pant_subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Pant_subject"],
                       body=in_config["Plant_Body"])
             raise BusinessException("Plant Column is empty")
 
         elif len(Gr_Amt_pd) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Gr Amt_Subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
             raise BusinessException("GR Amt Column is empty")
         else:
@@ -124,12 +80,12 @@ def create_plant_wise_sheet(in_config, present_quarter_pd, previous_quarter_pd):
         Gr_Amt_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
         if len(Plant_pd_2) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Pant_subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Pant_subject"],
                       body=in_config["Plant_Body"])
             raise BusinessException("Plant Column is empty")
 
         elif len(Gr_Amt_pd_2) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Gr Amt_Subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
             raise BusinessException("GR Amt Column is empty")
         else:
@@ -182,15 +138,15 @@ def create_plant_wise_sheet(in_config, present_quarter_pd, previous_quarter_pd):
 
 
         plant_wise_comparative_file = merge_pd.rename(
-            columns={col_name[1]: in_config["PresentQuarterColumn"]})
+            columns={col_name[1]: main_config["PresentQuarterColumnName"]})
 
         plant_wise_comparative_file = plant_wise_comparative_file.rename(
-            columns={col_name[2]: in_config["PreviousQuarterColumn"]})
-        with pd.ExcelWriter(in_config["Output_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            plant_wise_comparative_file.to_excel(writer, sheet_name=in_config["PlantSheet"], index=False,
+            columns={col_name[2]: main_config["PreviousQuarterColumnName"]})
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+            plant_wise_comparative_file.to_excel(writer, sheet_name=main_config["Output_Comparatives_Plant_sheetname"], index=False,
                                              startrow=16)
-        wb = openpyxl.load_workbook(in_config["Output_Path"])
-        ws = wb[in_config["PlantSheet"]]
+        wb = openpyxl.load_workbook(main_config["Output_File_Path"])
+        ws = wb[main_config["Output_Comparatives_Plant_sheetname"]]
 
         for cell in ws['B']:
             cell.number_format = '#,###.##'
@@ -248,9 +204,9 @@ def create_plant_wise_sheet(in_config, present_quarter_pd, previous_quarter_pd):
         ws.merge_cells('A14:E14')
 
         # Headers implementation
-        ws['A1'] = in_config['A1']
-        ws['A2'] = in_config['A2']
-        ws['A3'] = in_config['A3']
+        ws['A1'] = main_config['CompanyName']
+        ws['A2'] = main_config['StatutoryAuditQuarter']
+        ws['A3'] = main_config['FinancialYear']
         ws['A4'] = in_config['A4']
         ws['A5'] = in_config['A5']
         ws['A7'] = in_config['A7']
@@ -282,13 +238,13 @@ def create_plant_wise_sheet(in_config, present_quarter_pd, previous_quarter_pd):
 
         ws.sheet_view.showGridLines = False
         print(wb.sheetnames)
-        wb.save(in_config["Output_Path"])
+        wb.save(main_config["Output_File_Path"])
 
         return plant_wise_comparative_file
 
     # Excepting Errors here
     except FileNotFoundError as notfound_error:
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["subject_file_not_found"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["subject_file_not_found"],
                   body=in_config["body_file_not_found"])
         print("Plant Type Wise Comparatives Process-", notfound_error)
         return notfound_error
@@ -296,7 +252,7 @@ def create_plant_wise_sheet(in_config, present_quarter_pd, previous_quarter_pd):
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(V_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Purchase Type Wise Comparatives Process-", V_error)
         return V_error
     except BusinessException as business_error:
@@ -306,35 +262,36 @@ def create_plant_wise_sheet(in_config, present_quarter_pd, previous_quarter_pd):
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(type_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Plant Type Wise Comparatives Process-", type_error)
         return type_error
     except (OSError, ImportError, MemoryError, RuntimeError, Exception) as error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Plant Type Wise Comparatives Process-", error)
         return error
     except KeyError as key_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(key_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Plant Type Wise Comparatives Process-", key_error)
         return key_error
     except PermissionError as file_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(file_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=subject, body=body)
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
         print("Please close the file")
         return file_error
 
 
 config = {}
+main_config = {}
 present_quarter_pd = pd.DataFrame()
 previous_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(create_plant_wise_sheet(config, present_quarter_pd, previous_quarter_pd))
+    print(create_plant_wise_sheet(main_config, config, present_quarter_pd, previous_quarter_pd))
 

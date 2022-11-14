@@ -28,45 +28,26 @@ def send_mail(to, cc, subject, body):
         return error
 
 
-def con_vendor_wise(in_config, present_quarter_pd):
+def con_vendor_wise(main_config, in_config, present_quarter_pd):
     try:
         read_present_quarter_pd = present_quarter_pd
-        present_quarter_columns = read_present_quarter_pd.columns
-        if in_config["purchase_register_1st_column_name"] in present_quarter_columns and \
-                in_config["purchase_register_2nd_column_name"] in present_quarter_columns:
-            print("The data is starting from first row only")
-            pass
 
-        else:
-            print("The data is not starting from first row ")
-            for index, row in read_present_quarter_pd.iterrows():
-
-                if row[0] != in_config["purchase_register_1st_column_name"]:
-                    read_present_quarter_pd.drop(index, axis=0, inplace=True)
-                else:
-                    break
-            new_header = read_present_quarter_pd.iloc[0]
-            read_present_quarter_pd = read_present_quarter_pd[1:]
-            read_present_quarter_pd.columns = new_header
-            read_present_quarter_pd.reset_index(drop=True, inplace=True)
-            read_present_quarter_pd.columns.name = None
-        read_present_quarter_pd = read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
         read_present_quarter_pd = read_present_quarter_pd[["Vendor No.", "Vendor Name", "GR Amt.in loc.cur."]]
 
         Amount = read_present_quarter_pd[read_present_quarter_pd["GR Amt.in loc.cur."].notna()]
         Vendor_no = read_present_quarter_pd[read_present_quarter_pd["Vendor No."].notna()]
 
         if read_present_quarter_pd.shape[0] == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Sourcefile_subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Sourcefile_subject"],
                       body=in_config["Body_mail1"])
             raise BusinessException("Sheet is empty")
         elif len(Amount) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Gr_amount"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr_amount"],
                       body=in_config["Gr_amount_body"])
             raise BusinessException("Empty column")
 
         elif len(Vendor_no) == 0:
-            send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Vendor_No"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Vendor_No"],
                       body=in_config["Vendor_No_body"])
             raise BusinessException("Vendor No column  missed")
 
@@ -98,14 +79,14 @@ def con_vendor_wise(in_config, present_quarter_pd):
                 percentage = vendor_amount / grand_total
             con_vendor_sheet["Percentage"][index] = percentage
         con_vendor_sheet[name_of_column[2]].values[-1] = grand_total
-        con_vendor_sheet = con_vendor_sheet.rename(columns={name_of_column[2]: in_config["Quarter_column_name"]})
+        con_vendor_sheet = con_vendor_sheet.rename(columns={name_of_column[2]: main_config["PresentQuarterColumnName"]})
 
-        with pd.ExcelWriter(in_config["OutputFile_path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            con_vendor_sheet.to_excel(writer, sheet_name=in_config["Output_sheetName"], index=False,
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+            con_vendor_sheet.to_excel(writer, sheet_name=main_config["Output_Concentration_Vendor_sheetname"], index=False,
                                   startrow=17)
 
-        wb = openpyxl.load_workbook(in_config["OutputFile_path"])
-        ws = wb[in_config["Output_sheetName"]]
+        wb = openpyxl.load_workbook(main_config["Output_File_Path"])
+        ws = wb[main_config["Output_Concentration_Vendor_sheetname"]]
 
         for cell in ws["C"]:
             cell.number_format = "#,###.##"
@@ -161,9 +142,9 @@ def con_vendor_wise(in_config, present_quarter_pd):
         ws.merge_cells('A14:F14')
 
         # Headers implementation
-        ws['A1'] = in_config['A1']
-        ws['A2'] = in_config['A2']
-        ws['A3'] = in_config['A3']
+        ws['A1'] = main_config['CompanyName']
+        ws['A2'] = main_config['StatutoryAuditQuarter']
+        ws['A3'] = main_config['FinancialYear']
         ws['A4'] = in_config['A4']
         ws['A5'] = in_config['A5']
         ws['A7'] = in_config['A7']
@@ -195,49 +176,49 @@ def con_vendor_wise(in_config, present_quarter_pd):
 
         ws.sheet_view.showGridLines = False
 
-        wb.save(in_config["OutputFile_path"])
+        wb.save(main_config["Output_File_Path"])
         wb.close()
-        wb = openpyxl.load_workbook(in_config["OutputFile_path"])
+        wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         print(wb.sheetnames)
 
     except SyntaxError as s_error:
         print("SyntaxError" + str(s_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Syn1"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Syn1"],
                   body=in_config["Synody_1"])
         return s_error
     except FileNotFoundError as f_error:
         print("FileNotFoundError" + str(f_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["File_N1"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["File_N1"],
                   body=in_config["File_N1_body"])
         return f_error
     except NameError as n_error:
         print("NameError" + str(n_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Name_E1"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Name_E1"],
                   body=in_config["Name_E1_body"])
         return n_error
     except KeyError as k_error:
         print("KeyError" + str(k_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Key1"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Key1"],
                   body=in_config["Key1_body"])
         return k_error
     except ValueError as v_error:
         print("ValueError" + str(v_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Value_E1"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Value_E1"],
                   body=in_config["Value_E1_body"])
         return v_error
     except AttributeError as a_error:
         print("AttributeError" + str(a_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["AttributeError1"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["AttributeError1"],
                   body=in_config["AttributeError1_body"])
         return a_error
     except TypeError as t_error:
         print("TypeError" + str(t_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Type_E1"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Type_E1"],
                   body=in_config["Type_E1_body"])
         return t_error
     except PermissionError as p_error:
         print("PermissionError" + str(p_error))
-        send_mail(to=in_config["to_mail"], cc=in_config["cc_mail"], subject=in_config["Perm_E1"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Perm_E1"],
                   body=in_config["Perm_E1_body"])
         return p_error
     except (ImportError, MemoryError, RuntimeError, Exception) as error:
@@ -246,8 +227,9 @@ def con_vendor_wise(in_config, present_quarter_pd):
 
 
 config = {}
+main_config = {}
 present_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(con_vendor_wise(config, present_quarter_pd))
+    print(con_vendor_wise(main_config, config, present_quarter_pd))
 
 
