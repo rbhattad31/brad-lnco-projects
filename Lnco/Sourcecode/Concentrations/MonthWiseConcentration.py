@@ -3,29 +3,11 @@ import numpy
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Side, Border
 from string import ascii_lowercase
-from win32com import client
-import pywintypes
 import os
-
+from send_mail_reusable_task import send_mail
 
 class BusinessException(Exception):
     pass
-
-
-def send_mail(to, cc, subject, body):
-    try:
-        outlook = client.Dispatch('outlook.application')
-        mail = outlook.CreateItem(0)
-        mail.To = to
-        mail.cc = cc
-        mail.Subject = subject
-        mail.Body = body
-        mail.Send()
-    except pywintypes.com_error as message_error:
-        print("Sendmail error - Please check outlook connection")
-        return message_error
-    except Exception as error:
-        return error
 
 
 def month_wise(main_config, in_config, present_quarter_pd):

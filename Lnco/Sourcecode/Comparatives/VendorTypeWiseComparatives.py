@@ -5,8 +5,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Side, Border
 from string import ascii_uppercase
 
-from win32com import client
-import pywintypes
+from send_mail_reusable_task import send_mail
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -14,23 +13,6 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 class BusinessException(Exception):
     pass
-
-
-# Send Outlook Mails
-def send_mail(to, cc, subject, body):
-    try:
-        outlook = client.Dispatch('outlook.application')
-        mail = outlook.CreateItem(0)
-        mail.To = to
-        mail.cc = cc
-        mail.Subject = subject
-        mail.Body = body
-        mail.Send()
-    except pywintypes.com_error as message_error:
-        print("Sendmail error - Please check outlook connection")
-        return message_error
-    except Exception as error:
-        return error
 
 
 # Defining a Function

@@ -2,31 +2,9 @@ import os
 from string import ascii_lowercase
 import xlrd_compdoc_commented as xlrd
 import openpyxl
-import pywintypes
 import pandas as pd
-from win32com import client
+from send_mail_reusable_task import send_mail
 from openpyxl.styles import Border, Side, PatternFill, Alignment, Font
-
-
-
-
-def send_mail(to, cc, subject, body):
-    try:
-        outlook = client.Dispatch('outlook.application')
-        mail = outlook.CreateItem(0)
-        mail.To = to
-        mail.cc = cc
-        mail.Subject = subject
-        mail.Body = body
-        mail.Send()
-    except pywintypes.com_error as error_message:
-        print("Sendmail error - Please check outlook connection")
-        return error_message
-    except Exception as error:
-        return error
-
-    finally:
-        print('Mail process over')
 
 
 #  Function produce average day purchase output sheet

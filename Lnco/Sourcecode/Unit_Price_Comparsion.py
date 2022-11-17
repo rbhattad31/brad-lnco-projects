@@ -1,6 +1,5 @@
 from string import ascii_lowercase
-
-from win32com import client
+from send_mail_reusable_task import send_mail
 
 import numpy
 import pandas as pd
@@ -14,27 +13,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 class BusinessException(Exception):
     pass
 
-
-# Send Outlook Mails
-def send_mail(to, cc, subject, body, pywintypes=None):
-    try:
-        outlook = client.Dispatch('outlook.application')
-        mail = outlook.CreateItem(0)
-        mail.To = to
-        mail.cc = cc
-        mail.Subject = subject
-        mail.Body = body
-        mail.Send()
-    except pywintypes.com_error as message_error:
-        print("Sendmail error - Please check outlook connection")
-        return message_error
-    except Exception as error:
-        return error
-
-
 def create_unit_price(main_config, in_config, present_quarter_pd, previous_quarter_pd):
     try:
-        # Excel_data = pd.read_excel(main_config["InputFilePath"], sheet_name=main_config["PresentQuarterSheetName"],skiprows=in_config["Skiprow_Q4"])
 
         Excel_data = present_quarter_pd
         # Fetch To Address

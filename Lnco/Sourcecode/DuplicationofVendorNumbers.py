@@ -3,29 +3,12 @@ import pandas as pd
 import numpy
 import openpyxl
 from openpyxl.styles import PatternFill, Side, Border
-from win32com import client
-import pywintypes
+from send_mail_reusable_task import send_mail
 import os
 
 
 class BusinessException(Exception):
     pass
-
-
-def send_mail(to, cc, subject, body):
-    try:
-        outlook = client.Dispatch('outlook.application')
-        mail = outlook.CreateItem(0)
-        mail.To = to
-        mail.cc = cc
-        mail.Subject = subject
-        mail.Body = body
-        mail.Send()
-    except pywintypes.com_error as message_error:
-        print("Sendmail error - Please check outlook connection")
-        return message_error
-    except Exception as error:
-        return error
 
 
 def vendor_numbers_duplication(main_config, in_config):

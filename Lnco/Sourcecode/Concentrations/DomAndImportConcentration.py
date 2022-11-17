@@ -1,6 +1,5 @@
 import os
-from win32com import client
-import pywintypes
+from send_mail_reusable_task import send_mail
 import pandas as pd
 import numpy
 import openpyxl
@@ -10,22 +9,6 @@ from string import ascii_lowercase
 
 class BusinessException(Exception):
     pass
-
-
-def send_mail(to, cc, subject, body):
-    try:
-        outlook = client.Dispatch('outlook.application')
-        mail = outlook.CreateItem(0)
-        mail.To = to
-        mail.cc = cc
-        mail.Subject = subject
-        mail.Body = body
-        mail.Send()
-    except pywintypes.com_error as message_error:
-        print("Sendmail error - Please check outlook connection")
-        return message_error
-    except Exception as error:
-        return error
 
 
 def purchase_type(main_config, in_config, present_quarter_pd):

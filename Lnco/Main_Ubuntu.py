@@ -1,9 +1,7 @@
 import sys
 import openpyxl
-
-import pywintypes               # this package is installed by installing pywin32
-from win32com import client     # this package is installed by installing pywin32
-
+import xlsxwriter
+import pandas as pd
 import os.path
 
 import Sourcecode.Comparatives.Purchase_type_wise_comparatives as ptcomp
@@ -24,27 +22,10 @@ import Sourcecode.SameMaterialPurchasesfromDVDP as smpdvdp
 import Sourcecode.Unit_Price_Comparsion as upc
 import Sourcecode.Inventory_Mapping as im
 
-import xlsxwriter
-import pandas as pd
+from send_mail_reusable_task import send_mail
 
 
 print("Process started")
-
-
-def send_mail(to, cc, subject, body):
-    try:
-        outlook = client.Dispatch('outlook.application')
-        mail = outlook.CreateItem(0)
-        mail.To = to
-        mail.cc = cc
-        mail.Subject = subject
-        mail.Body = body
-        mail.Send()
-    except pywintypes.com_error as message_error:
-        print("Sendmail error - Please check outlook connection")
-        return message_error
-    except Exception as error:
-        return error
 
 
 def reading_sheets_names_from_config_main_sheet(path, sheet_name):
@@ -84,7 +65,7 @@ L & Co
 def reading_sheet_config_data_to_dict(sheet_name):
     try:
         config = {}
-        work_book = openpyxl.load_workbook(r"C:\Users\BRADSOL-User\Documents\GitHub\brad-lnco-projects\Lnco\Input\Config.xlsx")
+        work_book = openpyxl.load_workbook("/var/www/html/brad-lnco-projects/Lnco/Input/Config_ubuntu.xlsx")
         work_sheet = work_book[sheet_name]
         maximum_row = work_sheet.max_row
         maximum_col = work_sheet.max_column
@@ -116,7 +97,7 @@ L & Co
 
 
 print("Reading main sheet config file is started")
-path = r"C:\Users\BRADSOL-User\Documents\GitHub\brad-lnco-projects\Lnco\Input\Config.xlsx"
+path = "/var/www/html/brad-lnco-projects/Lnco/Input/Config_ubuntu.xlsx"
 config_sheet_name = "Main"
 config_main = reading_sheets_names_from_config_main_sheet(path, config_sheet_name)
 print("Reading main sheet config file is completed")
