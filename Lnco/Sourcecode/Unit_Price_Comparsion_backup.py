@@ -32,11 +32,11 @@ def send_mail(to, cc, subject, body, pywintypes=None):
         return error
 
 
-def create_unit_price(main_config, in_config, present_quarter_pd, previous_quarter_pd):
+def create_unit_price(main_config, in_config):
     try:
-        # Excel_data = pd.read_excel(main_config["InputFilePath"], sheet_name=main_config["PresentQuarterSheetName"],skiprows=in_config["Skiprow_Q4"])
+        Excel_data = pd.read_excel(main_config["InputFilePath"], sheet_name=main_config["PresentQuarterSheetName"],
+                                   skiprows=in_config["Skiprow_Q4"])
 
-        Excel_data = present_quarter_pd
         # Fetch To Address
         to_address = main_config["To_Mail_Address"]
         cc_address = main_config["CC_Mail_Address"]
@@ -74,9 +74,8 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
         for index in pivot_Q4.index:
             GR_amt = pivot_Q4[columns[3]][index]
             GR_qty = pivot_Q4[columns[4]][index]
-            if GR_qty != 0:
-                Unit_price = GR_amt / GR_qty
-                pivot_Q4['Unit Price'][index] = Unit_price
+            Unit_price = GR_amt / GR_qty
+            pivot_Q4['Unit Price'][index] = Unit_price
 
         columns = pivot_Q4.columns.values.tolist()
         pivot_Q4 = pivot_Q4.rename(
@@ -87,15 +86,15 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
             columns={columns[5]: "Unit Price1"})
 
         pivot_Q4['Concat'] = ""
-        pivot_Q4["Concat"] = pivot_Q4["Material No."].astype(str) + pivot_Q4["Valuation Class Text"].astype(str) + pivot_Q4[
-            "Vendor Name"].astype(str)
+        pivot_Q4["Concat"] = pivot_Q4["Material No."].astype(str) + pivot_Q4["Valuation Class Text"] + pivot_Q4[
+            "Vendor Name"]
         pivot_Q4 = pivot_Q4[["Material No.", "Valuation Class Text", "Vendor Name", "Concat", "GR Amt.in loc.cur.1",
                              "GR Qty1", "Unit Price1"]]
 
         # Q3 Pivot
-        # Excel_data = pd.read_excel(main_config["InputFilePath"], sheet_name=main_config["PreviousQuarterSheetName"],skiprows=in_config["Skiprow_Q3"])
+        Excel_data = pd.read_excel(main_config["InputFilePath"], sheet_name=main_config["PreviousQuarterSheetName"],
+                                   skiprows=in_config["Skiprow_Q3"])
 
-        Excel_data = previous_quarter_pd
         # Check Exception
         if Excel_data.shape[0] == 0:
             subject = in_config["EmptyInput_Subject1"]
@@ -127,12 +126,12 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
 
         pivot_Q3['Unit Price'] = ""
         pd.options.mode.chained_assignment = None
+
         for index in pivot_Q3.index:
             GR_amt = pivot_Q3[columns[3]][index]
             GR_qty = pivot_Q3[columns[4]][index]
-            if GR_qty != 0 and type(GR_amt) != 'str' and type(GR_qty) != 'str':
-                Unit_price = GR_amt / GR_qty
-                pivot_Q3['Unit Price'][index] = Unit_price
+            Unit_price = GR_amt / GR_qty
+            pivot_Q3['Unit Price'][index] = Unit_price
 
         columns = pivot_Q3.columns.values.tolist()
         pivot_Q3 = pivot_Q3.rename(
@@ -143,8 +142,8 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
             columns={columns[5]: "Unit Price2"})
 
         pivot_Q3['Concat'] = ""
-        pivot_Q3["Concat"] = pivot_Q3["Material No."].astype(str) + pivot_Q3["Valuation Class Text"].astype(str) + pivot_Q3[
-            "Vendor Name"].astype(str)
+        pivot_Q3["Concat"] = pivot_Q3["Material No."].astype(str) + pivot_Q3["Valuation Class Text"] + pivot_Q3[
+            "Vendor Name"]
         pivot_Q3 = pivot_Q3[
             ["Material No.", "Valuation Class Text", "Vendor Name", "Concat", "GR Amt.in loc.cur.2", "GR Qty2",
              "Unit Price2"]]
@@ -202,6 +201,7 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
 
         Unit_Price['Increase/decrease in Quantity'] = ""
         pd.options.mode.chained_assignment = None
+
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[7]][index]
             GR_qty = Unit_Price[columns[10]][index]
@@ -210,43 +210,42 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
 
         Unit_Price['Increase/decrease in Unit Price'] = ""
         pd.options.mode.chained_assignment = None
+
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[8]][index]
             GR_qty = Unit_Price[columns[11]][index]
-            if isinstance(GR_amt, str) or isinstance(GR_qty, str):
-                continue
             Unit_price = GR_amt - GR_qty
             Unit_Price['Increase/decrease in Unit Price'][index] = Unit_price
 
         columns = Unit_Price.columns.values.tolist()
         Unit_Price['Increase/decrease in unit price (%)'] = ""
         pd.options.mode.chained_assignment = None
+
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[14]][index]
             GR_qty = Unit_Price[columns[11]][index]
-            if GR_qty != 0 and isinstance(GR_amt, int) and isinstance(GR_qty, int):
-                Unit_price = GR_amt / GR_qty
-                Unit_Price['Increase/decrease in unit price (%)'][index] = Unit_price
+            Unit_price = (GR_amt / GR_qty)
+            Unit_Price['Increase/decrease in unit price (%)'][index] = Unit_price
 
         columns = Unit_Price.columns.values.tolist()
         Unit_Price['In amount due to Qty'] = ""
         pd.options.mode.chained_assignment = None
+
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[13]][index]
             GR_qty = Unit_Price[columns[11]][index]
-            if isinstance(GR_amt, int) and isinstance(GR_qty, int):
-                Unit_price = GR_amt * GR_qty
-                Unit_Price['In amount due to Qty'][index] = Unit_price
+            Unit_price = GR_amt * GR_qty
+            Unit_Price['In amount due to Qty'][index] = Unit_price
+
         columns = Unit_Price.columns.values.tolist()
         Unit_Price['In amount due to Qty (%)'] = ""
         pd.options.mode.chained_assignment = None
+
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[16]][index]
             GR_qty = Unit_Price[columns[12]][index]
-
-            if GR_qty != 0 and isinstance(GR_amt, int) and isinstance(GR_qty, int):
-                Unit_price = GR_amt / GR_qty
-                Unit_Price['In amount due to Qty (%)'][index] = Unit_price
+            Unit_price = GR_amt / GR_qty
+            Unit_Price['In amount due to Qty (%)'][index] = Unit_price
 
         columns = Unit_Price.columns.values.tolist()
         Unit_Price['In amount due to price'] = ""
@@ -255,19 +254,18 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[7]][index]
             GR_qty = Unit_Price[columns[14]][index]
-            if isinstance(GR_amt, int) or isinstance(GR_qty, int):
-                Unit_price = GR_amt * GR_qty
-                Unit_Price['In amount due to price'][index] = Unit_price
+            Unit_price = GR_amt * GR_qty
+            Unit_Price['In amount due to price'][index] = Unit_price
 
         columns = Unit_Price.columns.values.tolist()
         Unit_Price['In amount due to unit price (%)'] = ""
         pd.options.mode.chained_assignment = None
+
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[18]][index]
             GR_qty = Unit_Price[columns[12]][index]
-            if GR_qty != 0 and isinstance(GR_amt, int) and isinstance(GR_qty, int):
-                Unit_price = GR_amt / GR_qty
-                Unit_Price['In amount due to unit price (%)'][index] = Unit_price
+            Unit_price = (GR_amt / GR_qty)
+            Unit_Price['In amount due to unit price (%)'][index] = Unit_price
 
         #  Rename Columns
         Unit_Price = Unit_Price.rename(
@@ -450,44 +448,42 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
         subject = in_config["FileNotFound_Subject"]
         body = in_config["FileNotFound_Body"]
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Unit Price Comparison Process-", notfound_error)
+        print("Unit Price Comparison Process-", end="")
         return notfound_error
     except BusinessException as business_error:
-        print("Unit Price Comparison Process-", business_error)
+        print("Unit Price Comparison Process-", end="")
         return business_error
     except ValueError as value_error:
         subject = in_config["SheetMiss_Subject"]
         body = in_config["SheetMiss_Body"]
         body = body.replace("ValueError +", str(value_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Unit Price Comparison Process-", value_error)
+        print("Unit Price Comparison Process-", end="")
         return value_error
     except TypeError as type_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(type_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Unit Price Comparison Process-", type_error)
+        print("Unit Price Comparison Process-", end="")
         return type_error
     except (OSError, ImportError, MemoryError, RuntimeError, Exception) as error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Unit Price Comparison Process-", error)
+        print("Unit Price Comparison Process-", end="")
         return error
     except KeyError as key_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(key_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Unit Price Comparison Process-", key_error)
+        print("Unit Price Comparison Process-", end="")
         return key_error
 
 
 config = {}
 main_config = {}
-present_quarter_pd = pd.DataFrame()
-previous_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(create_unit_price(main_config, config, present_quarter_pd, previous_quarter_pd))
+    print(create_unit_price(main_config, config))

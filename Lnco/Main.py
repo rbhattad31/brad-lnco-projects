@@ -386,7 +386,7 @@ print("Executing Unit Price Comparison code")
 try:
     config_unit_price = reading_sheet_config_data_to_dict(
         sheet_name=config_main["Config_Unit_Price_Comparison_sheetname"])
-    upc.create_unit_price(config_main, config_unit_price)
+    upc.create_unit_price(config_main, config_unit_price, read_present_quarter_pd, read_previous_quarter_pd)
 
 except Exception as e:
     print("Exception caught for Process: Unit Price Comparison code ", e)
