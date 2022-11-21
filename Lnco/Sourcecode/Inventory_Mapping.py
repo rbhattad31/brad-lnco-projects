@@ -10,7 +10,7 @@ class BusinessException(Exception):
     pass
 
 
-def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd):
+def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, mb51_file_location):
     try:
         # Reading Purchase register File
         # read_excel_data = pd.read_excel(in_config["ExcelPath1"], sheet_name=in_config["Sheet_Name1"], skiprows=6)
@@ -57,7 +57,7 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd):
 
 
         # Reading MB 51 File
-        read_excel_data_2 = pd.read_excel(main_config["MB51_FilePath"], sheet_name=main_config["MB51SheetName"])
+        read_excel_data_2 = pd.read_excel(mb51_file_location, sheet_name=main_config["MB51SheetName"])
         read_excel_data_2 = read_excel_data_2.loc[:,
                                   ~read_excel_data_2.columns.duplicated(keep='first')]
         columns = read_excel_data_2.columns

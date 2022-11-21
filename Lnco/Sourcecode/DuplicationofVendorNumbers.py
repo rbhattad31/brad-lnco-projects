@@ -11,10 +11,10 @@ class BusinessException(Exception):
     pass
 
 
-def vendor_numbers_duplication(main_config, in_config):
+def vendor_numbers_duplication(main_config, in_config, vendor_file_location):
     try:
         # Read Purchase Register Sheets
-        vendor_data = pd.read_excel(main_config["VendorMasterFilePath"], sheet_name=main_config["VendorMasterSheetName"])
+        vendor_data = pd.read_excel(vendor_file_location, sheet_name=main_config["VendorMasterSheetName"])
 
         # Fetch To Address
         to_address = main_config["To_Mail_Address"]

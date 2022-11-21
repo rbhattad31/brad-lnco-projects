@@ -2,7 +2,7 @@
 # from win32com import client     # this package is installed by installing pywin32
 #
 #
-# def send_mail(to, cc, subject, body):
+# def send_mail(to, cc, subject, body, attachment):
 #     try:
 #         outlook = client.Dispatch('outlook.application')
 #         mail = outlook.CreateItem(0)
@@ -10,6 +10,7 @@
 #         mail.cc = cc
 #         mail.Subject = subject
 #         mail.Body = body
+
 #         mail.Send()
 #     except pywintypes.com_error as message_error:
 #         print("Sendmail error - Please check outlook connection")
