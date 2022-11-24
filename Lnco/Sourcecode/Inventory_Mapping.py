@@ -127,7 +127,7 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
         # print(pivot2_df)
 
         # Merging 2 Pivots
-        merge_pd = pd.merge(pivot1_df, pivot2_df, how="inner", on=["GR Document Number"])
+        merge_pd = pd.merge(pivot1_df, pivot2_df, how="outer", on=["GR Document Number"])
         # print("at merging")
         # print(merge_pd.head(10))
         columns_list = merge_pd.columns.values.tolist()
