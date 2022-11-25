@@ -99,9 +99,8 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
 
         # reset "indices created during pivot table creation" - for merging
         purchase_type_wise_pd = purchase_type_wise_pd.reset_index()
-        print(purchase_type_wise_pd)
-        # purchase_type_wise_pd["Valuation Class"] = int
-
+        # print(purchase_type_wise_pd)
+        # print(purchase_type_wise_pd.dtypes)
         # read previous quarters final working file - pd will be replaced with Nan in any blank cells
         previous_quarter_final_file_pd = pd.pivot_table(read_previous_quarter_pd, index=["Valuation Class", "Valuation Class Text"],
                                                         values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=True,
@@ -110,26 +109,27 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
         # replace Nan with blank
         previous_quarter_final_file_pd = previous_quarter_final_file_pd.replace(numpy.nan, '', regex=True)
         previous_quarter_final_file_pd = previous_quarter_final_file_pd.reset_index()
-        print(previous_quarter_final_file_pd)
-        # previous_quarter_final_file_pd["Valuation Class"] = int
-
+        # print(previous_quarter_final_file_pd)
+        # print(previous_quarter_final_file_pd.dtypes)
         # merging present and previous quarter purchase type wise data -  pd will be replaced with Nan in any blank cells
         merge_pd = pd.merge(purchase_type_wise_pd, previous_quarter_final_file_pd, how="outer",
                             on=["Valuation Class", "Valuation Class Text"])
-        print(merge_pd)
+
+        # print(merge_pd)
         # replacing all Nan's with zeros in Present and previous Quarter's values columns
         merge_pd = merge_pd.replace(numpy.nan, 0, regex=True)
-        print(merge_pd)
+        # print(merge_pd)
+
         Col_List = merge_pd.columns.values.tolist()
         # returns as ['Valuation Class', 'Valuation Class Text', 'GR Amt.in loc.cur.', 'Previous Quarter']
 
         # dropping columns present and previous quarters both have values as zero
         merge_pd.drop(merge_pd.index[(merge_pd[Col_List[2]] == 0) & (merge_pd[Col_List[3]] == 0)],
                       inplace=True)
-        print(merge_pd)
+        # print(merge_pd)
         # create a new column - Success
         merge_pd['Variance'] = 0
-        print(merge_pd)
+        # print(merge_pd)
         pd.options.mode.chained_assignment = None
 
         # variance formula implementation using index

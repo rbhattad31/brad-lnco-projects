@@ -105,7 +105,8 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
                                                               )
                 print("mb51 file path: ", mb51_file_saved_path)
                 print("MB51 file is downloaded...")
-            except Exception:
+            except Exception as e:
+                print(e)
                 raise Exception("Error while downloading MB51 file from AWS")
 
             print("--------------------------------------------------------------------")

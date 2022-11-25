@@ -204,7 +204,9 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[14]][index]
             GR_qty = Unit_Price[columns[11]][index]
-            if GR_qty != 0 and isinstance(GR_amt, int) and isinstance(GR_qty, int):
+            if isinstance(GR_amt, str) or isinstance(GR_qty, str):
+                continue
+            elif GR_qty != 0:
                 Unit_price = GR_amt / GR_qty
                 Unit_Price['Increase/decrease in unit price (%)'][index] = Unit_price
 
@@ -214,7 +216,9 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[13]][index]
             GR_qty = Unit_Price[columns[11]][index]
-            if isinstance(GR_amt, int) and isinstance(GR_qty, int):
+            if isinstance(GR_amt, str) or isinstance(GR_qty, str):
+                continue
+            else:
                 Unit_price = GR_amt * GR_qty
                 Unit_Price['In amount due to Qty'][index] = Unit_price
         columns = Unit_Price.columns.values.tolist()
@@ -224,7 +228,9 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
             GR_amt = Unit_Price[columns[16]][index]
             GR_qty = Unit_Price[columns[12]][index]
 
-            if GR_qty != 0 and isinstance(GR_amt, int) and isinstance(GR_qty, int):
+            if isinstance(GR_amt, str) or isinstance(GR_qty, str):
+                continue
+            elif GR_qty != 0:
                 Unit_price = GR_amt / GR_qty
                 Unit_Price['In amount due to Qty (%)'][index] = Unit_price
 
@@ -235,7 +241,9 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[7]][index]
             GR_qty = Unit_Price[columns[14]][index]
-            if isinstance(GR_amt, int) or isinstance(GR_qty, int):
+            if isinstance(GR_amt, str) or isinstance(GR_qty, str):
+                continue
+            else:
                 Unit_price = GR_amt * GR_qty
                 Unit_Price['In amount due to price'][index] = Unit_price
 
@@ -245,7 +253,9 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
         for index in Unit_Price.index:
             GR_amt = Unit_Price[columns[18]][index]
             GR_qty = Unit_Price[columns[12]][index]
-            if GR_qty != 0 and isinstance(GR_amt, int) and isinstance(GR_qty, int):
+            if isinstance(GR_amt, str) or isinstance(GR_qty, str):
+                continue
+            elif GR_qty != 0:
                 Unit_price = GR_amt / GR_qty
                 Unit_Price['In amount due to unit price (%)'][index] = Unit_price
 

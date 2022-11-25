@@ -68,6 +68,7 @@ def generate_domestic_and_import_wise(main_config, in_config, present_quarter_pd
             pass
         read_present_quarter_pd = read_present_quarter_pd[["Currency Key", "GR Amt.in loc.cur."]]
         read_present_quarter_pd = read_present_quarter_pd.dropna()
+
         # create a new column 'Purchase Type' with blank value
         read_present_quarter_pd['Purchase Type'] = ''
 
