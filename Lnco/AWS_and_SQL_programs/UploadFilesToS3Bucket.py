@@ -45,19 +45,5 @@ def upload_file(file_path, bucket_name, bucket_sub_folder_path, file_name, aws_a
         print("Output file is not valid or not exist")
 
 
-AWS_ACCESS_KEY_ID_Temp = ''
-AWS_SECRET_ACCESS_KEY_Temp = ''
-aws_bucket_name_Temp = ''
-bucket_subFolder_Temp = ''
-
-# Output file of the
-upload_file_path_Temp = ''
-file_name_to_be_saved_as_in_s3_Temp = ''
-
 if __name__ == '__main__':
-    aws_file_path = upload_file(file_path=upload_file_path_Temp,
-                                bucket_name=aws_bucket_name_Temp,
-                                bucket_sub_folder_path=bucket_subFolder_Temp,
-                                file_name=file_name_to_be_saved_as_in_s3_Temp,
-                                aws_access_key_id=AWS_ACCESS_KEY_ID_Temp,
-                                aws_secret_access_key=AWS_SECRET_ACCESS_KEY_Temp)
+    pass
