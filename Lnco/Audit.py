@@ -8,7 +8,9 @@ import datetime
 from send_mail_reusable_task import send_mail
 
 # read env file name from config file
+
 ENV_FILE = 'quality.env'
+
 
 try:
     env_file = Config(RepositoryEnv(ENV_FILE))
