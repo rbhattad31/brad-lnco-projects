@@ -6,6 +6,7 @@ from string import ascii_lowercase
 from openpyxl.styles import Alignment
 from send_mail_reusable_task import send_mail
 import os
+import logging
 
 
 class BusinessException(Exception):
@@ -14,19 +15,19 @@ class BusinessException(Exception):
 
 def purchase_type(main_config, in_config, present_quarter_pd):
     try:
-
+        logging.info("Starting plant wise concentration code execution")
         # Read Purchase Register Sheets
         read_present_quarter_pd = present_quarter_pd
 
         # Fetch To Address
         to_address = main_config["To_Mail_Address"]
         cc_address = main_config["CC_Mail_Address"]
-
         # Check Exception
         if read_present_quarter_pd.shape[0] == 0:
             subject = in_config["EmptyInput_Subject"]
             body = in_config["EmptyInput_Body"]
             send_mail(to=to_address, cc=cc_address, subject=subject, body=body)
+            logging.error("Empty present quarter purchase register found")
             raise BusinessException("Sheet is empty")
 
         # Check Column Present
@@ -37,6 +38,7 @@ def purchase_type(main_config, in_config, present_quarter_pd):
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
                 send_mail(to=to_address, cc=cc_address, subject=subject, body=body)
+                logging.error("{} Column is missing".format(col))
                 raise BusinessException(col + " Column is missing")
 
         # Filter rows
@@ -47,11 +49,13 @@ def purchase_type(main_config, in_config, present_quarter_pd):
             subject = in_config["Plant_Subject"]
             body = in_config["Plant_Body"]
             send_mail(to=to_address, cc=cc_address, subject=subject, body=body)
+            logging.error("Plant Column is empty")
             raise BusinessException("Plant Column is empty")
         elif len(gr_amt) == 0:
             subject = in_config["GRAmt_Subject"]
             body = in_config["GRAmt_Body"]
             send_mail(to=to_address, cc=cc_address, subject=subject, body=body)
+            logging.error("GR Amt Column is empty")
             raise BusinessException("GR Amt Column is empty")
         else:
             pass
@@ -61,7 +65,7 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         pivot_values = ["GR Amt.in loc.cur."]
         pivot_present_quarter = pd.pivot_table(read_present_quarter_pd, index=pivot_index, values=pivot_values, aggfunc=numpy.sum, margins=True,
                                                margins_name='Grand Total')
-
+        logging.info("Present quarter pivot table is created")
         # Remove Index
         pivot_present_quarter = pivot_present_quarter.reset_index()
 
@@ -73,7 +77,6 @@ def purchase_type(main_config, in_config, present_quarter_pd):
 
         # Get Pivot Column Names
         col_name = pivot_sheet.columns.values.tolist()
-
         # Delete row of Q4 and Q3 columns values as zero
         pivot_sheet.drop(pivot_sheet.index[(pivot_sheet[col_name[1]] == 0)], inplace=True)
 
@@ -106,11 +109,13 @@ def purchase_type(main_config, in_config, present_quarter_pd):
 
         # Check outfile creation
         if os.path.exists(main_config["Output_File_Path"]):
-            print("Plant Wise Concentration Logged")
+            print("Plant Wise Concentration sheet is created")
+            logging.info("Plant wise concentration sheet is created")
         else:
             subject = in_config["OutputNotFound_Subject"]
             body = in_config["OutputNotFound_Body"]
             send_mail(to=to_address, cc=cc_address, subject=subject, body=body)
+            logging.warning("Plant Wise Concentration sheet is not created")
             raise BusinessException("Output file not generated")
 
         # Load Sheet in openpyxl
@@ -166,7 +171,6 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         font_style2 = Font(name='Cambria', size=12, color='002060', bold=True, underline='single')
         font_style3 = Font(name='Cambria', size=14, color='002060', bold=True)
 
-
         # Cell merge for headers implementation
         ws.merge_cells('A1:E1')
         ws.merge_cells('A2:E2')
@@ -220,6 +224,7 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         print(wb.sheetnames)
         # Save File
         wb.save(main_config["Output_File_Path"])
+        logging.info("Completed plant wise concentration code execution")
         return ws
 
     except PermissionError as file_error:
@@ -227,52 +232,55 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(file_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Concentration Plant Wise Process-", end="")
+        print("Concentration Plant Wise Process-", str(file_error))
         print("Please close the file")
+        logging.exception(file_error)
         return file_error
     except FileNotFoundError as notfound_error:
         subject = in_config["FileNotFound_Subject"]
         body = in_config["FileNotFound_Body"]
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Concentration Plant Wise Process-", end="")
+        print("Concentration Plant Wise Process-", str(notfound_error))
+        logging.exception(notfound_error)
         return notfound_error
     except BusinessException as business_error:
-        print("Concentration Plant Wise Process-", end="")
+        print("Concentration Plant Wise Process-", str(business_error))
+        logging.exception(business_error)
         return business_error
     except ValueError as value_error:
         subject = in_config["SheetMiss_Subject"]
         body = in_config["SheetMiss_Body"]
         body = body.replace("ValueError +", str(value_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Concentration Plant Wise Process-", end="")
+        print("Concentration Plant Wise Process-", str(value_error))
+        logging.exception(value_error)
         return value_error
     except TypeError as type_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(type_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Concentration Plant Wise Process-", end="")
+        print("Concentration Plant Wise Process-", str(type_error))
+        logging.exception(type_error)
         return type_error
     except (OSError, ImportError, MemoryError, RuntimeError, Exception) as error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Concentration Plant Wise Process-", end="")
+        print("Concentration Plant Wise Process-", str(error))
+        logging.exception(error)
         return error
     except KeyError as key_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(key_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Concentration Plant Wise Process-", end="")
+        print("Concentration Plant Wise Process-", str(key_error))
+        logging.exception(key_error)
         return key_error
 
 
-# Read config details and parse to dictionary
-config = {}
-main_config = {}
-present_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(purchase_type(main_config, config, present_quarter_pd))
+    pass
 

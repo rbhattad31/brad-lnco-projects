@@ -5,16 +5,29 @@ import openpyxl
 from openpyxl.styles import PatternFill, Side, Border
 from send_mail_reusable_task import send_mail
 import os
-
+from AWS_and_SQL_programs.vendor_file_creation import vendor_file_creation
+import logging
 
 class BusinessException(Exception):
     pass
 
 
-def vendor_numbers_duplication(main_config, in_config, vendor_file_location, vendor_master_sheet_name):
+def vendor_numbers_duplication(main_config, in_config, vendor_file_location, vendor_master_sheet_name, json_data_list):
     try:
         # Read Purchase Register Sheets
         vendor_data = pd.read_excel(vendor_file_location, vendor_master_sheet_name)
+
+        print("Reading Vendor Master file is complete, creating new input file only with required columns")
+        logging.info("Reading Vendor Master file is complete, creating new input file only with required columns")
+        vendor_master_folder_path = os.path.dirname(vendor_file_location)
+        vendor_master_file_name = os.path.basename(vendor_file_location).lower()
+        filtered_vendor_master_file_name = "filtered_" + str(vendor_master_file_name)
+        filtered_vendor_master_file_saving_path = os.path.join(vendor_master_folder_path,
+                                                               filtered_vendor_master_file_name)
+        filtered_vendor_master_sheet_name = vendor_master_sheet_name
+
+        vendor_data = vendor_file_creation(vendor_data, json_data_list, filtered_vendor_master_file_saving_path, filtered_vendor_master_sheet_name)
+        vendor_data.columns.values[0:3] = ['Vendor', 'Name 1', 'Tax Number']
 
         # Fetch To Address
         to_address = main_config["To_Mail_Address"]
