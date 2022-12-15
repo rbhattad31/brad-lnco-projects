@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 import numpy
 import openpyxl
@@ -9,6 +11,39 @@ import os
 
 
 class BusinessException(Exception):
+    pass
+
+
+def purchase_concentration_top_weight(purchase_concentration_dataframe):
+    # save grand total row to delete from datatable to sort
+    grand_total_row = purchase_concentration_dataframe.tail(1)
+    # delete last row from the grand_total_row
+    purchase_concentration_dataframe.drop(purchase_concentration_dataframe.tail(1).index, inplace=True)
+    # sort the dataframe using column name
+    purchase_concentration_dataframe.sort_values(by="Variance", ascending=False)
+    purchase_concentration_weightage = pd.DataFrame(columns=purchase_concentration_dataframe.columns)
+    print("empty dataframe is created with columns")
+    print(purchase_concentration_weightage)
+    sum_of_variance = 0
+    for index, row in purchase_concentration_dataframe.iterrows():
+        print(int(row["Variance"]))
+        if sum_of_variance < 60:
+            sum_of_variance = sum_of_variance + int(row["Variance"])
+            print(sum_of_variance)
+            purchase_concentration_weightage.append(row)
+            print("appended row")
+        else:
+            break
+    purchase_concentration_weightage.append(grand_total_row)
+    print(purchase_concentration_weightage)
+
+    # logic for dataframe descending order
+    # logic to select the condition met rows
+    # check if sheet exist - Concentration_weightage
+    # create if not exist
+    # get the last row number in the sheet
+    # 4th line from end, create file heading
+
     pass
 
 
@@ -106,11 +141,22 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         # Change Column names of Q4 and Q3
         pivot_sheet = pivot_sheet.rename(columns={col_name[2]: main_config["PresentQuarterColumnName"]})
         # Log Sheet
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Concentrations_Purchase_sheetname"], index=False,  startrow=16)
+        try:
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+                pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Concentrations_Purchase_sheetname"], index=False,  startrow=16)
+        except Exception as File_creation_error:
+            logging.error("Exception occurred while creating purchase type wise concentration sheet")
+            raise File_creation_error
+        try:
+            purchase_concentration_top_weight(pivot_sheet)
+        except Exception as purchase_concentration_top_weight_error:
+            logging.error("Exception occurred while creating purchase type wise concentration top weight table")
+            raise purchase_concentration_top_weight_error
+
         # Check outfile creation
         if os.path.exists(main_config["Output_File_Path"]):
             print("Type Wise Comparatives Logged")
+            logging.info("Purchase type wise concentration sheet is created")
         else:
             subject = in_config["OutputNotFound_Subject"]
             body = in_config["OutputNotFound_Body"]
@@ -226,6 +272,7 @@ def purchase_type(main_config, in_config, present_quarter_pd):
 
         # Save File
         wb.save(main_config["Output_File_Path"])
+        logging.info("Formatting is complete for Purchase type wise concentration sheet")
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])

@@ -3,6 +3,9 @@ import boto3
 import mysql.connector
 import json
 import logging
+
+import xlsxwriter
+
 import send_mail_reusable_task
 from AWS_and_SQL_programs.downloadFilesFromS3Bucket import download_files_from_s3
 from AWS_and_SQL_programs.UploadFilesToS3Bucket import upload_file
@@ -10,11 +13,14 @@ from Main_Ubuntu import process_execution
 from decouple import Config, RepositoryEnv
 from sys import platform
 from psutil import process_iter
+import os
+from datetime import datetime
 
 
 def audit_process(host, username, password, database, aws_bucket_name, aws_access_key, aws_secret_key,
                   file_name_to_be_saved_as_in_s3, config_main):
-    env_file = 'quality.env'
+    present_working_directory = os.getcwd()
+    env_file = os.path.join(present_working_directory, 'envfiles', 'quality.env')
     env_file = Config(RepositoryEnv(env_file))
     default_to_mail_address = env_file('DEFAULT_TO_EMAIL')
     default_cc_mail_address = env_file('DEFAULT_CC_EMAIL')
@@ -73,7 +79,8 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
     try:
         db_cursor.execute(select_in_progress_requests_query)
         logging.debug(
-            "Query executed to find in progress requests on datatable :\n\t {}".format(select_in_progress_requests_query))
+            "Query executed to find in progress requests on datatable :\n\t {}".format(
+                select_in_progress_requests_query))
     except Exception as select_in_progress_requests_query_exception:
         print(select_in_progress_requests_query_exception)
         logging.critical("Exception occurred while reading in progress requests details from audit request database: ")
@@ -198,17 +205,35 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
             request_id) + "'"
         print(set_in_progress_query)
         logging.debug("query to update the status of the request to In progress is :" + '\n\t' + set_in_progress_query)
+
         try:
             db_cursor.execute(set_in_progress_query)
             db_connection.commit()
-            logging.info(
-                "Status of request {} is changed to 'in progress' in audit requests datatable".format(request_id))
+            print("Changed the status of request:", request_id, " to ", in_progress_status_keyword)
+            logging.info("Changed the status of request: {} to {}".format(request_id, in_progress_status_keyword))
         except Exception as set_in_progress_query_exception:
             logging.critical("Failed to change the status of request {} in audit request table".format(request_id))
             raise set_in_progress_query_exception
 
-        print("Changed the status of request:", request_id, " to ", in_progress_status_keyword)
-        logging.info("Changed the status of request: {} to {}".format(request_id, in_progress_status_keyword))
+        try:
+            project_home_directory = os.getcwd()
+            config_download_file_path_in_input = os.path.join(project_home_directory, 'Data', 'Config', 'audit_requests',
+                                                              str(request_id), 'config.xlsx')
+            # creating new config file in input folder
+            workbook = xlsxwriter.Workbook(config_download_file_path_in_input)
+            worksheet = workbook.add_worksheet()
+            row_config = 0
+            for key in config_main.keys():
+                row_config += 1
+                col_config = 0
+                worksheet.write(row_config, col_config, key)
+                worksheet.write(row_config, col_config + 1, str(config_main[key]))
+            workbook.close()
+            print("Saved config data to an excel file in input folder of request")
+
+        except Exception as config_file_save_exception:
+            logging.info("Exception occurred while saving config file to the input folder of the request")
+            raise config_file_save_exception
 
         try:
             client_id = row[0][6]
@@ -442,7 +467,8 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
         # get column names from input configuration table -
         mb51_file_id_in_db = env_file('MB51_FILE_ID_IN_DB')
         query_to_get_mb51_column_names = \
-            "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(client_id) + " AND `file_id` = " + str(mb51_file_id_in_db)
+            "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(
+                client_id) + " AND `file_id` = " + str(mb51_file_id_in_db)
         logging.info(
             "query to get MB51 file column names is: \n\t {}".format(str(query_to_get_mb51_column_names)))
         db_cursor.execute(query_to_get_mb51_column_names)
@@ -452,8 +478,10 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
 
         vendor_file_id_in_db = env_file('VENDOR_FILE_ID_IN_DB')
         query_to_get_vendor_file_column_names = \
-            "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(client_id) + " AND `file_id` = " + str(vendor_file_id_in_db)
-        logging.info("query to get vendor file column names is: \n\t {}".format(str(query_to_get_vendor_file_column_names)))
+            "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(
+                client_id) + " AND `file_id` = " + str(vendor_file_id_in_db)
+        logging.info(
+            "query to get vendor file column names is: \n\t {}".format(str(query_to_get_vendor_file_column_names)))
         db_cursor.execute(query_to_get_vendor_file_column_names)
         vendor_file_column_names_json = db_cursor.fetchall()
         vendor_file_column_names_json_object = json.loads(vendor_file_column_names_json[0][0])
@@ -461,7 +489,8 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
 
         purchase_file_id_in_db = env_file('PURCHASE_FILE_ID_IN_DB')
         query_to_get_purchase_column_names = \
-            "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(client_id) + " AND `file_id` = " + str(purchase_file_id_in_db)
+            "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(
+                client_id) + " AND `file_id` = " + str(purchase_file_id_in_db)
         logging.info(
             "query to get vendor file column names is: \n\t {}".format(str(query_to_get_vendor_file_column_names)))
         db_cursor.execute(query_to_get_purchase_column_names)
@@ -481,7 +510,8 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
         logging.info("purchase register present quarter file path {}".format(input_files[2]))
         logging.info("purchase register previous quarter file path {}".format(input_files[3]))
 
-        json_data_list = [mb51_column_names_json_object, vendor_file_column_names_json_object, purchase_column_names_json_object]
+        json_data_list = [mb51_column_names_json_object, vendor_file_column_names_json_object,
+                          purchase_column_names_json_object]
 
         try:
             output_file_path = \
@@ -500,6 +530,7 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
                                   )
 
             print("Output file path is: ", output_file_path)
+            output_file_name = os.path.basename(output_file_path)
             logging.info("Audit process program execution is completed")
             logging.info("Output file path is {}".format(output_file_path))
             config_main['output_file_path'] = output_file_path
@@ -544,7 +575,7 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
             try:
                 logging.info("Updating Output file name in audit requests data table")
                 db_cursor.execute("UPDATE audit_requests SET `output_file`=%(output_file)s where `id`=%(id)s",
-                                  {'output_file': output_file_path, 'id': request_id})
+                                  {'output_file': output_file_name, 'id': request_id})
                 db_connection.commit()
                 print("updated the table with output file name")
                 logging.info("Output file name is updated in audit requests data table")
@@ -557,6 +588,9 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
                 set_success_query = "UPDATE audit_requests SET `status`='" + success_request_status_keyword + "' where `id`='" + str(
                     request_id) + "'"
                 db_cursor.execute(set_success_query)
+                last_updated_timestamp_query = "UPDATE audit_requests SET `updated_at`='" + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "' where `id`='" + str(
+                    request_id) + "'"
+                db_cursor.execute(last_updated_timestamp_query)
                 db_connection.commit()
                 logging.info("Updated audit request status as {}".format(success_request_status_keyword))
                 print("status changed to ", success_request_status_keyword)
@@ -575,6 +609,10 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
             set_fail_query = "UPDATE audit_requests SET `status`='" + fail_request_status_keyword + "' where `id`='" + str(
                 request_id) + "'"
             db_cursor.execute(set_fail_query)
+
+            last_updated_timestamp_query = "UPDATE audit_requests SET `updated_at`='" + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "' where `id`='" + str(request_id) + "'"
+            db_cursor.execute(last_updated_timestamp_query)
+
             db_connection.commit()
             logging.warning("Updated audit request status as {} in datatable".format(fail_request_status_keyword))
             logging.info("Updating error message in audit request datatable")

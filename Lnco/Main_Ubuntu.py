@@ -56,7 +56,7 @@ def reading_sheets_names_from_config_main_sheet(path, sheet_name):
 def reading_sheet_config_data_to_dict(sheet_name):
     try:
         config = {}
-        work_book = openpyxl.load_workbook("Input/Config.xlsx")
+        work_book = openpyxl.load_workbook("Config/Config.xlsx")
         work_sheet = work_book[sheet_name]
         maximum_row = work_sheet.max_row
         maximum_col = work_sheet.max_column
@@ -109,7 +109,7 @@ def process_execution(input_files,
     config_main['FinancialYear'] = financial_year
 
     # reading env file
-    env_file = 'quality.env'
+    env_file = 'envfiles/quality.env'
     print("ENV_FILE: ", env_file)
 
     env_file = Config(RepositoryEnv(env_file))
@@ -137,7 +137,7 @@ def process_execution(input_files,
         print("Creating directory: ", output_file_path)
         os.makedirs(output_file_path)
         print("Directory" + output_file_path + " is created")
-    output_file_name = company_name.replace(' ', '_') + "_" + "Output.xlsx"
+    output_file_name = company_name.replace(' ', '_') + "_" + str(request_id) + "_Purchase_Register_Output.xlsx"
     output_file_path = os.path.join(output_file_path, output_file_name)
     print("Output file path is: " + output_file_path)
     config_main['Output_File_Path'] = output_file_path
@@ -174,6 +174,7 @@ def process_execution(input_files,
         print(purchase_register_present_quarter_file_path)
         read_present_quarter_pd = pd.read_excel(purchase_register_present_quarter_file_path,
                                                 present_quarter_sheet_name)
+        print(read_present_quarter_pd.dtypes.to_list)
         read_present_quarter_pd = \
             read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
 
@@ -203,7 +204,8 @@ def process_execution(input_files,
         logging.info(
             "Reading purchase register present quarter sheet is complete, creating new input file only with required columns")
         purchase_register_present_quarter_folder_path = os.path.dirname(purchase_register_present_quarter_file_path)
-        purchase_register_present_quarter_file_name = os.path.basename(purchase_register_present_quarter_file_path).lower()
+        purchase_register_present_quarter_file_name = os.path.basename(
+            purchase_register_present_quarter_file_path).lower()
         filtered_purchase_present_file_name = "filtered_" + str(purchase_register_present_quarter_file_name)
         filtered_purchase_present_file_saving_path = os.path.join(purchase_register_present_quarter_folder_path,
                                                                   filtered_purchase_present_file_name)
@@ -213,15 +215,13 @@ def process_execution(input_files,
                                                                          filtered_purchase_present_file_saving_path,
                                                                          filtered_purchase_present_sheet_name)
         logging.info("new purchase register present quarter file is created in input folder in request ID folder")
-        read_present_quarter_pd.columns.values[0:13] = ['Plant', 'GR Document Number', 'GR Posting Date',
-                                                        'Valuation Class', 'Valuation Class Text', 'Material No.',
-                                                        'Material Desc', 'Vendor No.', 'Vendor Name', 'GR Qty',
-                                                        'GR Amt.in loc.cur.', 'Unit Price', 'Currency Key']
+
         # reading previous quarter sheet
         print("Reading previous quarter sheet")
         logging.info("Reading previous quarter sheet")
         read_previous_quarter_pd = pd.read_excel(purchase_register_previous_quarter_file_path,
                                                  previous_quarter_sheet_name)
+        print(read_previous_quarter_pd.dtypes.to_list)
         read_previous_quarter_pd = \
             read_previous_quarter_pd.loc[:, ~read_previous_quarter_pd.columns.duplicated(keep='first')]
 
@@ -250,7 +250,8 @@ def process_execution(input_files,
         logging.info(
             "Reading purchase register previous quarter sheet is complete, creating new input file only with required columns")
         purchase_register_previous_quarter_folder_path = os.path.dirname(purchase_register_previous_quarter_file_path)
-        purchase_register_previous_quarter_file_name = os.path.basename(purchase_register_previous_quarter_file_path).lower()
+        purchase_register_previous_quarter_file_name = os.path.basename(
+            purchase_register_previous_quarter_file_path).lower()
         filtered_purchase_previous_file_name = "filtered_" + str(purchase_register_previous_quarter_file_name)
         filtered_purchase_previous_file_saving_path = os.path.join(purchase_register_previous_quarter_folder_path,
                                                                    filtered_purchase_previous_file_name)
@@ -261,23 +262,19 @@ def process_execution(input_files,
                                                                            filtered_purchase_previous_sheet_name)
         logging.info("new purchase register previous quarter file is created in input folder in request ID folder")
 
-        # change column names as per code in sheets
-        read_previous_quarter_pd.columns.values[0:13] = ['Plant', 'GR Document Number', 'GR Posting Date',
-                                                         'Valuation Class', 'Valuation Class Text', 'Material No.',
-                                                         'Material Desc', 'Vendor No.', 'Vendor Name', 'GR Qty',
-                                                         'GR Amt.in loc.cur.', 'Unit Price', 'Currency Key']
-
     except FileNotFoundError as notfound_error:
         send_mail(to=config_main["To_Mail_Address"], cc=config_main["CC_Mail_Address"],
                   subject=config_main["subject_file_not_found"],
                   body=config_main["body_file_not_found"])
         print(notfound_error)
+        logging.error("file not found error occurred: \n\t {}".format(notfound_error))
         raise notfound_error
     except ValueError as sheetNotFound_error:
         send_mail(to=config_main["To_Mail_Address"], cc=config_main["CC_Mail_Address"],
                   subject=config_main["subject_sheet_not_found"],
                   body=config_main["body_sheet_not_found"])
         print(sheetNotFound_error)
+        logging.error("sheet not found error occurred: \n\t {}".format(sheetNotFound_error))
         raise sheetNotFound_error
 
     print("*******************************************")
@@ -600,7 +597,7 @@ def process_execution(input_files,
             read_present_quarter_pd_inventory = read_present_quarter_pd_inventory[["GR Document Number", "GR Qty"]]
             config_inventory_mapping = reading_sheet_config_data_to_dict(
                 sheet_name=config_main["Config_Inventory_Mapping_Sheetname"])
-            im.create_Inventory_Mapping_sheet(config_main, config_inventory_mapping, read_present_quarter_pd_inventory,
+            im.create_inventory_mapping_sheet(config_main, config_inventory_mapping, read_present_quarter_pd_inventory,
                                               mb51_file_path, mb51_sheet_name, json_data_list)
         elif env_file('Inventory_Mapping') == 'NO':
             print("Inventory_Mapping process is skipped as per env file")
@@ -621,6 +618,7 @@ def process_execution(input_files,
 
     request_config_saving_path = os.path.join(project_home_directory, 'Data', 'Output', 'audit_requests',
                                               str(request_id), 'config.xlsx')
+    # creating new config file in output folder
     workbook = xlsxwriter.Workbook(request_config_saving_path)
     worksheet = workbook.add_worksheet()
     row = 0

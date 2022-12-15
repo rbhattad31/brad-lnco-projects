@@ -10,11 +10,9 @@ import logging
 from decouple import Config, RepositoryEnv
 
 
-ENV_FILE = 'quality.env'
-env_file = Config(RepositoryEnv(ENV_FILE))
-
-
 def send_mail(to, cc, subject, body):
+    env_file = 'envfiles/quality.env'
+    env_file = Config(RepositoryEnv(env_file))
     logging.info("Sending Notification mail")
     smtp_username = env_file('SMTP_USER_NAME')
 
@@ -56,6 +54,8 @@ def send_mail(to, cc, subject, body):
 
 
 def send_mail_with_attachment(to, cc, subject, body, attachment_path=None):
+    env_file = 'envfiles/quality.env'
+    env_file = Config(RepositoryEnv(env_file))
     logging.info("Sending Notification mail")
     sender = env_file('DEFAULT_SENDER_EMAIL')
     smtp_username = env_file('SMTP_USER_NAME')

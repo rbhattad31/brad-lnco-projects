@@ -7,11 +7,14 @@ from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Side, Border
 from openpyxl.styles import numbers
 import warnings
+
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+
 class BusinessException(Exception):
     pass
+
 
 def create_unit_price(main_config, in_config, present_quarter_pd, previous_quarter_pd):
     try:
@@ -67,8 +70,9 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
             columns={columns[5]: "Unit Price1"})
 
         pivot_Q4['Concat'] = ""
-        pivot_Q4["Concat"] = pivot_Q4["Material No."].astype(str) + pivot_Q4["Valuation Class Text"].astype(str) + pivot_Q4[
-            "Vendor Name"].astype(str)
+        pivot_Q4["Concat"] = pivot_Q4["Material No."].astype(str) + pivot_Q4["Valuation Class Text"].astype(str) + \
+                             pivot_Q4[
+                                 "Vendor Name"].astype(str)
         pivot_Q4 = pivot_Q4[["Material No.", "Valuation Class Text", "Vendor Name", "Concat", "GR Amt.in loc.cur.1",
                              "GR Qty1", "Unit Price1"]]
 
@@ -123,8 +127,9 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
             columns={columns[5]: "Unit Price2"})
 
         pivot_Q3['Concat'] = ""
-        pivot_Q3["Concat"] = pivot_Q3["Material No."].astype(str) + pivot_Q3["Valuation Class Text"].astype(str) + pivot_Q3[
-            "Vendor Name"].astype(str)
+        pivot_Q3["Concat"] = pivot_Q3["Material No."].astype(str) + pivot_Q3["Valuation Class Text"].astype(str) + \
+                             pivot_Q3[
+                                 "Vendor Name"].astype(str)
         pivot_Q3 = pivot_Q3[
             ["Material No.", "Valuation Class Text", "Vendor Name", "Concat", "GR Amt.in loc.cur.2", "GR Qty2",
              "Unit Price2"]]
@@ -141,7 +146,6 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
              "Unit Price2"]]
         columns = Unit_Price_Q3.columns.values.tolist()
 
-
         Unit_Price = pd.merge(Unit_Price_Q4, Unit_Price_Q3, how="outer",
                               on=["Material No.", "Valuation Class Text", "Vendor Name", "Concat"], copy=False)
         # Unit_Price = pd.concat([Unit_Price_Q4, Unit_Price_Q3], ignore_index=True, sort=True)
@@ -152,7 +156,6 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
 
         Unit_Price = Unit_Price.replace(numpy.nan, 0, regex=True)
         Unit_Price["Remarks"] = " "
-
 
         columns = Unit_Price.columns.values.tolist()
         columns.remove("Remarks")
@@ -274,8 +277,10 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
             columns={columns[11]: "Unit Price"})
         Unit_Price = Unit_Price.drop(columns=["index"])
 
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            Unit_Price.to_excel(writer, sheet_name=main_config["Output_Unit_Price_Comparison_sheetname"], startrow=24, index=False)
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="replace") as writer:
+            Unit_Price.to_excel(writer, sheet_name=main_config["Output_Unit_Price_Comparison_sheetname"], startrow=24,
+                                index=False)
 
         wb = load_workbook(main_config["Output_File_Path"])
         ws = wb[main_config["Output_Unit_Price_Comparison_sheetname"]]

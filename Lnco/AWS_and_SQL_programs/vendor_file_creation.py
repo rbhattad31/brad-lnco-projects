@@ -24,7 +24,17 @@ def vendor_file_creation(vendor_file_client_dataframe, json_data_list, filtered_
         logging.exception(vendor_json_exception)
         raise vendor_json_exception
 
-    # create new Excel file in ID folder in Input folder
+    try:
+        vendor_new_dataframe.columns = ['Vendor Code', 'Vendor Name', 'Tax Number']
+        vendor_new_dataframe[["Vendor Code"]] = vendor_new_dataframe[["Vendor Code"]].fillna('').astype(int, errors='ignore')
+        vendor_new_dataframe[["Vendor Name"]] = vendor_new_dataframe[["Vendor Name"]].fillna('').astype(str, errors='ignore')
+        vendor_new_dataframe[['Tax Number']] = vendor_new_dataframe[['Tax Number']].fillna('').astype(str, errors='ignore')
+
+    except Exception as datatype_conversion_exception:
+        logging.error("Exception occurred while converting datatypes of vendor file")
+        raise datatype_conversion_exception
+
+    # create new Excel file in ID folder in Config folder
     try:
         with pd.ExcelWriter(filtered_vendor_file_saving_path, engine="openpyxl") as writer:
             vendor_new_dataframe.to_excel(writer, sheet_name=filtered_vendor_file_sheet_name, index=False)

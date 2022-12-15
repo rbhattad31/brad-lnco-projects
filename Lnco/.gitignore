@@ -1,11 +1,3 @@
-/quality.env
-/local.env
-/local_new.env
-/LocalEnvFile.env
-/Output/Output.xlsx
-/Input/MB51.xlsx
-/Input/purchase registers.xlsx
-/Input/vendor master.XLSX
-/Input
 /Data
-/Output
+/envfiles
+/Logs

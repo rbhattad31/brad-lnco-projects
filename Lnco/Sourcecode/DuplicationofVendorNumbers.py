@@ -8,6 +8,7 @@ import os
 from AWS_and_SQL_programs.vendor_file_creation import vendor_file_creation
 import logging
 
+
 class BusinessException(Exception):
     pass
 
@@ -26,8 +27,8 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
                                                                filtered_vendor_master_file_name)
         filtered_vendor_master_sheet_name = vendor_master_sheet_name
 
-        vendor_data = vendor_file_creation(vendor_data, json_data_list, filtered_vendor_master_file_saving_path, filtered_vendor_master_sheet_name)
-        vendor_data.columns.values[0:3] = ['Vendor', 'Name 1', 'Tax Number']
+        vendor_data = vendor_file_creation(vendor_data, json_data_list, filtered_vendor_master_file_saving_path,
+                                           filtered_vendor_master_sheet_name)
 
         # Fetch To Address
         to_address = main_config["To_Mail_Address"]
@@ -42,7 +43,7 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
 
         # Check Column Present
         vendor_col = vendor_data.columns.values.tolist()
-        for col in ["Vendor", "Name 1", "Tax Number"]:
+        for col in ["Vendor Code", "Vendor Name", "Tax Number"]:
             if col not in vendor_col:
                 subject = in_config["ColumnMiss_Subject"]
                 body = in_config["ColumnMiss_Body"]
@@ -51,8 +52,8 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
                 raise BusinessException(col + " Column is missing")
 
         # Filter rows
-        vendor_name = vendor_data[vendor_data['Name 1'].notna()]
-        vendor_no = vendor_data[vendor_data['Vendor'].notna()]
+        vendor_name = vendor_data[vendor_data['Vendor Name'].notna()]
+        vendor_no = vendor_data[vendor_data['Vendor Code'].notna()]
         vendor_tax = vendor_data[vendor_data['Tax Number'].notna()]
 
         # Check Exception
@@ -78,15 +79,14 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
         vendor_data = vendor_data.replace(numpy.nan, "Empty", regex=True)
 
         # create Pivot Table
-        pivot_index = ["Vendor", "Name 1", "Tax Number"]
+        pivot_index = ["Vendor Code", "Vendor Name", "Tax Number"]
         pivot_data = pd.pivot_table(vendor_data, index=pivot_index, sort=True)
-
 
         # Remove Index
         pivot_data = pivot_data.reset_index()
 
         # Assign Sheet
-        pivot_sheet = pivot_data[["Vendor", "Name 1", "Tax Number"]]
+        pivot_sheet = pivot_data[["Vendor Code", "Vendor Name", "Tax Number"]]
 
         # Remove Empty Rows
         pivot_sheet = pivot_sheet.replace(numpy.nan, '', regex=True)
@@ -94,7 +94,7 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
 
         # Create Duplicate Column
         pivot_sheet['Duplicate'] = ""
-        pivot_sheet['Lower case'] = pivot_sheet["Name 1"].str.lower()
+        pivot_sheet['Lower case'] = pivot_sheet["Vendor Name"].str.lower()
 
         # Map Duplicate Rows
         pivot_sheet['Duplicate'] = pivot_sheet.duplicated(subset=["Lower case"], keep=False) \
@@ -104,7 +104,7 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
         col_name = pivot_sheet.columns.values.tolist()
 
         # Assign Sheet
-        pivot_sheet = pivot_sheet[["Vendor", "Name 1", "Tax Number", 'Duplicate']]
+        pivot_sheet = pivot_sheet[["Vendor Code", "Vendor Name", "Tax Number", 'Duplicate']]
 
         # Delete row where vendor number columns values as zero
         pivot_sheet.drop(pivot_sheet.index[(pivot_sheet[col_name[0]] == 0)], inplace=True)
@@ -113,7 +113,8 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
         pivot_sheet = pivot_sheet.sort_values(by='Vendor', ascending=True)
 
         # Log Sheet
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="replace") as writer:
             pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Duplication_of_Vendor_sheetname"], index=False)
 
         # Check outfile creation
@@ -209,12 +210,5 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
         return key_error
 
 
-# Read config details and parse to dictionary
-config = {}
-main_config = {}
-vendor_file_location = ''
-vendor_master_sheet_name = ''
-
-
 if __name__ == "__main__":
-    print(vendor_numbers_duplication(main_config, config, vendor_file_location, vendor_master_sheet_name))
+    pass

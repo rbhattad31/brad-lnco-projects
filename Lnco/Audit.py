@@ -9,8 +9,7 @@ from send_mail_reusable_task import send_mail
 
 # read env file name from config file
 
-ENV_FILE = 'quality.env'
-
+ENV_FILE = 'envfiles/local.env'
 
 try:
     env_file = Config(RepositoryEnv(ENV_FILE))
@@ -77,7 +76,7 @@ logging.info("Program Execution is started")
 logging.info("ENV_FILE used for the program: {}".format(ENV_FILE))
 
 # read config file
-path = "Input/Config.xlsx"
+path = "Config/Config.xlsx"
 config_sheet_name = "Main"
 
 try:

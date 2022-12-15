@@ -15,7 +15,7 @@ class BusinessException(Exception):
     pass
 
 
-def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, mb51_file_location, mb51_sheet_name,
+def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, mb51_file_location, mb51_sheet_name,
                                    json_data_list):
     try:
         # Reading Purchase register File
@@ -31,9 +31,9 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
                       body=in_config["Body_mail"])
             raise BusinessException("Sheet is empty")
 
-        Purchase_Sheet_col = read_excel_data.columns.values.tolist()
+        purchase_sheet_col = read_excel_data.columns.values.tolist()
         for col in ["GR Document Number", "GR Qty"]:
-            if col not in Purchase_Sheet_col:
+            if col not in purchase_sheet_col:
                 subject = in_config["Purchase_ColumnMiss_Subject"]
                 body = in_config["Purchase_ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
@@ -42,16 +42,16 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
                           body=body)
                 raise BusinessException(col + " Column is missing")
         # Filter Rows
-        GR_Document_Number_pd = read_excel_data[read_excel_data['GR Document Number'].notna()]
-        Gr_Qty_pd = read_excel_data[read_excel_data['GR Qty'].notna()]
+        gr_document_number_pd = read_excel_data[read_excel_data['GR Document Number'].notna()]
+        gr_qty_pd = read_excel_data[read_excel_data['GR Qty'].notna()]
 
-        if len(GR_Document_Number_pd) == 0:
+        if len(gr_document_number_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["GR Document_Number_subject"],
                       body=in_config["GR Document_Number_Body"])
             raise BusinessException("GR Document Number Column is empty")
 
-        elif len(Gr_Qty_pd) == 0:
+        elif len(gr_qty_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Gr Qty_Subject"],
                       body=in_config["Gr Qty_Body"])
@@ -67,8 +67,7 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
 
         # Reading MB 51 File
         mb51_pd = pd.read_excel(mb51_file_location, mb51_sheet_name)
-        mb51_pd = mb51_pd.loc[:,
-                  ~mb51_pd.columns.duplicated(keep='first')]
+        mb51_pd = mb51_pd.loc[:, ~mb51_pd.columns.duplicated(keep='first')]
         columns = mb51_pd.columns
         if main_config["MB51_first_column"] in columns and \
                 main_config["MB51_second_column"] in columns:
@@ -87,19 +86,19 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
             mb51_pd.columns = new_header
             mb51_pd.reset_index(drop=True, inplace=True)
             mb51_pd.columns.name = None
-        mb51_pd = mb51_pd.loc[:,
-                  ~mb51_pd.columns.duplicated(keep='first')]
+        mb51_pd = mb51_pd.loc[:, ~mb51_pd.columns.duplicated(keep='first')]
         print("MB51 file reading is complete, creating new input file only with required columns")
         logging.info(
             "Reading purchase register present quarter sheet is complete, creating new input file only with required columns")
         mb51_folder_path = os.path.dirname(mb51_file_location)
         mb51_file_name = os.path.basename(mb51_file_location).lower()
         filtered_mb51_file_name = "filtered_" + str(mb51_file_name)
-        filtered_purchase_present_file_saving_path = os.path.join(mb51_folder_path,filtered_mb51_file_name)
+        filtered_purchase_present_file_saving_path = os.path.join(mb51_folder_path, filtered_mb51_file_name)
         filtered_purchase_present_sheet_name = mb51_sheet_name
-        mb51_pd = mb51_file_creation(mb51_pd, json_data_list, filtered_purchase_present_file_saving_path, filtered_purchase_present_sheet_name)
+        mb51_pd = mb51_file_creation(mb51_pd, json_data_list, filtered_purchase_present_file_saving_path,
+                                     filtered_purchase_present_sheet_name)
         logging.info("new mb51 filtered file is created in input folder in request ID folder")
-        mb51_pd.columns.values[0:2] = ["Material Document", "Qty in unit of entry"]
+
         # print(mb51_pd.head(5))
         # Check Exception
         if mb51_pd.shape[0] == 0:
@@ -108,9 +107,9 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
                       body=in_config["Body_mail"])
             raise BusinessException("Sheet is empty")
 
-        MB51_Sheet_col = mb51_pd.columns.values.tolist()
+        mb51_sheet_col = mb51_pd.columns.values.tolist()
         for col in ["Material Document", "Qty in unit of entry"]:
-            if col not in MB51_Sheet_col:
+            if col not in mb51_sheet_col:
                 subject = in_config["MB51_ColumnMiss_Subject"]
                 body = in_config["MB51_ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
@@ -120,16 +119,16 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
                 raise BusinessException(col + " Column is missing")
 
         # Filter Rows
-        Material_Document_pd = mb51_pd[mb51_pd['Material Document'].notna()]
-        Qty_unit_of_entry_pd = mb51_pd[mb51_pd['Qty in unit of entry'].notna()]
+        material_document_pd = mb51_pd[mb51_pd['Material Document'].notna()]
+        qty_unit_of_entry_pd = mb51_pd[mb51_pd['Qty in unit of entry'].notna()]
 
-        if len(Material_Document_pd) == 0:
+        if len(material_document_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Material_Document_subject"],
                       body=in_config["Material_Document_Body"])
             raise BusinessException("Material Document Column is empty")
 
-        elif len(Qty_unit_of_entry_pd) == 0:
+        elif len(qty_unit_of_entry_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Qty_unit_of_entry_Subject"],
                       body=in_config["Qty_unit_of_entry_Body"])
@@ -164,32 +163,32 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
 
         # variance formula for index
         for index in merge_pd.index:
-            Q4 = merge_pd[columns_list[1]][index]
-            Q3 = merge_pd[columns_list[2]][index]
+            present_quarter = merge_pd[columns_list[1]][index]
+            previous_quarter = merge_pd[columns_list[2]][index]
 
-            if Q4 == Q3:
-                CHECK = True
+            if present_quarter == previous_quarter:
+                check = True
             else:
-                CHECK = False
+                check = False
 
-            merge_pd['Check'][index] = CHECK
+            merge_pd['Check'][index] = check
 
         # Renaming Columns
-        Inventory_Mapping_file = merge_pd.rename(
+        inventory_mapping_file = merge_pd.rename(
             columns={columns_list[0]: in_config["Rename_Column1"],
                      columns_list[1]: in_config["Rename_Column2"],
                      columns_list[2]: in_config["Rename_Column3"]})
-        # print(Inventory_Mapping_file)
+        # print(inventory_mapping_file)
 
-        Purchase_Sheet_Sum = Inventory_Mapping_file[in_config["Rename_Column2"]].sum()
-        # print(Purchase_Sheet_Sum)
-        MB51_Sheet_Sum = Inventory_Mapping_file[in_config["Rename_Column3"]].sum()
-        # print(MB51_Sheet_Sum)
+        purchase_sheet_sum = inventory_mapping_file[in_config["Rename_Column2"]].sum()
+        # print(purchase_sheet_sum)
+        mb51_sheet_sum = inventory_mapping_file[in_config["Rename_Column3"]].sum()
+        # print(mb51_sheet_sum)
 
         # Creating Output File
         with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
                             if_sheet_exists="replace") as writer:
-            Inventory_Mapping_file.to_excel(writer, sheet_name=main_config["Output_Inventory_Mapping_Sheetname"],
+            inventory_mapping_file.to_excel(writer, sheet_name=main_config["Output_Inventory_Mapping_Sheetname"],
                                             index=False, startrow=9)
 
         # Opening and Reading Output File.
@@ -211,8 +210,8 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
         ws["C10"].fill = PatternFill("solid", fgColor="ffff00")
 
         # # Adding Auto Filter Option
-        FullRange = "A10:D" + str(ws.max_row)
-        ws.auto_filter.ref = FullRange
+        full_range = "A10:D" + str(ws.max_row)
+        ws.auto_filter.ref = full_range
 
         # Auto Width Setting
         for c in ascii_uppercase:
@@ -222,8 +221,8 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
                 break
 
         # Passing Column Values
-        ws['B9'] = Purchase_Sheet_Sum
-        ws['C9'] = MB51_Sheet_Sum
+        ws['B9'] = purchase_sheet_sum
+        ws['C9'] = mb51_sheet_sum
 
         # Number Formatting
         ws['B9'].number_format = '#,###.##'
@@ -237,7 +236,7 @@ def create_Inventory_Mapping_sheet(main_config, in_config, present_quarter_pd, m
         print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
 
-        return create_Inventory_Mapping_sheet
+        return create_inventory_mapping_sheet
 
     # Excepting Errors here
     except FileNotFoundError as notfound_error:
