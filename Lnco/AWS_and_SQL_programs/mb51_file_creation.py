@@ -28,7 +28,7 @@ def mb51_file_creation(mb51_client_dataframe, json_data_list, filtered_mb51_file
         logging.error("Exception occurred while converting datatypes of Inventory mapping file")
         raise datatype_conversion_exception
 
-    # create new Excel file in ID folder in Config folder
+    # create new Excel file in ID folder in Input folder
     try:
         with pd.ExcelWriter(filtered_mb51_file_saving_path, engine="openpyxl") as writer:
             mb51_new_dataframe.to_excel(writer, sheet_name=filtered_mb51_sheet_name, index=False)

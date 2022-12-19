@@ -58,7 +58,7 @@ def download_files_from_s3(bucket_name, prefix_name, aws_access_key_id, aws_secr
     print("prefix: ", prefix_name)
     logging.info("AWS S3 bucket sub folder is {}".format(prefix_name))
     project_home_directory = os.getcwd()
-    download_file_path = os.path.join(project_home_directory, 'Data', 'Config', 'audit_requests', str(request_id))
+    download_file_path = os.path.join(project_home_directory, 'Data', 'Input', 'audit_requests', str(request_id))
     print("file download path: ", download_file_path)
     logging.info("file download path is {}".format(download_file_path))
     # Get resource to check bucket exists

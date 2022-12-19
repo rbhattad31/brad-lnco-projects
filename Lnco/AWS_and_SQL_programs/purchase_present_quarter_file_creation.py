@@ -115,7 +115,7 @@ def purchase_present_quarter_file_creation(purchase_present_client_dataframe, js
         logging.error("Exception occurred while converting datatypes of present quarter purchase register input file")
         raise datatype_conversion_exception
 
-    # create new Excel file in ID folder in Config folder
+    # create new Excel file in ID folder in Input folder
     try:
         with pd.ExcelWriter(filtered_purchase_present_file_saving_path, engine="openpyxl") as writer:
             purchase_present_new_dataframe.to_excel(writer, sheet_name=filtered_purchase_present_sheet_name,

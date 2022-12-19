@@ -148,7 +148,8 @@ def purchase_type(main_config, in_config, present_quarter_pd):
             logging.error("Exception occurred while creating purchase type wise concentration sheet")
             raise File_creation_error
         try:
-            purchase_concentration_top_weight(pivot_sheet)
+            pass
+            # purchase_concentration_top_weight(pivot_sheet)
         except Exception as purchase_concentration_top_weight_error:
             logging.error("Exception occurred while creating purchase type wise concentration top weight table")
             raise purchase_concentration_top_weight_error

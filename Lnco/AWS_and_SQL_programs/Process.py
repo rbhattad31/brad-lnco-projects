@@ -217,7 +217,7 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
 
         try:
             project_home_directory = os.getcwd()
-            config_download_file_path_in_input = os.path.join(project_home_directory, 'Data', 'Config', 'audit_requests',
+            config_download_file_path_in_input = os.path.join(project_home_directory, 'Data', 'Input', 'audit_requests',
                                                               str(request_id), 'config.xlsx')
             # creating new config file in input folder
             workbook = xlsxwriter.Workbook(config_download_file_path_in_input)

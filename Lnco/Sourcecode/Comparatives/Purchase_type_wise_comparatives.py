@@ -27,7 +27,7 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
         if read_present_quarter_pd.shape[0] == 0 or read_previous_quarter_pd.shape[0] == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
-            raise BusinessException("Config Sheet Data is empty")
+            raise BusinessException("Input Sheet Data is empty")
 
         PreviousQuarterSheet_col = read_previous_quarter_pd.columns.values.tolist()
         for col in ["Valuation Class", "Valuation Class Text", "GR Amt.in loc.cur."]:

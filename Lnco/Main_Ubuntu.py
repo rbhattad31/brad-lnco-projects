@@ -56,7 +56,7 @@ def reading_sheets_names_from_config_main_sheet(path, sheet_name):
 def reading_sheet_config_data_to_dict(sheet_name):
     try:
         config = {}
-        work_book = openpyxl.load_workbook("Config/Config.xlsx")
+        work_book = openpyxl.load_workbook("Input/Config.xlsx")
         work_sheet = work_book[sheet_name]
         maximum_row = work_sheet.max_row
         maximum_col = work_sheet.max_column
@@ -113,8 +113,6 @@ def process_execution(input_files,
     print("ENV_FILE: ", env_file)
 
     env_file = Config(RepositoryEnv(env_file))
-
-    print("Reading main sheet config file is completed")
 
     print("*******************************************")
     # send Bot starting mail

@@ -26,7 +26,7 @@ def Create_Vendor_Wise(main_config, in_config, present_quarter_pd, previous_quar
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
-            raise BusinessException("Config Sheet Data is empty")
+            raise BusinessException("Input Sheet Data is empty")
 
         present_quarter_columns_list = read_present_quarter_pd.columns.values.tolist()
         for col in ["Vendor No.", "Vendor Name", "GR Amt.in loc.cur."]:
@@ -68,7 +68,7 @@ def Create_Vendor_Wise(main_config, in_config, present_quarter_pd, previous_quar
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
-            raise BusinessException("Config Sheet Data is empty")
+            raise BusinessException("Input Sheet Data is empty")
 
         previous_quarter_columns_list = read_previous_quarter_pd.columns.values.tolist()
         for col in ["Vendor No.", "Vendor Name", "GR Amt.in loc.cur."]:

@@ -116,7 +116,7 @@ def purchase_previous_quarter_file_creation(purchase_previous_client_dataframe, 
         logging.error("Exception occurred while converting datatypes of previous quarter purchase register input file")
         raise datatype_conversion_exception
 
-    # create new Excel file in ID folder in Config folder
+    # create new Excel file in ID folder in Input folder
     try:
         with pd.ExcelWriter(filtered_purchase_previous_file_saving_path, engine="openpyxl") as writer:
             purchase_previous_new_dataframe.to_excel(writer, sheet_name=filtered_purchase_previous_sheet_name,

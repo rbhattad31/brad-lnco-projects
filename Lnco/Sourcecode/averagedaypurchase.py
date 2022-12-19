@@ -67,6 +67,7 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
         pivot_q4 = pivot_q4.iloc[:-1]
 
         # Arithmetic operations
+
         pivot_q4['Average'] = total_gr_amt / (len(pivot_q4))
         pivot_q4['Variance'] = pivot_q4['Average'] - pivot_q4['GR Amt.in loc.cur.']
         pivot_q4['Percentage'] = pivot_q4['Variance'] / pivot_q4['Average']

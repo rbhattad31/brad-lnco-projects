@@ -76,7 +76,7 @@ logging.info("Program Execution is started")
 logging.info("ENV_FILE used for the program: {}".format(ENV_FILE))
 
 # read config file
-path = "Config/Config.xlsx"
+path = "Input/Config.xlsx"
 config_sheet_name = "Main"
 
 try:
@@ -86,9 +86,9 @@ try:
     config_main['CC_Mail_Address'] = default_cc_mail_address
     config_main['Sender_Mail_Address'] = default_sender_mail_address
     print("Reading config sheet is complete")
-    logging.info("Config file main sheet reading has been complete")
+    logging.info("Input file main sheet reading has been complete")
 except Exception as config_exception:
-    print("Config file not found or couldn't read")
+    print("Input file not found or couldn't read")
     logging.critical("Exception occurred while reading config file.")
 
     subject = 'Bot execution is stopped'
@@ -101,11 +101,11 @@ LnCo
     '''.format(str(config_exception))
     send_mail(default_to_mail_address, default_cc_mail_address, subject, body)
 
-    print("Mail notification has been sent - Config load error")
+    print("Mail notification has been sent - Input load error")
 
-    logging.critical("Failed to read Config file. Hence, stopping the bot")
+    logging.critical("Failed to read Input file. Hence, stopping the bot")
 
-    logging.warning("Mail notification has been sent - Config load error")
+    logging.warning("Mail notification has been sent - Input load error")
     logging.exception(config_exception)
 
     exception_type, exception_object, exception_traceback = sys.exc_info()
