@@ -170,7 +170,7 @@ except Exception as audit_process_exception:
     line_number = exception_traceback.tb_lineno
 
     logging.critical(str(exception_type))
-    logging.critical("Exception occurred in file : {} at line number: {}".format(filename, line_number))
+    logging.critical("Exception occurred in file : {0} at line number: {1}".format(filename, line_number))
     # send mail notification
     body = \
         '''

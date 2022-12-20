@@ -109,8 +109,9 @@ def purchase_present_quarter_file_creation(purchase_present_client_dataframe, js
         purchase_present_new_dataframe[["GR Amt.in loc.cur.", "Unit Price"]] = purchase_present_new_dataframe[
             ["GR Amt.in loc.cur.", "Unit Price"]].fillna(0).astype(float, errors='ignore')
 
-        print(purchase_present_new_dataframe.dtypes.tolist())
+        # print(purchase_present_new_dataframe.dtypes.tolist())
         logging.info("purchase register previous quarter datatypes are changed successfully ")
+        print("purchase register previous quarter datatypes are changed successfully")
     except Exception as datatype_conversion_exception:
         logging.error("Exception occurred while converting datatypes of present quarter purchase register input file")
         raise datatype_conversion_exception

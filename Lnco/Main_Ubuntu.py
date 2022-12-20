@@ -5,6 +5,7 @@ import xlsxwriter
 import pandas as pd
 import os.path
 import os
+import sys
 from decouple import Config, RepositoryEnv
 
 from AWS_and_SQL_programs.purchase_present_quarter_file_creation import purchase_present_quarter_file_creation
@@ -172,7 +173,7 @@ def process_execution(input_files,
         print(purchase_register_present_quarter_file_path)
         read_present_quarter_pd = pd.read_excel(purchase_register_present_quarter_file_path,
                                                 present_quarter_sheet_name)
-        print(read_present_quarter_pd.dtypes.to_list)
+        # print(read_present_quarter_pd.dtypes.to_list)
         read_present_quarter_pd = \
             read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
 
@@ -259,7 +260,7 @@ def process_execution(input_files,
                                                                            filtered_purchase_previous_file_saving_path,
                                                                            filtered_purchase_previous_sheet_name)
         logging.info("new purchase register previous quarter file is created in input folder in request ID folder")
-
+        print("new purchase register previous quarter file is created in input folder in request ID folder")
     except FileNotFoundError as notfound_error:
         send_mail(to=config_main["To_Mail_Address"], cc=config_main["CC_Mail_Address"],
                   subject=config_main["subject_file_not_found"],
@@ -612,20 +613,34 @@ def process_execution(input_files,
         final_output_file.remove(final_output_file['Sheet1'])
     final_output_file.save(output_file_path)
 
-    print("Saving config data to an excel file")
+    # ------------------------------------------------------------------------------------
 
-    request_config_saving_path = os.path.join(project_home_directory, 'Data', 'Output', 'audit_requests',
-                                              str(request_id), 'config.xlsx')
-    # creating new config file in output folder
-    workbook = xlsxwriter.Workbook(request_config_saving_path)
-    worksheet = workbook.add_worksheet()
-    row = 0
-    for key in config_main.keys():
-        row += 1
-        col = 0
-        worksheet.write(row, col, key)
-        worksheet.write(row, col + 1, str(config_main[key]))
-    workbook.close()
+    config_saving_file_path_in_output = os.path.join(project_home_directory, 'Data', 'Output', 'audit_requests',
+                                                     str(request_id), 'config.xlsx')
+    config_saving_folder_path_in_output = os.path.join(project_home_directory, 'Data', 'Output', 'audit_requests',
+                                                       str(request_id))
+    if not os.path.exists(config_saving_folder_path_in_output):
+        logging.warning("folder path {0} is not exist".format(config_saving_folder_path_in_output))
+        os.makedirs(config_saving_folder_path_in_output)
+        logging.warning("created the directory: {0}".format(config_saving_folder_path_in_output))
+    print("Creating new Config file in output folder of Request from Config Dictionary")
+    logging.info("Creating new Config file in output folder of Request from Config Dictionary")
+    try:
+        new_config_df = pd.DataFrame.from_dict(config_main, orient='index', columns=['Value'])
+        new_config_df.index.name = 'Key'
+        new_config_df.reset_index(level=0, inplace=True)
+        new_config_df.to_excel(config_saving_file_path_in_output, index=False)
+        print("Created new Config file in output folder of Request from Config Dictionary")
+        logging.info("Created new Config file in Output folder of Request from Config Dictionary")
+    except Exception as config_file_save_exception:
+        logging.warning("Exception occurred while saving config file in Output folder of Request Folder directory")
+        logging.exception(config_file_save_exception)
+        exception_type, exception_object, exception_traceback = sys.exc_info()
+        filename = exception_traceback.tb_frame.f_code.co_filename
+        line_number = exception_traceback.tb_lineno
+        logging.warning(str(exception_type))
+        logging.warning("Exception occurred in file : {} at line number: {}".format(filename, line_number))
+    # ------------------------------------------------------------------------------------
     print("Saved config data to an excel file")
 
     # Bot success mail notification

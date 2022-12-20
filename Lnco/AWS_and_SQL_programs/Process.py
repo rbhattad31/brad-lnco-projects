@@ -4,6 +4,7 @@ import mysql.connector
 import json
 import logging
 
+import pandas as pd
 import xlsxwriter
 
 import send_mail_reusable_task
@@ -219,16 +220,34 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
             project_home_directory = os.getcwd()
             config_download_file_path_in_input = os.path.join(project_home_directory, 'Data', 'Input', 'audit_requests',
                                                               str(request_id), 'config.xlsx')
-            # creating new config file in input folder
-            workbook = xlsxwriter.Workbook(config_download_file_path_in_input)
-            worksheet = workbook.add_worksheet()
-            row_config = 0
-            for key in config_main.keys():
-                row_config += 1
-                col_config = 0
-                worksheet.write(row_config, col_config, key)
-                worksheet.write(row_config, col_config + 1, str(config_main[key]))
-            workbook.close()
+            config_download_folder_path_in_input = os.path.join(project_home_directory, 'Data', 'Input',
+                                                                'audit_requests', str(request_id))
+            if not os.path.exists(config_download_folder_path_in_input):
+                logging.warning("folder path {0} is not exist".format(config_download_folder_path_in_input))
+                os.makedirs(config_download_folder_path_in_input)
+                logging.warning("created the directory: {0}".format(config_download_folder_path_in_input))
+            print("Created folder with request number in Input Folder")
+
+            # ------------------------------------------------------------------------------------
+            print("Creating new Config file in input folder of Request from Config Dictionary")
+            logging.info("Creating new Config file in input folder of Request from Config Dictionary")
+            try:
+                new_config_df = pd.DataFrame.from_dict(config_main, orient='index', columns=['Value'])
+                new_config_df.index.name = 'Key'
+                new_config_df.reset_index(level=0, inplace=True)
+                new_config_df.to_excel(config_download_file_path_in_input, index=False)
+                print("Created new Config file in input folder of Request from Config Dictionary")
+                logging.info("Created new Config file in input folder of Request from Config Dictionary")
+            except Exception as config_file_save_exception:
+                logging.warning("Exception occurred while saving config file in input folder")
+                logging.exception(config_file_save_exception)
+                exception_type, exception_object, exception_traceback = sys.exc_info()
+                filename = exception_traceback.tb_frame.f_code.co_filename
+                line_number = exception_traceback.tb_lineno
+                logging.warning(str(exception_type))
+                logging.warning("Exception occurred in file : {0} at line number: {1}".format(filename, line_number))
+            # ------------------------------------------------------------------------------------
+
             print("Saved config data to an excel file in input folder of request")
 
         except Exception as config_file_save_exception:
@@ -588,7 +607,8 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
                 set_success_query = "UPDATE audit_requests SET `status`='" + success_request_status_keyword + "' where `id`='" + str(
                     request_id) + "'"
                 db_cursor.execute(set_success_query)
-                last_updated_timestamp_query = "UPDATE audit_requests SET `updated_at`='" + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "' where `id`='" + str(
+                last_updated_timestamp_query = "UPDATE audit_requests SET `updated_at`='" + datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S") + "' where `id`='" + str(
                     request_id) + "'"
                 db_cursor.execute(last_updated_timestamp_query)
                 db_connection.commit()
@@ -610,7 +630,8 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
                 request_id) + "'"
             db_cursor.execute(set_fail_query)
 
-            last_updated_timestamp_query = "UPDATE audit_requests SET `updated_at`='" + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "' where `id`='" + str(request_id) + "'"
+            last_updated_timestamp_query = "UPDATE audit_requests SET `updated_at`='" + datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S") + "' where `id`='" + str(request_id) + "'"
             db_cursor.execute(last_updated_timestamp_query)
 
             db_connection.commit()
