@@ -13,6 +13,42 @@ class BusinessException(Exception):
     pass
 
 
+def plant_concentration_top_weight(plant_concentration_dataframe, main_config):
+    # save grand total row to delete from datatable to sort
+    # print(plant_concentration_dataframe)
+    grand_total_row = plant_concentration_dataframe.tail(1)
+    # print(grand_total_row)
+    # delete last row from the grand_total_row
+    plant_concentration_dataframe.drop(plant_concentration_dataframe.tail(1).index, inplace=True)
+    # print("Deleted Grand total row")
+    # sort the dataframe using column name
+    plant_concentration_dataframe.sort_values(by="Variance", ascending=False, inplace=True)
+    # print(plant_concentration_dataframe)
+    plant_concentration_weightage = pd.DataFrame(columns=plant_concentration_dataframe.columns)
+    # print("empty dataframe is created with columns")
+    # print(plant_concentration_weightage)
+    sum_of_variance = 0
+    for index, row in plant_concentration_dataframe.iterrows():
+        # print(float(row["Variance"]))
+        if sum_of_variance < 0.60:
+            sum_of_variance = sum_of_variance + float(row["Variance"])
+            # print(sum_of_variance)
+            plant_concentration_weightage = plant_concentration_weightage.append(row, ignore_index=True)
+            # print("appended row")
+        else:
+            break
+    # print(plant_concentration_weightage)
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="overlay") as writer:
+            plant_concentration_weightage.to_excel(writer, sheet_name=main_config[
+                "Output_Concentration_Weightage_sheetname"], index=False, startrow=2, startcol=12)
+        print("plant type concentration top weightage entries are logged in the output file")
+    except Exception as File_creation_error:
+        logging.error("Exception occurred while creating purchase type wise concentration sheet")
+        raise File_creation_error
+
+
 def purchase_type(main_config, in_config, present_quarter_pd):
     try:
         logging.info("Starting plant wise concentration code execution")
@@ -104,8 +140,17 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         pivot_sheet = pivot_sheet.rename(columns={col_name[1]: main_config["PresentQuarterColumnName"]})
 
         # Log Sheet
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Concentrations_Plant_sheetname"], index=False,  startrow=16)
+        try:
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+                pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Concentrations_Plant_sheetname"], index=False,  startrow=16)
+        except Exception as File_creation_error:
+            logging.error("Exception occurred while creating plant wise concentration sheet")
+            raise File_creation_error
+        try:
+            plant_concentration_top_weight(pivot_sheet, main_config)
+        except Exception as plant_concentration_top_weight_error:
+            logging.error("Exception occurred while creating plant wise concentration top weight table")
+            raise plant_concentration_top_weight_error
 
         # Check outfile creation
         if os.path.exists(main_config["Output_File_Path"]):
@@ -281,6 +326,10 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         return key_error
 
 
+config = {}
+main_config = {}
+present_quarter_pd = pd.DataFrame()
+
 if __name__ == "__main__":
-    pass
+    purchase_type(main_config, config, present_quarter_pd)
 

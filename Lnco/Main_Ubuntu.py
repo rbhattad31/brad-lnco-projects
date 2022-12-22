@@ -17,7 +17,7 @@ import Sourcecode.Comparatives.Plant_wise_comparatives as pwcomp
 import Sourcecode.Comparatives.DomImp_wise_sheet_comparatives as dicomp
 import Sourcecode.Comparatives.VendorTypeWiseComparatives as vtwc
 
-import Sourcecode.Concentrations.PurcahseTypewiseConcentration as ptconc
+import Sourcecode.Concentrations.PurchaseTypeWiseConcentration as ptconc
 import Sourcecode.Concentrations.MonthWiseConcentration as mwconc
 import Sourcecode.Concentrations.PlantWiseConcentration as pwconc
 import Sourcecode.Concentrations.DomAndImportConcentration as diconc
@@ -220,7 +220,7 @@ def process_execution(input_files,
         logging.info("Reading previous quarter sheet")
         read_previous_quarter_pd = pd.read_excel(purchase_register_previous_quarter_file_path,
                                                  previous_quarter_sheet_name)
-        print(read_previous_quarter_pd.dtypes.to_list)
+        # print(read_previous_quarter_pd.dtypes.to_list)
         read_previous_quarter_pd = \
             read_previous_quarter_pd.loc[:, ~read_previous_quarter_pd.columns.duplicated(keep='first')]
 
@@ -315,8 +315,8 @@ def process_execution(input_files,
                 ["GR Posting Date", "GR Amt.in loc.cur."]]
             config_month_comparatives = reading_sheet_config_data_to_dict(
                 sheet_name=config_main["Config_Comparatives_Month_sheetname"])
-            mwcomp.purchasemonth(config_main, config_month_comparatives, read_present_quarter_pd_comp_month,
-                                 read_previous_quarter_pd_comp_month)
+            mwcomp.purchase_month(config_main, config_month_comparatives, read_present_quarter_pd_comp_month,
+                                  read_previous_quarter_pd_comp_month)
         elif env_file('comparatives_month_wise') == 'NO':
             print("comparatives_month_wise process is skipped as per env file")
         else:
@@ -388,7 +388,7 @@ def process_execution(input_files,
                 read_previous_quarter_pd_comp_vendor[["Vendor No.", "Vendor Name", "GR Amt.in loc.cur."]]
             config_vendor_comp = reading_sheet_config_data_to_dict(
                 sheet_name=config_main["Config_Comparatives_Vendor_sheetname"])
-            vtwc.Create_Vendor_Wise(config_main, config_vendor_comp, read_present_quarter_pd_comp_vendor,
+            vtwc.create_vendor_wise(config_main, config_vendor_comp, read_present_quarter_pd_comp_vendor,
                                     read_previous_quarter_pd_comp_vendor)
         elif env_file('comparatives_vendor_wise') == 'NO':
             print("comparatives_vendor_wise process is skipped as per env file")

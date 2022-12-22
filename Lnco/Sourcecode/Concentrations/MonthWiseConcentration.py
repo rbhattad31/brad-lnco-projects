@@ -4,16 +4,61 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Side, Border
 from string import ascii_lowercase
 import os
+import logging
 from send_mail_reusable_task import send_mail
+
 
 class BusinessException(Exception):
     pass
+
+
+def month_concentration_top_weight(month_concentration_dataframe, main_config):
+    # save grand total row to delete from datatable to sort
+    # print(month_concentration_dataframe)
+    grand_total_row = month_concentration_dataframe.tail(1)
+    # print(grand_total_row)
+    # delete last row from the grand_total_row
+    month_concentration_dataframe.drop(month_concentration_dataframe.tail(1).index, inplace=True)
+    # print("Deleted Grand total row")
+    # sort the dataframe using column name
+    month_concentration_dataframe.sort_values(by="Variance", ascending=False, inplace=True)
+    # print(month_concentration_dataframe)
+    month_concentration_weightage = pd.DataFrame(columns=month_concentration_dataframe.columns)
+    # print("empty dataframe is created with columns")
+    # print(month_concentration_weightage)
+    sum_of_variance = 0
+    for index, row in month_concentration_dataframe.iterrows():
+        # print(float(row["Variance"]))
+        if sum_of_variance < 0.60:
+            sum_of_variance = sum_of_variance + float(row["Variance"])
+            # print(sum_of_variance)
+            month_concentration_weightage = month_concentration_weightage.append(row, ignore_index=True)
+            # print("appended row")
+        else:
+            break
+    # print(month_concentration_weightage)
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="overlay") as writer:
+            month_concentration_weightage.to_excel(writer, sheet_name=main_config[
+                "Output_Concentration_Weightage_sheetname"], index=False, startrow=2, startcol=7)
+        print("Month wise concentration top weightage entries are logged in the output file")
+    except Exception as File_creation_error:
+
+        logging.error("Exception occurred while creating purchase type wise concentration sheet")
+        raise File_creation_error
 
 
 def month_wise(main_config, in_config, present_quarter_pd):
     try:
         # Read Purchase Register Sheets
         read_present_quarter_pd = present_quarter_pd
+
+        # Create Month Column
+        read_present_quarter_pd['GR Posting Date'] = pd.to_datetime(read_present_quarter_pd['GR Posting Date'], errors='coerce')
+
+        read_present_quarter_pd['GR Posting Date'] = read_present_quarter_pd['GR Posting Date'].dt.month_name().str[:3]
+
         read_present_quarter_pd['Month'] = read_present_quarter_pd['GR Posting Date']
 
         # Fetch To Address
@@ -109,8 +154,18 @@ def month_wise(main_config, in_config, present_quarter_pd):
         pivot_sheet['Variance'] = variance_list
 
         # Log Sheet
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Concentrations_Month_sheetname"], index=False,  startrow=16)
+        try:
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+                pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Concentrations_Month_sheetname"], index=False,  startrow=16)
+        except Exception as File_creation_error:
+            logging.error("Exception occurred while creating month wise concentration sheet")
+            raise File_creation_error
+
+        try:
+            month_concentration_top_weight(pivot_sheet, main_config)
+        except Exception as month_concentration_top_weight_error:
+            logging.error("Exception occurred while creating month wise concentration top weight table")
+            raise month_concentration_top_weight_error
 
         # Check outfile creation
         if os.path.exists(main_config["Output_File_Path"]):

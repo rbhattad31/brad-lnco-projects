@@ -5,10 +5,48 @@ import openpyxl
 from openpyxl.styles import PatternFill, Font, Side, Border
 from send_mail_reusable_task import send_mail
 from openpyxl.utils import get_column_letter
+import logging
 
 
 class BusinessException(Exception):
     pass
+
+
+def vendor_concentration_top_weight(vendor_concentration_dataframe, main_config):
+    # save grand total row to delete from datatable to sort
+    # print(vendor_concentration_dataframe)
+    grand_total_row = vendor_concentration_dataframe.tail(1)
+    # print(grand_total_row)
+    # delete last row from the grand_total_row
+    vendor_concentration_dataframe.drop(vendor_concentration_dataframe.tail(1).index, inplace=True)
+    # print("Deleted Grand total row")
+    # sort the dataframe using column name
+    vendor_concentration_dataframe.sort_values(by="Percentage", ascending=False, inplace=True)
+    # print(vendor_concentration_dataframe)
+    vendor_concentration_weightage = pd.DataFrame(columns=vendor_concentration_dataframe.columns)
+    # print("empty dataframe is created with columns")
+    # print(vendor_concentration_weightage)
+    sum_of_variance = 0
+    for index, row in vendor_concentration_dataframe.iterrows():
+        # print(float(row["Percentage"]))
+        if sum_of_variance < 0.60:
+            sum_of_variance = sum_of_variance + float(row["Percentage"])
+            # print(sum_of_variance)
+            vendor_concentration_weightage = vendor_concentration_weightage.append(row, ignore_index=True)
+            # print("appended row")
+        else:
+            break
+    # print(vendor_concentration_weightage)
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="overlay") as writer:
+            vendor_concentration_weightage.to_excel(writer, sheet_name=main_config[
+                "Output_Concentration_Weightage_sheetname"], index=False, startrow=2, startcol=22)
+            print("Vendor wise concentration top weightage entries are logged in the output file")
+
+    except Exception as File_creation_error:
+        logging.error("Exception occurred while creating Vendor wise concentration sheet")
+        raise File_creation_error
 
 
 def con_vendor_wise(main_config, in_config, present_quarter_pd):
@@ -17,20 +55,23 @@ def con_vendor_wise(main_config, in_config, present_quarter_pd):
 
         read_present_quarter_pd = read_present_quarter_pd[["Vendor No.", "Vendor Name", "GR Amt.in loc.cur."]]
 
-        Amount = read_present_quarter_pd[read_present_quarter_pd["GR Amt.in loc.cur."].notna()]
-        Vendor_no = read_present_quarter_pd[read_present_quarter_pd["Vendor No."].notna()]
+        amount = read_present_quarter_pd[read_present_quarter_pd["GR Amt.in loc.cur."].notna()]
+        vendor_no = read_present_quarter_pd[read_present_quarter_pd["Vendor No."].notna()]
 
         if read_present_quarter_pd.shape[0] == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Sourcefile_subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Sourcefile_subject"],
                       body=in_config["Body_mail1"])
             raise BusinessException("Sheet is empty")
-        elif len(Amount) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr_amount"],
+        elif len(amount) == 0:
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Gr_amount"],
                       body=in_config["Gr_amount_body"])
             raise BusinessException("Empty column")
 
-        elif len(Vendor_no) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Vendor_No"],
+        elif len(vendor_no) == 0:
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Vendor_No"],
                       body=in_config["Vendor_No_body"])
             raise BusinessException("Vendor No column  missed")
 
@@ -64,9 +105,21 @@ def con_vendor_wise(main_config, in_config, present_quarter_pd):
         con_vendor_sheet[name_of_column[2]].values[-1] = grand_total
         con_vendor_sheet = con_vendor_sheet.rename(columns={name_of_column[2]: main_config["PresentQuarterColumnName"]})
 
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            con_vendor_sheet.to_excel(writer, sheet_name=main_config["Output_Concentration_Vendor_sheetname"], index=False,
-                                  startrow=17)
+        try:
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                                if_sheet_exists="replace") as writer:
+                con_vendor_sheet.to_excel(writer, sheet_name=main_config["Output_Concentration_Vendor_sheetname"],
+                                          index=False, startrow=17)
+
+        except Exception as File_creation_error:
+            logging.error("Exception occurred while creating Vendor wise concentration sheet")
+            raise File_creation_error
+
+        try:
+            vendor_concentration_top_weight(con_vendor_sheet, main_config)
+        except Exception as purchase_concentration_top_weight_error:
+            logging.error("Exception occurred while creating purchase type wise concentration top weight table")
+            raise purchase_concentration_top_weight_error
 
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         ws = wb[main_config["Output_Concentration_Vendor_sheetname"]]
@@ -76,10 +129,10 @@ def con_vendor_wise(main_config, in_config, present_quarter_pd):
         for cell in ws["D"]:
             cell.number_format = "##.##%"
 
-        Full_range = "A18:" + get_column_letter(ws.max_column) \
+        full_range = "A18:" + get_column_letter(ws.max_column) \
                      + str(ws.max_row)
 
-        ws.auto_filter.ref = Full_range
+        ws.auto_filter.ref = full_range
 
         font_style = Font(name="Cambria", size=13, bold=True, color="000000")
         for c in ascii_uppercase:
@@ -191,7 +244,8 @@ def con_vendor_wise(main_config, in_config, present_quarter_pd):
         return v_error
     except AttributeError as a_error:
         print("AttributeError" + str(a_error))
-        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["AttributeError1"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                  subject=in_config["AttributeError1"],
                   body=in_config["AttributeError1_body"])
         return a_error
     except TypeError as t_error:
@@ -214,5 +268,3 @@ main_config = {}
 present_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
     print(con_vendor_wise(main_config, config, present_quarter_pd))
-
-

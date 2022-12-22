@@ -7,10 +7,46 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Side, Border
 from string import ascii_uppercase
 from send_mail_reusable_task import send_mail
+import logging
 
 
 class BusinessException(Exception):
     pass
+
+
+def purchase_comparatives_top_weight(purchase_comparatives_dataframe, main_config):
+    # save grand total row to delete from datatable to sort
+    # print(purchase_concentration_dataframe)
+    grand_total_row = purchase_comparatives_dataframe.tail(1)
+    variance = float(grand_total_row['Variance'])
+    # print(grand_total_row)
+    # delete last row from the grand_total_row
+    purchase_comparatives_dataframe.drop(purchase_comparatives_dataframe.tail(1).index, inplace=True)
+    # print("Deleted Grand total row")
+    # sort the dataframe using column name
+    purchase_comparatives_dataframe.sort_values(by="Variance", ascending=False, inplace=True)
+    # print(purchase_concentration_dataframe)
+    purchase_comparatives_weightage = pd.DataFrame(columns=purchase_comparatives_dataframe.columns)
+    # print("empty dataframe is created with columns")
+    for index, row in purchase_comparatives_dataframe.iterrows():
+        # print(float(row["Variance"]))
+        if float(row['Variance']) > variance:
+            # print(sum_of_variance)
+            purchase_comparatives_weightage = purchase_comparatives_weightage.append(row, ignore_index=True)
+            # print("appended row")
+        else:
+            continue
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="overlay") as writer:
+            purchase_comparatives_weightage.to_excel(writer, sheet_name=main_config[
+                "Output_Comparatives_Weightage_sheetname"], index=False, startrow=2, startcol=1)
+            print("purchase type concentration top weightage entries are logged in the output file")
+
+    except Exception as File_creation_error:
+        logging.error("Exception occurred while creating purchase type wise concentration sheet: \n {0}".format(
+            File_creation_error))
+        raise File_creation_error
 
 
 # Defining a Function
@@ -18,14 +54,17 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
     try:
         # Read Purchase Register Sheets
         read_present_quarter_pd = present_quarter_pd
-        read_present_quarter_pd = read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
+        read_present_quarter_pd = read_present_quarter_pd.loc[:,
+                                  ~read_present_quarter_pd.columns.duplicated(keep='first')]
 
         read_previous_quarter_pd = previous_quarter_pd
-        read_previous_quarter_pd = read_previous_quarter_pd.loc[:, ~read_previous_quarter_pd.columns.duplicated(keep='first')]
+        read_previous_quarter_pd = read_previous_quarter_pd.loc[:,
+                                   ~read_previous_quarter_pd.columns.duplicated(keep='first')]
 
         # Check Exception
         if read_present_quarter_pd.shape[0] == 0 or read_previous_quarter_pd.shape[0] == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["subject_mail"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
             raise BusinessException("Input Sheet Data is empty")
 
@@ -36,7 +75,8 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
 
-                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
+                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject,
+                          body=body)
                 raise BusinessException(col + " Column is missing")
 
         PresentQuarterSheetColumns = read_present_quarter_pd.columns.values.tolist()
@@ -46,7 +86,8 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
 
-                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
+                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject,
+                          body=body)
                 raise BusinessException(col + " Column is missing")
 
         # Filter Rows
@@ -55,17 +96,20 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
         Gr_Amt_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
         if len(Valuation_pd) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Valuation Class_subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Valuation Class_subject"],
                       body=in_config["Valuation Class_Body"])
             raise BusinessException("Valuation Class Column is empty")
 
         elif len(Valuation_Text_pd) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Valuation Class Text_Subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Valuation Class Text_Subject"],
                       body=in_config["Valuation Class Text_Body"])
             raise BusinessException("Valuation Class Text Column is empty")
 
         elif len(Gr_Amt_pd) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr Amt_Subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
             raise BusinessException("GR Amt Column is empty")
         else:
@@ -76,33 +120,38 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
         Gr_Amt_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
         if len(Valuation_pd_2) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Valuation Class_subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Valuation Class_subject"],
                       body=in_config["Valuation Class_Body"])
             raise BusinessException("Valuation Class Column is empty")
 
         elif len(Valuation_Text_pd_2) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Valuation Class Text_Subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Valuation Class Text_Subject"],
                       body=in_config["Valuation Class Text_Body"])
             raise BusinessException("Valuation Class Text Column is empty")
 
         elif len(Gr_Amt_pd_2) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr Amt_Subject"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
             raise BusinessException("GR Amt Column is empty")
         else:
             pass
 
         # create pivot table
-        purchase_type_wise_pd = pd.pivot_table(read_present_quarter_pd, index=["Valuation Class", "Valuation Class Text"],
+        purchase_type_wise_pd = pd.pivot_table(read_present_quarter_pd,
+                                               index=["Valuation Class", "Valuation Class Text"],
                                                values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=True,
-                                                        margins_name="Grand Total")
+                                               margins_name="Grand Total")
 
         # reset "indices created during pivot table creation" - for merging
         purchase_type_wise_pd = purchase_type_wise_pd.reset_index()
         # print(purchase_type_wise_pd)
         # print(purchase_type_wise_pd.dtypes)
         # read previous quarters final working file - pd will be replaced with Nan in any blank cells
-        previous_quarter_final_file_pd = pd.pivot_table(read_previous_quarter_pd, index=["Valuation Class", "Valuation Class Text"],
+        previous_quarter_final_file_pd = pd.pivot_table(read_previous_quarter_pd,
+                                                        index=["Valuation Class", "Valuation Class Text"],
                                                         values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=True,
                                                         margins_name="Grand Total")
 
@@ -124,9 +173,10 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
         # returns as ['Valuation Class', 'Valuation Class Text', 'GR Amt.in loc.cur.', 'Previous Quarter']
 
         # dropping columns present and previous quarters both have values as zero
+        # print(merge_pd[[Col_List[2], Col_List[3]]])
         merge_pd.drop(merge_pd.index[(merge_pd[Col_List[2]] == 0) & (merge_pd[Col_List[3]] == 0)],
                       inplace=True)
-        # print(merge_pd)
+        # print(merge_pd[[Col_List[2], Col_List[3]]])
         # create a new column - Success
         merge_pd['Variance'] = 0
         # print(merge_pd)
@@ -134,12 +184,12 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
 
         # variance formula implementation using index
         for index in merge_pd.index:
-            Q4 = merge_pd[Col_List[2]][index]
-            Q3 = merge_pd[Col_List[3]][index]
-            if Q3 == 0:
+            present_quarter_row_value = merge_pd[Col_List[2]][index]
+            previous_quarter_row_value = merge_pd[Col_List[3]][index]
+            if previous_quarter_row_value == 0:
                 variance = 1
             else:
-                variance = (Q4 - Q3) / Q3
+                variance = (present_quarter_row_value - previous_quarter_row_value) / previous_quarter_row_value
             merge_pd['Variance'][index] = variance
 
         # copy present quarter Amount column Grand total, set it as zero, sort the data frame and reassign the value.
@@ -152,10 +202,22 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
             columns={Col_List[2]: main_config["PresentQuarterColumnName"]})
         purchase_type_wise_comparatives_pd = purchase_type_wise_comparatives_pd.rename(
             columns={Col_List[3]: main_config["PreviousQuarterColumnName"]})
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            purchase_type_wise_comparatives_pd.to_excel(writer,
-                                                    sheet_name=main_config["Output_Comparatives_Purchase_sheetname"],
-                                                    index=False, startrow=16)
+        try:
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                                if_sheet_exists="replace") as writer:
+                purchase_type_wise_comparatives_pd.to_excel(writer,sheet_name=main_config[
+                                                                "Output_Comparatives_Purchase_sheetname"],
+                                                            index=False, startrow=16)
+        except Exception as File_creation_error:
+            logging.error("Exception occurred while creating purchase type wise comparatives sheet")
+            raise File_creation_error
+
+        try:
+            purchase_comparatives_top_weight(purchase_type_wise_comparatives_pd, main_config)
+        except Exception as purchase_comparatives_top_weight_error:
+            print("Exception occurred while creating purchase type wise concentration sheet: \n {0}".format(
+                purchase_comparatives_top_weight_error))
+
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         ws = wb[main_config["Output_Comparatives_Purchase_sheetname"]]
 
@@ -251,7 +313,8 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
 
     # Excepting Errors here
     except FileNotFoundError as notfound_error:
-        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["subject_file_not_found"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                  subject=in_config["subject_file_not_found"],
                   body=in_config["body_file_not_found"])
         print("Purchase Type Wise Comparatives Process-", notfound_error)
         return notfound_error
@@ -300,5 +363,4 @@ config = {}
 present_quarter_pd = pd.DataFrame()
 previous_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(create_purchase_type_wise(main_config, config, present_quarter_pd, previous_quarter_pd ))
-
+    print(create_purchase_type_wise(main_config, config, present_quarter_pd, previous_quarter_pd))

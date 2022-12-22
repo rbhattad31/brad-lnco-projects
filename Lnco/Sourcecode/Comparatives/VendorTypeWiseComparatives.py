@@ -4,7 +4,7 @@ import numpy
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Side, Border
 from string import ascii_uppercase
-
+import logging
 from send_mail_reusable_task import send_mail
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -15,8 +15,38 @@ class BusinessException(Exception):
     pass
 
 
+def vendor_comparatives_top_weight(vendor_comparatives_dataframe, main_config, percentage):
+    # save grand total row to delete from datatable to sort
+    # grand_total_row = vendor_comparatives_dataframe.tail(1)
+    # print(grand_total_row)
+    # delete last row from the grand_total_row
+    vendor_comparatives_dataframe.drop(vendor_comparatives_dataframe.tail(1).index, inplace=True)
+    # print("Deleted Grand total row")
+    # sort the dataframe using column name
+    col_list = vendor_comparatives_dataframe.columns.values.tolist()
+    vendor_comparatives_dataframe.sort_values(by=col_list[2], ascending=False, inplace=True)
+    vendor_comparatives_weightage = pd.DataFrame(columns=vendor_comparatives_dataframe.columns)
+    # print("empty dataframe is created with columns")
+    for index, row in vendor_comparatives_dataframe.iterrows():
+        if float(row['Percentage']) > percentage:
+            vendor_comparatives_weightage = vendor_comparatives_weightage.append(row, ignore_index=True)
+        else:
+            continue
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="overlay") as writer:
+            vendor_comparatives_weightage.to_excel(writer, sheet_name=main_config[
+                "Output_Comparatives_Weightage_sheetname"], index=False, startrow=2, startcol=23)
+            print("vendor concentration top weightage entries are logged in the output file")
+
+    except Exception as File_creation_error:
+        logging.error("Exception occurred while creating vendor type wise concentration sheet: \n {0}".format(
+            File_creation_error))
+        raise File_creation_error
+
+
 # Defining a Function
-def Create_Vendor_Wise(main_config, in_config, present_quarter_pd, previous_quarter_pd):
+def create_vendor_wise(main_config, in_config, present_quarter_pd, previous_quarter_pd):
     try:
         read_present_quarter_pd = present_quarter_pd
         read_previous_quarter_pd = previous_quarter_pd
@@ -40,21 +70,21 @@ def Create_Vendor_Wise(main_config, in_config, present_quarter_pd, previous_quar
                 raise BusinessException(col + " Column is missing")
 
         # Filter Rows
-        Vendor_No_pd = read_present_quarter_pd[read_present_quarter_pd['Vendor No.'].notna()]
-        Vendor_Name_pd = read_present_quarter_pd[read_present_quarter_pd['Vendor Name'].notna()]
-        Gr_Amt_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
+        vendor_no_pd = read_present_quarter_pd[read_present_quarter_pd['Vendor No.'].notna()]
+        vendor_name_pd = read_present_quarter_pd[read_present_quarter_pd['Vendor Name'].notna()]
+        gr_amt_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
-        if len(Vendor_No_pd) == 0:
+        if len(vendor_no_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Vendor No._subject"],
                       body=in_config["Vendor No._Body"])
             raise BusinessException("Vendor No. Column is empty")
-        elif len(Vendor_Name_pd) == 0:
+        elif len(vendor_name_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Vendor Name_Subject"],
                       body=in_config["Vendor Name_Body"])
             raise BusinessException("Vendor Name Column is empty")
-        elif len(Gr_Amt_pd) == 0:
+        elif len(gr_amt_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
@@ -83,25 +113,24 @@ def Create_Vendor_Wise(main_config, in_config, present_quarter_pd, previous_quar
 
         # Filter Rows
 
-        Vendor_No_pd = read_previous_quarter_pd[read_previous_quarter_pd['Vendor No.'].notna()]
-        Vendor_Name_pd = read_previous_quarter_pd[read_previous_quarter_pd['Vendor Name'].notna()]
-        Gr_Amt_pd = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
+        vendor_no_pd = read_previous_quarter_pd[read_previous_quarter_pd['Vendor No.'].notna()]
+        vendor_name_pd = read_previous_quarter_pd[read_previous_quarter_pd['Vendor Name'].notna()]
+        gr_amt_pd = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
-        if len(Vendor_No_pd) == 0:
+        if len(vendor_no_pd) == 0:
 
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Vendor No._subject"],
                       body=in_config["Vendor No._Body"])
             raise BusinessException("Vendor No. Column is empty")
 
-
-        elif len(Vendor_Name_pd) == 0:
+        elif len(vendor_name_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Vendor Name_Subject"],
                       body=in_config["Vendor Name_Body"])
             raise BusinessException("Vendor Name Column is empty")
 
-        elif len(Gr_Amt_pd) == 0:
+        elif len(gr_amt_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
@@ -112,36 +141,50 @@ def Create_Vendor_Wise(main_config, in_config, present_quarter_pd, previous_quar
         # exception ends here
 
         # create pivot table
+        # print(read_present_quarter_pd)
 
-        Vendor_wise_pd = pd.pivot_table(read_present_quarter_pd, index=["Vendor No.", "Vendor Name"],
-                                        values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=True,
-                                        margins_name="Grand Total")
-        Vendor_wise_pd = Vendor_wise_pd[:-1]
+        present_quarter_final_file_pd = pd.pivot_table(read_present_quarter_pd, index=["Vendor No.", "Vendor Name"],
+                                                       values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=True,
+                                                       margins_name="Grand Total")
+        # print(present_quarter_final_file_pd)
+        # pd[:-1] will select all the rows but not last row, omitting Grand total row
+        present_quarter_final_file_pd = present_quarter_final_file_pd[:-1]
+        # print(present_quarter_final_file_pd)
         # reset "indices created during pivot table creation" - for merging
-        Vendor_wise_pd = Vendor_wise_pd.reset_index()
+        present_quarter_final_file_pd = present_quarter_final_file_pd.reset_index()
+        # print(present_quarter_final_file_pd)
+
         # read previous quarters final working file - pd will be replaced with Nan in any blank cells
         previous_quarter_final_file_pd = pd.pivot_table(read_previous_quarter_pd,
                                                         index=['Vendor No.', 'Vendor Name'],
                                                         values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=True,
                                                         margins_name="Grand Total")
+        # print(previous_quarter_final_file_pd)
         previous_quarter_final_file_pd = previous_quarter_final_file_pd[:-1]
+        # print(previous_quarter_final_file_pd)
+        previous_quarter_final_file_pd = previous_quarter_final_file_pd.reset_index()
+        # print(previous_quarter_final_file_pd)
+
         # replace Nan with blank
+        present_quarter_final_file_pd = present_quarter_final_file_pd.replace(numpy.nan, 0, regex=True)
         previous_quarter_final_file_pd = previous_quarter_final_file_pd.replace(numpy.nan, 0, regex=True)
 
-        # merging present and previous quarter purchase type wise data -  pd will be replaced with Nan in any blank cells
-        merge_pd = pd.merge(Vendor_wise_pd, previous_quarter_final_file_pd, how="outer",
+        # print(present_quarter_final_file_pd)
+        # print(previous_quarter_final_file_pd)
+        # merging present and previous quarter vendor wise data -  pd will be replaced with Nan in any blank cells
+        merge_pd = pd.merge(present_quarter_final_file_pd, previous_quarter_final_file_pd, how="outer",
                             on=["Vendor No.", "Vendor Name"])
 
         # replacing all Nan's with zeros in Present and previous Quarter's values columns
         merge_pd = merge_pd.replace(numpy.nan, 0, regex=True)
 
-        Col_List = merge_pd.columns.values.tolist()
+        col_list = merge_pd.columns.values.tolist()
         # returns as ['Valuation Class', 'Valuation Class Text', 'GR Amt.in loc.cur.', 'Previous Quarter']
 
         # dropping columns present and previous quarters both have values as zero
-        merge_pd.drop(merge_pd.index[(merge_pd[Col_List[2]] == 0) & (merge_pd[Col_List[3]] == 0)],
+        merge_pd.drop(merge_pd.index[(merge_pd[col_list[2]] == 0) & (merge_pd[col_list[3]] == 0)],
                       inplace=True)
-        merge_pd.sort_values(by=Col_List[2], axis=0, ascending=False, inplace=True)
+        merge_pd.sort_values(by=col_list[2], axis=0, ascending=False, inplace=True)
 
         # create a new column - Success
         merge_pd['Variance'] = 0
@@ -150,77 +193,88 @@ def Create_Vendor_Wise(main_config, in_config, present_quarter_pd, previous_quar
 
         # variance formula implementation using index
         for index in merge_pd.index:
-            Present_quarter_row_value = merge_pd[Col_List[2]][index]
-            Previous_quarter_row_value = merge_pd[Col_List[3]][index]
-            variance = Present_quarter_row_value - Previous_quarter_row_value
+            present_quarter_row_value = merge_pd[col_list[2]][index]
+            previous_quarter_row_value = merge_pd[col_list[3]][index]
+            variance = present_quarter_row_value - previous_quarter_row_value
             merge_pd['Variance'][index] = variance
 
-        Col_List = merge_pd.columns.values.tolist()
-        merge_pd.drop(merge_pd.index[(merge_pd[Col_List[3]] == 0) & (merge_pd[Col_List[4]] == 0)],
+        col_list = merge_pd.columns.values.tolist()
+        merge_pd.drop(merge_pd.index[(merge_pd[col_list[3]] == 0) & (merge_pd[col_list[4]] == 0)],
                       inplace=True)
         merge_pd['Percentage'] = ''
         pd.options.mode.chained_assignment = None
         # variance formula implementation using index
         for index in merge_pd.index:
-            Previous_quarter_row_value = merge_pd[Col_List[3]][index]
-            Variance_row_value = merge_pd[Col_List[4]][index]
-            if Previous_quarter_row_value == 0:
-                Percentage = 1
-            elif Variance_row_value == 0:
-                Percentage = 1
+            previous_quarter_row_value = merge_pd[col_list[3]][index]
+            variance_row_value = merge_pd[col_list[4]][index]
+            if previous_quarter_row_value == 0:
+                percentage = 1
             else:
-                Percentage = Variance_row_value / Previous_quarter_row_value
-            merge_pd['Percentage'][index] = Percentage
-        Vendor_wise_comparatives_pd = merge_pd.rename(
-            columns={Col_List[2]: main_config["PresentQuarterColumnName"]})
-        Vendor_wise_comparatives_pd = Vendor_wise_comparatives_pd.rename(
-            columns={Col_List[3]: main_config["PreviousQuarterColumnName"]})
+                percentage = variance_row_value / previous_quarter_row_value
+            merge_pd['Percentage'][index] = percentage
+        vendor_wise_comparatives_pd = merge_pd.rename(
+            columns={col_list[2]: main_config["PresentQuarterColumnName"]})
+        vendor_wise_comparatives_pd = vendor_wise_comparatives_pd.rename(
+            columns={col_list[3]: main_config["PreviousQuarterColumnName"]})
 
-        present_quarter_subtotal = Vendor_wise_comparatives_pd[main_config["PresentQuarterColumnName"]].sum()
+        present_quarter_subtotal = vendor_wise_comparatives_pd[main_config["PresentQuarterColumnName"]].sum()
         # print(present_quarter_subtotal)
-        previous_quarter_subtotal = Vendor_wise_comparatives_pd[main_config["PreviousQuarterColumnName"]].sum()
+        previous_quarter_subtotal = vendor_wise_comparatives_pd[main_config["PreviousQuarterColumnName"]].sum()
         # print(previous_quarter_subtotal)
         variance_subtotal = present_quarter_subtotal - previous_quarter_subtotal
         # print(variance_subtotal)
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
-                            if_sheet_exists="replace") as writer:
-            Vendor_wise_comparatives_pd.to_excel(writer,
-                                                 sheet_name=main_config[
-                                                     "Output_Comparatives_Vendor_sheetname"], index=False,startrow=17)
+        percentage_overall = variance_subtotal / previous_quarter_subtotal
+        try:
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                                if_sheet_exists="replace") as writer:
+                vendor_wise_comparatives_pd.to_excel(writer,
+                                                     sheet_name=main_config[
+                                                         "Output_Comparatives_Vendor_sheetname"], index=False, startrow=17)
+        except Exception as File_creation_error:
+            logging.error("Exception occurred while creating vendor wise concentration sheet")
+            raise File_creation_error
+        try:
+            vendor_comparatives_top_weight(vendor_wise_comparatives_pd, main_config, percentage_overall)
+        except Exception as vendor_comparatives_top_weight_error:
+            print("Exception occurred while creating vendor wise concentration sheet: \n {0}".format(
+                vendor_comparatives_top_weight_error))
+
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         ws = wb[main_config["Output_Comparatives_Vendor_sheetname"]]
-        m_row = ws.max_row
 
-        ws['C17'] = '=SUBTOTAL(9,C19:C' + str(m_row) + ')'
-        ws['D17'] = '=SUBTOTAL(9,D19:D' + str(m_row) + ')'
-        ws['E17'] = '=SUBTOTAL(9,E19:E' + str(m_row) + ')'
+        ws['C17'] = present_quarter_subtotal
+        ws['D17'] = previous_quarter_subtotal
+        ws['E17'] = variance_subtotal
+        ws['F17'] = percentage_overall
 
         font_style = Font(name="Cambria", size=12, bold=True, color="000000")
-        for c in ascii_uppercase:
-            ws[c + "17"].font = font_style
+        for char in ascii_uppercase:
+            ws[char + "17"].font = font_style
+            if char == 'F':
+                break
 
-        m_row = ws.max_row
-        for c in ascii_uppercase:
-            ws[c + str(m_row)].font = font_style
+        # max_row_number = ws.max_row
+        # for char in ascii_uppercase:
+        #     ws[char + str(max_row_number)].font = font_style
+        #     if char == 'F':
+        #         break
 
         fill_pattern = PatternFill(patternType="solid", fgColor="ADD8E6")
-        for c in ascii_uppercase:
-            ws[c + "18"].fill = fill_pattern
-            if c == 'F':
+        for char in ascii_uppercase:
+            ws[char + "18"].fill = fill_pattern
+            if char == 'F':
                 break
-        m_row = ws.max_row
-        # print("A2:E" + str(m_row))
-        ws.auto_filter.ref = "A18:F" + str(m_row)
+
+        max_row_number = ws.max_row
+
+        ws.auto_filter.ref = "A18:F" + str(max_row_number)
         for c in ascii_uppercase:
             ws.column_dimensions[c].width = 20
         ws.column_dimensions["F"].width = 15
         ws.column_dimensions["B"].width = 35
-        ws.delete_rows(m_row)
-        ws.delete_rows(m_row - 1)
+        # ws.delete_rows(max_row_number)
+        # ws.delete_rows(max_row_number - 1)
 
-        ws['C1'] = present_quarter_subtotal
-        ws['D1'] = previous_quarter_subtotal
-        ws['E1'] = variance_subtotal
         for cell in ws["C"]:
             cell.number_format = "#,##,###"
             if cell.value == 0:
@@ -237,6 +291,8 @@ def Create_Vendor_Wise(main_config, in_config, present_quarter_pd, previous_quar
             if cell.value == 0:
                 cell.value = '-'
                 cell.alignment = Alignment(horizontal='center')
+        for cell in ws['F']:
+            cell.number_format = '0.0%'
 
         font_style1 = Font(name='Cambria', size=12, color='002060', bold=False)
         font_style2 = Font(name='Cambria', size=12, color='002060', bold=True, underline='single')
@@ -301,7 +357,7 @@ def Create_Vendor_Wise(main_config, in_config, present_quarter_pd, previous_quar
         print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
 
-        return Vendor_wise_comparatives_pd
+        return vendor_wise_comparatives_pd
 
     # Excepting Errors here
     except PermissionError as file_error:
@@ -355,4 +411,4 @@ main_config = {}
 present_quarter_pd = pd.DataFrame()
 previous_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(Create_Vendor_Wise(main_config, config, present_quarter_pd, previous_quarter_pd))
+    print(create_vendor_wise(main_config, config, present_quarter_pd, previous_quarter_pd))

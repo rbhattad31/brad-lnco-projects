@@ -3,12 +3,45 @@ import numpy
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Side, Border
 from string import ascii_uppercase
-
+import logging
 from send_mail_reusable_task import send_mail
 
 
 class BusinessException(Exception):
     pass
+
+
+def plant_comparatives_top_weight(plant_comparatives_dataframe, main_config):
+    # save grand total row to delete from datatable to sort
+    grand_total_row = plant_comparatives_dataframe.tail(1)
+    variance = float(grand_total_row['Variance'])
+    # print(grand_total_row)
+    # delete last row from the grand_total_row
+    plant_comparatives_dataframe.drop(plant_comparatives_dataframe.tail(1).index, inplace=True)
+    # print("Deleted Grand total row")
+    # sort the dataframe using column name
+    plant_comparatives_dataframe.sort_values(by="Variance", ascending=False, inplace=True)
+    plant_comparatives_weightage = pd.DataFrame(columns=plant_comparatives_dataframe.columns)
+    # print("empty dataframe is created with columns")
+    for index, row in plant_comparatives_dataframe.iterrows():
+        # print(float(row["Variance"]))
+        if float(row['Variance']) > variance:
+            # print(sum_of_variance)
+            plant_comparatives_weightage = plant_comparatives_weightage.append(row, ignore_index=True)
+            # print("appended row")
+        else:
+            continue
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="overlay") as writer:
+            plant_comparatives_weightage.to_excel(writer, sheet_name=main_config[
+                "Output_Comparatives_Weightage_sheetname"], index=False, startrow=2, startcol=13)
+            print("Plant wise concentration top weightage entries are logged in the output file")
+
+    except Exception as File_creation_error:
+        logging.error("Exception occurred while creating Plant wise concentration sheet: \n {0}".format(
+            File_creation_error))
+        raise File_creation_error
 
 
 def create_plant_wise_sheet(main_config, in_config, present_quarter_pd, previous_quarter_pd):
@@ -18,88 +51,87 @@ def create_plant_wise_sheet(main_config, in_config, present_quarter_pd, previous
 
         # Check Exception
         if read_present_quarter_pd.shape[0] == 0 or read_previous_quarter_pd.shape[0] == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["subject_mail"],
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
             raise BusinessException("Sheet is empty")
 
-        PreviousQuarterSheet_col = read_previous_quarter_pd.columns.values.tolist()
+        previous_quarter_sheet_col = read_previous_quarter_pd.columns.values.tolist()
         for col in ["Plant", "GR Amt.in loc.cur."]:
-            if col not in PreviousQuarterSheet_col:
+            if col not in previous_quarter_sheet_col:
                 subject = in_config["ColumnMiss_Subject"]
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
 
-                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
+                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject,
+                          body=body)
                 raise BusinessException(col + " Column is missing")
 
-        PresentQuarterSheet_col = read_present_quarter_pd.columns.values.tolist()
+        present_quarter_sheet_col = read_present_quarter_pd.columns.values.tolist()
         for col in ["Plant", "GR Amt.in loc.cur."]:
-            if col not in PresentQuarterSheet_col:
+            if col not in present_quarter_sheet_col:
                 subject = in_config["ColumnMiss_Subject"]
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
 
-                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
+                send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject,
+                          body=body)
                 raise BusinessException(col + " Column is missing")
 
         # Filter Rows
-        Plant_pd = read_present_quarter_pd[read_present_quarter_pd['Plant'].notna()]
-        Gr_Amt_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
+        plant_pd = read_present_quarter_pd[read_present_quarter_pd['Plant'].notna()]
+        gr_amt_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
-        if len(Plant_pd) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Pant_subject"],
+        if len(plant_pd) == 0:
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Pant_subject"],
                       body=in_config["Plant_Body"])
             raise BusinessException("Plant Column is empty")
 
-        elif len(Gr_Amt_pd) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr Amt_Subject"],
+        elif len(gr_amt_pd) == 0:
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
             raise BusinessException("GR Amt Column is empty")
         else:
             pass
 
-        Plant_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['Plant'].notna()]
-        Gr_Amt_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
+        plant_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['Plant'].notna()]
+        gr_amt_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
-        if len(Plant_pd_2) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Pant_subject"],
+        if len(plant_pd_2) == 0:
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Pant_subject"],
                       body=in_config["Plant_Body"])
             raise BusinessException("Plant Column is empty")
 
-        elif len(Gr_Amt_pd_2) == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr Amt_Subject"],
+        elif len(gr_amt_pd_2) == 0:
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
             raise BusinessException("GR Amt Column is empty")
         else:
             pass
-
 
         pivot_1 = pd.pivot_table(read_present_quarter_pd, index=["Plant"],
                                  values='GR Amt.in loc.cur.',
                                  aggfunc=numpy.sum, margins=True, margins_name='Grand Total')
         pivot_1 = pivot_1.reset_index()
 
-
-
-
         # read previous quarters final working file
         pivot_2 = pd.pivot_table(read_previous_quarter_pd, index=["Plant"],
                                  values='GR Amt.in loc.cur.',
                                  aggfunc=numpy.sum, margins=True, margins_name='Grand Total')
 
-
-
         merge_pd = pd.merge(pivot_1, pivot_2, how="outer", on=["Plant"])
 
         merge_pd = merge_pd.replace(numpy.nan, 0, regex=True)
-
 
         col_name = merge_pd.columns.values.tolist()
 
         # deleting columns present and past quarters both have values as zero
         merge_pd.drop(merge_pd.index[(merge_pd[col_name[1]] == 0) & (merge_pd[col_name[2]] == 0)],
-                                         inplace=True)
-
+                      inplace=True)
 
         # creating a column in our output excel file
         merge_pd['Variance'] = ""
@@ -108,25 +140,35 @@ def create_plant_wise_sheet(main_config, in_config, present_quarter_pd, previous
 
         # variance formula for index
         for index in merge_pd.index:
-            Q4 = merge_pd[col_name[1]][index]
-            Q3 = merge_pd[col_name[2]][index]
+            present_quarter_row_value = merge_pd[col_name[1]][index]
+            previous_quarter_row_value = merge_pd[col_name[2]][index]
 
-            if Q3 == 0:
+            if previous_quarter_row_value == 0:
                 variance = 1
             else:
-                variance = (Q4 - Q3) / Q3
+                variance = (present_quarter_row_value - previous_quarter_row_value) / previous_quarter_row_value
             merge_pd['Variance'][index] = variance
-
-
 
         plant_wise_comparative_file = merge_pd.rename(
             columns={col_name[1]: main_config["PresentQuarterColumnName"]})
 
         plant_wise_comparative_file = plant_wise_comparative_file.rename(
             columns={col_name[2]: main_config["PreviousQuarterColumnName"]})
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            plant_wise_comparative_file.to_excel(writer, sheet_name=main_config["Output_Comparatives_Plant_sheetname"], index=False,
-                                             startrow=16)
+
+        try:
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                                if_sheet_exists="replace") as writer:
+                plant_wise_comparative_file.to_excel(writer, sheet_name=main_config["Output_Comparatives_Plant_sheetname"],
+                                                     index=False,startrow=16)
+        except Exception as File_creation_error:
+            logging.error("Exception occurred while creating Plant wise comparatives sheet")
+            raise File_creation_error
+        try:
+            plant_comparatives_top_weight(plant_wise_comparative_file, main_config)
+        except Exception as plant_comparatives_top_weight_error:
+            print("Exception occurred while creating Plant wise concentration sheet: \n {0}".format(
+                plant_comparatives_top_weight_error))
+
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         ws = wb[main_config["Output_Comparatives_Plant_sheetname"]]
 
@@ -226,7 +268,8 @@ def create_plant_wise_sheet(main_config, in_config, present_quarter_pd, previous
 
     # Excepting Errors here
     except FileNotFoundError as notfound_error:
-        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["subject_file_not_found"],
+        send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                  subject=in_config["subject_file_not_found"],
                   body=in_config["body_file_not_found"])
         print("Plant Type Wise Comparatives Process-", notfound_error)
         return notfound_error
@@ -235,7 +278,7 @@ def create_plant_wise_sheet(main_config, in_config, present_quarter_pd, previous
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(V_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Purchase Type Wise Comparatives Process-", V_error)
+        print("Plant Type Wise Comparatives Process-", V_error)
         return V_error
     except BusinessException as business_error:
         print("Plant Type Wise Comparatives Process-", business_error)
@@ -276,4 +319,3 @@ present_quarter_pd = pd.DataFrame()
 previous_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
     print(create_plant_wise_sheet(main_config, config, present_quarter_pd, previous_quarter_pd))
-

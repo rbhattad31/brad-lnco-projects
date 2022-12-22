@@ -4,13 +4,47 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Side, Border
 from string import ascii_lowercase
 from send_mail_reusable_task import send_mail
+import logging
 
 
 class BusinessException(Exception):
     pass
 
 
-def purchasemonth(main_config, in_config, present_quarter_pd, previous_quarter_pd):
+def month_comparatives_top_weight(month_comparatives_dataframe, main_config):
+    # save grand total row to delete from datatable to sort
+    grand_total_row = month_comparatives_dataframe.tail(1)
+    variance = float(grand_total_row['Variance'])
+    # print(grand_total_row)
+    # delete last row from the grand_total_row
+    month_comparatives_dataframe.drop(month_comparatives_dataframe.tail(1).index, inplace=True)
+    # print("Deleted Grand total row")
+    # sort the dataframe using column name
+    month_comparatives_dataframe.sort_values(by="Variance", ascending=False, inplace=True)
+    month_comparatives_weightage = pd.DataFrame(columns=month_comparatives_dataframe.columns)
+    # print("empty dataframe is created with columns")
+    for index, row in month_comparatives_dataframe.iterrows():
+        # print(float(row["Variance"]))
+        if float(row['Variance']) > variance:
+            # print(sum_of_variance)
+            month_comparatives_weightage = month_comparatives_weightage.append(row, ignore_index=True)
+            # print("appended row")
+        else:
+            continue
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="overlay") as writer:
+            month_comparatives_weightage.to_excel(writer, sheet_name=main_config[
+                "Output_Comparatives_Weightage_sheetname"], index=False, startrow=2, startcol=7)
+            print("month wise concentration top weightage entries are logged in the output file")
+
+    except Exception as File_creation_error:
+        logging.error("Exception occurred while creating month wise concentration sheet: \n {0}".format(
+            File_creation_error))
+        raise File_creation_error
+
+
+def purchase_month(main_config, in_config, present_quarter_pd, previous_quarter_pd):
     try:
         read_present_quarter_pd = present_quarter_pd
 
@@ -34,9 +68,9 @@ def purchasemonth(main_config, in_config, present_quarter_pd, previous_quarter_p
                       body=in_config["Body_mail"])
             raise BusinessException("Sheet is empty")
 
-        PreviousQuarterSheet_col = read_previous_quarter_pd.columns.values.tolist()
+        previous_quarter_sheet_col = read_previous_quarter_pd.columns.values.tolist()
         for col in ["Month", "GR Amt.in loc.cur."]:
-            if col not in PreviousQuarterSheet_col:
+            if col not in previous_quarter_sheet_col:
                 subject = in_config["ColumnMiss_Subject"]
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
@@ -44,9 +78,9 @@ def purchasemonth(main_config, in_config, present_quarter_pd, previous_quarter_p
                 send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
                 raise BusinessException(col + " Column is missing")
 
-        PresentQuarterSheetColumns = read_present_quarter_pd.columns.values.tolist()
+        present_quarter_sheet_columns = read_present_quarter_pd.columns.values.tolist()
         for col in ["Month", "GR Amt.in loc.cur."]:
-            if col not in PresentQuarterSheetColumns:
+            if col not in present_quarter_sheet_columns:
                 subject = in_config["ColumnMiss_Subject"]
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
@@ -55,30 +89,30 @@ def purchasemonth(main_config, in_config, present_quarter_pd, previous_quarter_p
                 raise BusinessException(col + " Column is missing")
 
         # Filter Rows
-        Month_pd = read_present_quarter_pd[read_present_quarter_pd['Month'].notna()]
-        Gr_Amt_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
+        month_pd = read_present_quarter_pd[read_present_quarter_pd['Month'].notna()]
+        gr_amt_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
-        if len(Month_pd) == 0:
+        if len(month_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Month_subject"],
                       body=in_config["Month_Body"])
             raise BusinessException("Month Column is empty")
 
-        elif len(Gr_Amt_pd) == 0:
+        elif len(gr_amt_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
             raise BusinessException("GR Amt Column is empty")
         else:
             pass
 
-        Month_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['Month'].notna()]
-        Gr_Amt_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
+        month_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['Month'].notna()]
+        gr_amt_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
-        if len(Month_pd_2) == 0:
+        if len(month_pd_2) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Month_subject"],
                       body=in_config["Month_Body"])
             raise BusinessException("Month Column is empty")
 
-        elif len(Gr_Amt_pd_2) == 0:
+        elif len(gr_amt_pd_2) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
             raise BusinessException("GR Amt Column is empty")
@@ -88,76 +122,83 @@ def purchasemonth(main_config, in_config, present_quarter_pd, previous_quarter_p
         # create Pivot Table Q4
         pivot_index = ["Month"]
         pivot_values = ["GR Amt.in loc.cur."]
-        pivot_PresentQuarter = pd.pivot_table(read_present_quarter_pd, index=pivot_index, values=pivot_values, aggfunc=numpy.sum, margins=True,
-                                              margins_name='Grand Total')
+        pivot_present_quarter = pd.pivot_table(read_present_quarter_pd, index=pivot_index, values=pivot_values, aggfunc=numpy.sum, margins=True,
+                                               margins_name='Grand Total')
 
         # Get Pivot Column Names
-        col_name = pivot_PresentQuarter.columns.values.tolist()
+        col_name = pivot_present_quarter.columns.values.tolist()
 
         # Rename Column
-        pivot_PresentQuarter = pivot_PresentQuarter.rename(columns={col_name[0]: main_config["PresentQuarterColumnName"]})
-        pivot_PresentQuarter = pivot_PresentQuarter.reset_index()
+        pivot_present_quarter = pivot_present_quarter.rename(columns={col_name[0]: main_config["PresentQuarterColumnName"]})
+        pivot_present_quarter = pivot_present_quarter.reset_index()
 
         # Sort based on month
         month_dict = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9,
                       'Oct': 10, 'Nov': 11, 'Dec': 12, 'Grand Total': 13}
 
-        pivot_PresentQuarter = pivot_PresentQuarter.sort_values('Month', key=lambda x: x.apply(lambda y: month_dict[y]))
-        pivot_PresentQuarter.reset_index(inplace=True, drop=True)
-
+        pivot_present_quarter = pivot_present_quarter.sort_values('Month', key=lambda x: x.apply(lambda y: month_dict[y]))
+        pivot_present_quarter.reset_index(inplace=True, drop=True)
 
         # Create Pivot Table Q3
         pivot_index = ["Month"]
         pivot_values = ["GR Amt.in loc.cur."]
-        pivot_PreviousQuarter = pd.pivot_table(read_previous_quarter_pd, index=pivot_index, values=pivot_values, aggfunc=numpy.sum, margins=True,
-                                               margins_name='Grand Total')
+        pivot_previous_quarter = pd.pivot_table(read_previous_quarter_pd, index=pivot_index, values=pivot_values, aggfunc=numpy.sum, margins=True,
+                                                margins_name='Grand Total')
 
         # Get Pivot Column Names
-        col_name = pivot_PreviousQuarter.columns.values.tolist()
+        col_name = pivot_previous_quarter.columns.values.tolist()
 
         # Rename Column
-        pivot_PreviousQuarter = pivot_PreviousQuarter.rename(columns={col_name[0]: main_config["PreviousQuarterColumnName"]})
+        pivot_previous_quarter = pivot_previous_quarter.rename(columns={col_name[0]: main_config["PreviousQuarterColumnName"]})
 
         # Remove Index
-        pivot_PreviousQuarter = pivot_PreviousQuarter.reset_index()
+        pivot_previous_quarter = pivot_previous_quarter.reset_index()
 
         # Sort based on month
-        pivot_PreviousQuarter = pivot_PreviousQuarter.sort_values('Month', key=lambda x: x.apply(lambda a: month_dict[a]))
-        pivot_PreviousQuarter.reset_index(inplace=True, drop=True)
+        pivot_previous_quarter = pivot_previous_quarter.sort_values('Month', key=lambda x: x.apply(lambda a: month_dict[a]))
+        pivot_previous_quarter.reset_index(inplace=True, drop=True)
 
         # Merge Pivot Sheets
-        pivot_sheet = pd.concat([pivot_PresentQuarter, pivot_PreviousQuarter], axis=1, sort=False)
+        month_comparatives_pd = pd.concat([pivot_present_quarter, pivot_previous_quarter], axis=1, sort=False)
         # Remove Empty Rows
-        pivot_sheet = pivot_sheet.replace(numpy.nan, '', regex=True)
+        month_comparatives_pd = month_comparatives_pd.replace(numpy.nan, '', regex=True)
 
         # Get Pivot Column Names
-        col_name = pivot_sheet.columns.values.tolist()
+        col_name = month_comparatives_pd.columns.values.tolist()
 
         # Delete row of Q4 and Q3 columns values as zero
-        pivot_sheet.drop(pivot_sheet.index[(pivot_sheet[col_name[1]] == 0) & (pivot_sheet[col_name[3]] == 0)])
+        month_comparatives_pd.drop(month_comparatives_pd.index[(month_comparatives_pd[col_name[1]] == 0) & (month_comparatives_pd[col_name[3]] == 0)])
 
         pd.options.mode.chained_assignment = None
 
         # Variance Formula
         variance_list = []
-        for index in pivot_sheet.index:
-            quarter_4 = (pivot_sheet[col_name[1]][index])
-            quarter_3 = (pivot_sheet[col_name[3]][index])
+        for index in month_comparatives_pd.index:
+            present_quarter_row_value = (month_comparatives_pd[col_name[1]][index])
+            previous_quarter_row_value = (month_comparatives_pd[col_name[3]][index])
 
-            if quarter_3 == 0:
+            if previous_quarter_row_value == 0:
                 variance = 1
             else:
-                variance = (quarter_4 - quarter_3) / quarter_3
+                variance = (present_quarter_row_value - previous_quarter_row_value) / previous_quarter_row_value
 
             variance_list.append(variance)
 
         # Create Variance Column
-        pivot_sheet['Variance'] = variance_list
+        month_comparatives_pd['Variance'] = variance_list
+        try:
+            # Log Sheet
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+                month_comparatives_pd.to_excel(writer, sheet_name=main_config["Output_Comparatives_Month_sheetname"], index=False, startrow=16)
+        except Exception as File_creation_error:
+            logging.error("Exception occurred while creating month wise comparatives sheet")
+            raise File_creation_error
 
-
-        # Log Sheet
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Comparatives_Month_sheetname"], index=False, startrow=16)
+        try:
+            month_comparatives_top_weight(month_comparatives_pd, main_config)
+        except Exception as month_comparatives_top_weight_error:
+            print("Exception occurred while creating month type wise concentration sheet: \n {0}".format(
+                month_comparatives_top_weight_error))
 
         # Load Sheet in openpyxl
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
@@ -170,14 +211,13 @@ def purchasemonth(main_config, in_config, present_quarter_pd, previous_quarter_p
 
         # Format Variance
         for cell in ws['E']:
-            cell.number_format = '0%'
+            cell.number_format = '0.0%'
 
         # Format Header
         format_font = Font(name="Calibri", size=11, color="000000", bold=True)
         font_style1 = Font(name='Cambria', size=12, color='002060', bold=False)
         font_style2 = Font(name='Cambria', size=12, color='002060', bold=True, underline='single')
         font_style3 = Font(name='Cambria', size=14, color='002060', bold=True)
-
 
         for c in ascii_lowercase:
             ws[c + "17"].font = format_font
@@ -270,7 +310,7 @@ def purchasemonth(main_config, in_config, present_quarter_pd, previous_quarter_p
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(V_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Purchase Type Wise Comparatives Process-",V_error )
+        print("Purchase Type Wise Comparatives Process-", V_error)
         return V_error
     except BusinessException as business_error:
         print("Month Type Wise Comparatives Process-", business_error)
@@ -287,7 +327,7 @@ def purchasemonth(main_config, in_config, present_quarter_pd, previous_quarter_p
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Month Type Wise Comparatives Process-",error)
+        print("Month Type Wise Comparatives Process-", error)
         return error
     except KeyError as key_error:
         subject = in_config["SystemError_Subject"]
@@ -311,5 +351,4 @@ main_config = {}
 present_quarter_pd = pd.DataFrame()
 previous_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(purchasemonth(main_config, config, present_quarter_pd, previous_quarter_pd))
-
+    print(purchase_month(main_config, config, present_quarter_pd, previous_quarter_pd))

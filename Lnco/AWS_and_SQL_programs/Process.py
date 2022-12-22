@@ -561,7 +561,7 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
         try:
             logging.info("Uploading output file to the AWS s3 bucket")
             aws_file_path = upload_file(output_file_path, aws_bucket_name, bucket_sub_folder_path,
-                                        file_name_to_be_saved_as_in_s3, aws_access_key, aws_secret_key)
+                                        output_file_name, aws_access_key, aws_secret_key)
             logging.info("Uploading the output file to AWS s3 bucket has been complete")
             config_main['output_file_path_in_aws'] = aws_file_path
         except Exception as output_file_upload_exception:

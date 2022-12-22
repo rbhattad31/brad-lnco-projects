@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 import numpy
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Side,  Border
+from openpyxl.styles import Font, PatternFill, Side, Border
 from string import ascii_lowercase
 from openpyxl.styles import Alignment
 from send_mail_reusable_task import send_mail
@@ -14,41 +14,45 @@ class BusinessException(Exception):
     pass
 
 
-def purchase_concentration_top_weight(purchase_concentration_dataframe):
+def purchase_concentration_top_weight(purchase_concentration_dataframe, main_config):
     # save grand total row to delete from datatable to sort
-    grand_total_row = purchase_concentration_dataframe.tail(1)
+    # print(purchase_concentration_dataframe)
+    # grand_total_row = purchase_concentration_dataframe.tail(1)
+    # print(grand_total_row)
     # delete last row from the grand_total_row
     purchase_concentration_dataframe.drop(purchase_concentration_dataframe.tail(1).index, inplace=True)
+    # print("Deleted Grand total row")
     # sort the dataframe using column name
-    purchase_concentration_dataframe.sort_values(by="Variance", ascending=False)
+    purchase_concentration_dataframe.sort_values(by="Variance", ascending=False, inplace=True)
+    # print(purchase_concentration_dataframe)
     purchase_concentration_weightage = pd.DataFrame(columns=purchase_concentration_dataframe.columns)
-    print("empty dataframe is created with columns")
-    print(purchase_concentration_weightage)
+    # print("empty dataframe is created with columns")
+    # print(purchase_concentration_weightage)
     sum_of_variance = 0
     for index, row in purchase_concentration_dataframe.iterrows():
-        print(int(row["Variance"]))
-        if sum_of_variance < 60:
-            sum_of_variance = sum_of_variance + int(row["Variance"])
-            print(sum_of_variance)
-            purchase_concentration_weightage.append(row)
-            print("appended row")
+        # print(float(row["Variance"]))
+        if sum_of_variance < 0.60:
+            sum_of_variance = sum_of_variance + float(row["Variance"])
+            # print(sum_of_variance)
+            purchase_concentration_weightage = purchase_concentration_weightage.append(row, ignore_index=True)
+            # print("appended row")
         else:
             break
-    purchase_concentration_weightage.append(grand_total_row)
-    print(purchase_concentration_weightage)
+    # print(purchase_concentration_weightage)
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="overlay") as writer:
+            purchase_concentration_weightage.to_excel(writer, sheet_name=main_config[
+                "Output_Concentration_Weightage_sheetname"], index=False, startrow=2, startcol=1)
+            print("purchase type concentration top weightage entries are logged in the output file")
 
-    # logic for dataframe descending order
-    # logic to select the condition met rows
-    # check if sheet exist - Concentration_weightage
-    # create if not exist
-    # get the last row number in the sheet
-    # 4th line from end, create file heading
-
-    pass
+    except Exception as File_creation_error:
+        logging.error("Exception occurred while creating purchase type wise concentration top weight table: \n {0}".format(
+                File_creation_error))
+        raise File_creation_error
 
 
 def purchase_type(main_config, in_config, present_quarter_pd):
-
     try:
 
         # Read Purchase Register Sheets
@@ -101,7 +105,8 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         # create Pivot Table Q4
         pivot_index = ["Valuation Class", "Valuation Class Text"]
         pivot_values = ["GR Amt.in loc.cur."]
-        pivot_present_quarter = pd.pivot_table(read_present_quarter_pd, index=pivot_index, values=pivot_values, aggfunc=numpy.sum, margins=True,
+        pivot_present_quarter = pd.pivot_table(read_present_quarter_pd, index=pivot_index, values=pivot_values,
+                                               aggfunc=numpy.sum, margins=True,
                                                margins_name='Grand Total', sort=True)
 
         # Remove Index
@@ -142,18 +147,17 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         pivot_sheet = pivot_sheet.rename(columns={col_name[2]: main_config["PresentQuarterColumnName"]})
         # Log Sheet
         try:
-            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-                pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Concentrations_Purchase_sheetname"], index=False,  startrow=16)
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                                if_sheet_exists="replace") as writer:
+                pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Concentrations_Purchase_sheetname"],
+                                     index=False, startrow=16)
         except Exception as File_creation_error:
             logging.error("Exception occurred while creating purchase type wise concentration sheet")
             raise File_creation_error
         try:
-            pass
-            # purchase_concentration_top_weight(pivot_sheet)
+            purchase_concentration_top_weight(pivot_sheet, main_config)
         except Exception as purchase_concentration_top_weight_error:
-            logging.error("Exception occurred while creating purchase type wise concentration top weight table")
-            raise purchase_concentration_top_weight_error
-
+            print("Exception occurred while creating purchase type wise concentration top weight table: \n {0}".format(purchase_concentration_top_weight_error))
         # Check outfile creation
         if os.path.exists(main_config["Output_File_Path"]):
             print("Type Wise Comparatives Logged")
@@ -199,8 +203,8 @@ def purchase_type(main_config, in_config, present_quarter_pd):
                 break
 
         # Merge Grand Total
-        ws.merge_cells('A'+str(m_row)+':B'+str(m_row))
-        cell = ws['A'+str(m_row)]
+        ws.merge_cells('A' + str(m_row) + ':B' + str(m_row))
+        cell = ws['A' + str(m_row)]
         cell.alignment = Alignment(horizontal='center', vertical='center')
 
         # Set Width
@@ -332,5 +336,4 @@ main_config = {}
 present_quarter_pd = pd.DataFrame()
 
 if __name__ == "__main__":
-    print(purchase_type(main_config, config, present_quarter_pd))
-
+    purchase_type(main_config, config, present_quarter_pd)
