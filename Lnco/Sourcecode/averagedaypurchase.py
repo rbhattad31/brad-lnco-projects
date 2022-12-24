@@ -5,9 +5,109 @@ import openpyxl
 import pandas as pd
 from send_mail_reusable_task import send_mail
 from openpyxl.styles import Border, Side, PatternFill, Alignment, Font
-
+import logging
 
 #  Function produce average day purchase output sheet
+
+
+def average_day_purchase_weightage(pivot_present_quarter, main_config):
+    average_day_purchase_weightage = pd.DataFrame(columns=pivot_present_quarter.columns)
+
+    lowest_negative_row = pivot_present_quarter.tail(1)
+    print(lowest_negative_row)
+    lowest_negative_percentage = float(lowest_negative_row['Percentage'])
+    print(lowest_negative_percentage)
+    highest_positive_row = pivot_present_quarter.head(1)
+    print(highest_positive_row)
+    highest_positive_percentage = float(highest_positive_row['Percentage'])
+    print(highest_positive_percentage)
+    lowest_positive_percentage = highest_positive_percentage
+    print(lowest_positive_percentage)
+    highest_negative_percentage = lowest_negative_percentage
+    print(highest_negative_percentage)
+    lowest_positive_row = highest_positive_row
+    highest_negative_row = lowest_negative_row
+    for index, row in pivot_present_quarter.iterrows():
+        percentage = float(row['Percentage'])
+        if 0 <= percentage < lowest_positive_percentage:
+            lowest_positive_percentage = percentage
+            lowest_positive_row = row
+        if 0 > percentage > highest_negative_percentage:
+            highest_negative_percentage = percentage
+            highest_negative_row = row
+    average_day_purchase_weightage = average_day_purchase_weightage.append(highest_positive_row, ignore_index=True)
+    average_day_purchase_weightage = average_day_purchase_weightage.append(lowest_positive_row, ignore_index=True)
+    average_day_purchase_weightage = average_day_purchase_weightage.append(highest_negative_row, ignore_index=True)
+    average_day_purchase_weightage = average_day_purchase_weightage.append(lowest_negative_row, ignore_index=True)
+    # print(average_day_purchase_weightage)
+
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="overlay") as writer:
+            average_day_purchase_weightage.to_excel(writer, sheet_name=main_config[
+                "Output_Average_Day_Weightage_Sheetname"], index=False, startrow=0, startcol=0)
+            print("Average day purchase highest and lowest entries are logged in the output file")
+
+    except Exception as File_creation_error:
+        logging.error("Exception occurred while creating Average day purchase highest and lowest entries sheet: \n {0}".format(
+            File_creation_error))
+        raise File_creation_error
+
+    # Load excel file
+    workbook = openpyxl.load_workbook(main_config['Output_File_Path'])
+
+    # Load sheet
+    worksheet = workbook[main_config['Output_Average_Day_Weightage_Sheetname']]
+
+    # Assign max row value to variable
+    m_row = worksheet.max_row
+
+    # Set column widths
+    for c in ascii_lowercase:
+        column_length = max(len(str(cell.value)) for cell in worksheet[c])
+        worksheet.column_dimensions[c].width = column_length * 1.25
+        if c == 'e':
+            break
+
+    # row 3 font format, fill color
+    fill_hawkes_blue_color = PatternFill(fgColor='d9e1f2', fill_type="solid")
+    cambria_11_sapphire_bold = Font(name='Cambria', size=11, color='002060', bold=True)
+    cambria_11_sapphire = Font(name='Cambria', size=11, color='002060', bold=False)
+
+    for row in worksheet["A1:E1"]:
+        for cell in row:
+            cell.fill = fill_hawkes_blue_color
+            cell.font = cambria_11_sapphire_bold
+
+    # Cell border implementation for the table
+    thin = Side(border_style="thin", color='b1c5e7')
+
+    for row in worksheet.iter_rows(min_row=1, min_col=1, max_row=worksheet.max_row, max_col=worksheet.max_column):
+        for cell in row:
+            cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
+
+    # font format
+    for row in worksheet.iter_rows(min_row=2, min_col=1, max_row=worksheet.max_row, max_col=worksheet.max_column):
+        for cell in row:
+            cell.font = cambria_11_sapphire
+
+    # Number format implementation
+    for cell in worksheet['A']:
+        cell.number_format = 'dd-mm-yyyy'
+
+    for cell in worksheet['B']:
+        cell.number_format = '#,###'
+
+    for cell in worksheet['C']:
+        cell.number_format = '#,###'
+
+    for cell in worksheet['D']:
+        cell.number_format = '#,###'
+
+    for cell in worksheet['E']:
+        cell.number_format = '000%'
+
+    workbook.save(main_config['Output_File_Path'])
 
 
 def average_day_purchase(main_config, in_config, present_quarter_pd):
@@ -26,7 +126,8 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
 
         # Column existence check
         if pd.Series(['GR Amt.in loc.cur.', 'GR Posting Date']).isin(read_present_quarter_pd.columns).all():
-            print("Columns exist")
+            # print("Columns exist")
+            pass
         else:
             print("One or more columns doesnt exist in the read_present_quarter_pd")
             raise KeyError
@@ -40,46 +141,46 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
             print('Column GR Posting Date is empty')
             raise ValueError
 
-        # # Column data format check
-        # if read_present_quarter_pd['GR Amt.in loc.cur.'].dtype == 'float64':
-        #     print("Type is float")
-        # else:
-        #     print("Column format not correct")
-        #     raise TypeError
-
-        # if read_present_quarter_pd['GR Posting Date'].dtype == 'datetime64[ns]':
-        #     print("Type is dd-mm-yyyy")
-        # else:
-        #     print("Column format not correct")
-        #     raise TypeError
-
         # Generating pivot table
-        pivot_q4 = pd.pivot_table(read_present_quarter_pd, values='GR Amt.in loc.cur.', index='GR Posting Date',
-                                  observed=True, sort=True, aggfunc='sum', margins=True, margins_name="Grand Total")
+        pivot_present_quarter = pd.pivot_table(read_present_quarter_pd, values='GR Amt.in loc.cur.',
+                                               index='GR Posting Date',
+                                               observed=True, sort=True, aggfunc='sum', margins=True,
+                                               margins_name="Grand Total")
 
         # Sort pivot table
-        pivot_q4 = pivot_q4.reset_index()
+        pivot_present_quarter = pivot_present_quarter.reset_index()
 
         # Store the last grand total value to variable
-        total_gr_amt = (pivot_q4.iloc[-1]['GR Amt.in loc.cur.'])
+        present_total_gr_amt = (pivot_present_quarter.iloc[-1]['GR Amt.in loc.cur.'])
 
         # Remove last row from pivot table
-        pivot_q4 = pivot_q4.iloc[:-1]
+        pivot_present_quarter = pivot_present_quarter.iloc[:-1]
 
         # Arithmetic operations
 
-        pivot_q4['Average'] = total_gr_amt / (len(pivot_q4))
-        pivot_q4['Variance'] = pivot_q4['Average'] - pivot_q4['GR Amt.in loc.cur.']
-        pivot_q4['Percentage'] = pivot_q4['Variance'] / pivot_q4['Average']
-        pivot_q4.columns = ['GR Posting Date', 'Amount as per purchase register', 'Average purchases', 'Variance',
-                            'Percentage']
+        pivot_present_quarter['Average'] = present_total_gr_amt / (len(pivot_present_quarter))
+        pivot_present_quarter['Variance'] = pivot_present_quarter['Average'] - pivot_present_quarter['GR Amt.in loc.cur.']
+        pivot_present_quarter['Percentage'] = pivot_present_quarter['Variance'] / pivot_present_quarter['Average']
+        pivot_present_quarter.columns = ['GR Posting Date', 'Amount as per purchase register', 'Average purchases',
+                                         'Variance','Percentage']
 
         # Sort pivot table based of percentage column in ascending order
-        pivot_q4.sort_values(by='Percentage', inplace=True)
+        pivot_present_quarter.sort_values(by='Percentage', ascending=False, inplace=True)
 
         # Save pivot table to Excel file
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-            pivot_q4.to_excel(writer, sheet_name=main_config['Output_Average_Day_Purchase_sheetname'], startrow=24, index=False)
+        try:
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                                if_sheet_exists="replace") as writer:
+                pivot_present_quarter.to_excel(writer, sheet_name=main_config['Output_Average_Day_Purchase_sheetname'],
+                                               startrow=24, index=False)
+        except Exception as File_creation_error:
+            logging.error("Exception occurred while creating average day purchases sheet")
+            raise File_creation_error
+        try:
+            average_day_purchase_weightage(pivot_present_quarter, main_config)
+        except Exception as average_day_high_low_entries_error:
+            print("Exception occurred while creating average day Highest and Least Values Table in excel sheet: \n {0}".format(
+                average_day_high_low_entries_error))
 
         #   Formatting and styling the Excel data
         # Load excel file
@@ -99,19 +200,19 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
                 break
 
         # Implement subtotal formula for max row values
-        worksheet['B24'] = '=SUBTOTAL(9,B26:B'+str(m_row)+')'
-        worksheet['C24'] = '=SUBTOTAL(9,C26:C'+str(m_row)+')'
-
+        worksheet['B24'] = '=SUBTOTAL(9,B26:B' + str(m_row) + ')'
+        worksheet['C24'] = '=SUBTOTAL(9,C26:C' + str(m_row) + ')'
 
         # Set font style variable configuration
-        font_style = Font(name='Cambria', size=11, color='002060', bold=True)
-        font_style1 = Font(name='Cambria', size=12, color='002060', bold=False)
-        font_style2 = Font(name='Cambria', size=12, color='002060', bold=True, underline='single')
-        font_style3 = Font(name='Cambria', size=14, color='002060', bold=True)
+        cambria_11_sapphire_bold = Font(name='Cambria', size=11, color='002060', bold=True)
+        cambria_12_sapphire = Font(name='Cambria', size=12, color='002060', bold=False)
+        cambria_12_sapphire_bold_underline = Font(name='Cambria', size=12, color='002060', bold=True, underline='single')
+        cambria_14_sapphire_bold = Font(name='Cambria', size=14, color='002060', bold=True)
 
         # Implement the configuration to appropriate rows
-        worksheet['B24'].font = font_style
-        worksheet['C24'].font = font_style
+        # Set Cambria to Total values above the table
+        worksheet['B24'].font = cambria_11_sapphire_bold
+        worksheet['C24'].font = cambria_11_sapphire_bold
 
         # Number format implementation
         for cell in worksheet['A']:
@@ -130,18 +231,13 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
             cell.number_format = '000%'
 
         # Cell color variable assignment
-        fill_cell = PatternFill(patternType='solid', fgColor='ffff00')
-        fill_color = PatternFill(fgColor='d9e1f2', fill_type="solid")
+        fill_hawkes_blue_color = PatternFill(fgColor='d9e1f2', fill_type="solid")
 
         # Cell color implementation for appropriate rows
         for row in worksheet["A25:E25"]:
             for cell in row:
-                cell.fill = fill_color
-                cell.font = font_style
-
-        for row in worksheet["A26:E28"]:
-            for cell in row:
-                cell.fill = fill_cell
+                cell.fill = fill_hawkes_blue_color
+                cell.font = cambria_11_sapphire_bold
 
         # Cell border implementation
         thin = Side(border_style="thin", color='b1c5e7')
@@ -150,7 +246,7 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
             for cell in row:
                 cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
 
-        for row in worksheet.iter_rows(min_row=27, min_col=1, max_row=worksheet.max_row, max_col=worksheet.max_column):
+        for row in worksheet.iter_rows(min_row=26, min_col=1, max_row=worksheet.max_row, max_col=worksheet.max_column):
             for cell in row:
                 cell.font = Font(name='Cambria', size=11, color='002060')
 
@@ -200,31 +296,31 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
         # Headers formatting and styling
         for row in worksheet.iter_rows(min_row=1, min_col=1, max_row=5, max_col=1):
             for cell in row:
-                cell.font = font_style3
+                cell.font = cambria_14_sapphire_bold
 
         for row in worksheet.iter_rows(min_row=7, min_col=1, max_row=7, max_col=1):
             for cell in row:
-                cell.font = font_style2
+                cell.font = cambria_12_sapphire_bold_underline
 
         for row in worksheet.iter_rows(min_row=10, min_col=1, max_row=10, max_col=1):
             for cell in row:
-                cell.font = font_style2
+                cell.font = cambria_12_sapphire_bold_underline
 
         for row in worksheet.iter_rows(min_row=13, min_col=1, max_row=13, max_col=1):
             for cell in row:
-                cell.font = font_style2
+                cell.font = cambria_12_sapphire_bold_underline
 
         for row in worksheet.iter_rows(min_row=8, min_col=1, max_row=8, max_col=1):
             for cell in row:
-                cell.font = font_style1
+                cell.font = cambria_12_sapphire
 
         for row in worksheet.iter_rows(min_row=11, min_col=1, max_row=11, max_col=1):
             for cell in row:
-                cell.font = font_style1
+                cell.font = cambria_12_sapphire
 
         for row in worksheet.iter_rows(min_row=14, min_col=1, max_row=16, max_col=1):
             for cell in row:
-                cell.font = font_style1
+                cell.font = cambria_12_sapphire
 
         # Remove Gridlines
         worksheet.sheet_view.showGridLines = False
@@ -239,7 +335,7 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
         for row in range(25, wb_sheet.nrows):
             for column in range(0, wb_sheet.ncols):
                 if wb_sheet.cell_value(row, column) == "":
-                    print('row', row+1, 'col', column+1, 'is empty')
+                    print('row', row + 1, 'col', column + 1, 'is empty')
                     raise RuntimeError
 
         wb = openpyxl.load_workbook(main_config['Output_File_Path'])
@@ -259,7 +355,7 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
         print("Close the excel file before execution")
         os.system('TASKKILL /F /IM excel.exe')
         print("Re executing...")
-        average_day_purchase(config)
+        average_day_purchase(main_config, main_config, present_quarter_pd)
         print("exception: ", PermissionError)
     except KeyError:
         print("Check with the input column names provided from the source file and program")
@@ -310,12 +406,8 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
         print("Look for incorrect syntax input")
         print("exception: ", SyntaxError)
     finally:
-            print("Process is over")
+        print("Process is over")
 
 
-config = {}
-main_config = {}
-present_quarter_pd = pd.DataFrame()
 if __name__ == "__main__":
-    print(average_day_purchase(main_config, config, present_quarter_pd))
-
+    pass
