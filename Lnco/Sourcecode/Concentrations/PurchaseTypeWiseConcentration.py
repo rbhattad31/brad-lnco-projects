@@ -51,6 +51,45 @@ def purchase_concentration_top_weight(purchase_concentration_dataframe, main_con
                 File_creation_error))
         raise File_creation_error
 
+    # Load excel file
+    workbook = openpyxl.load_workbook(main_config['Output_File_Path'])
+
+    # Load sheet
+    worksheet = workbook[main_config['Output_Concentration_Weightage_sheetname']]
+
+    # Set column widths
+    for column_letter in ['b', 'c', 'd', 'e']:
+        column_length = max(len(str(cell.value)) for cell in worksheet[column_letter])
+        worksheet.column_dimensions[column_letter].width = column_length * 1.25
+
+    # row 3 font format, fill color
+    cambria_11_black = Font(name='Calibri', size=11, color='000000', bold=False)
+    calibri_11_black_bold = Font(name="Calibri", size=11, color="000000", bold=True)
+    light_blue_solid_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
+    thin = Side(border_style="thin", color='b1c5e7')
+    thin_border = Border(top=thin, left=thin, right=thin, bottom=thin)
+
+    for row in worksheet["B3:E3"]:
+        for cell in row:
+            cell.fill = light_blue_solid_fill
+            cell.font = calibri_11_black_bold
+
+    max_row = len(purchase_concentration_weightage.index)
+    for row in worksheet["B" + str(3 + 1) + ":E" + str(max_row + 3)]:
+        for cell in row:
+            cell.font = cambria_11_black
+            cell.border = thin_border
+
+    # Number format implementation
+    for cell in worksheet['D']:
+        cell.number_format = "#,###,##"
+
+    # Format Variance
+    for cell in worksheet['E']:
+        cell.number_format = '0.0%'
+
+    workbook.save(main_config['Output_File_Path'])
+
 
 def purchase_type(main_config, in_config, present_quarter_pd):
     try:
@@ -180,25 +219,25 @@ def purchase_type(main_config, in_config, present_quarter_pd):
             cell.number_format = '0.0%'
 
         # Format Header
-        format_font = Font(name="Calibri", size=11, color="000000", bold=True)
+        calibri_11_black_bold = Font(name="Calibri", size=11, color="000000", bold=True)
         for c in ascii_lowercase:
-            ws[c + "17"].font = format_font
+            ws[c + "17"].font = calibri_11_black_bold
 
         # Format Footer
         m_row = ws.max_row
         for c in ascii_lowercase:
-            ws[c + str(m_row)].font = format_font
+            ws[c + str(m_row)].font = calibri_11_black_bold
 
         # Header Fill
-        format_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
+        light_blue_solid_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
         for c in ascii_lowercase:
-            ws[c + "17"].fill = format_fill
+            ws[c + "17"].fill = light_blue_solid_fill
             if c == 'd':
                 break
 
         # Footer Fill
         for c in ascii_lowercase:
-            ws[c + str(m_row)].fill = format_fill
+            ws[c + str(m_row)].fill = light_blue_solid_fill
             if c == 'd':
                 break
 
@@ -220,9 +259,9 @@ def purchase_type(main_config, in_config, present_quarter_pd):
             for cell in row:
                 cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
 
-        font_style1 = Font(name='Cambria', size=12, color='002060', bold=False)
-        font_style2 = Font(name='Cambria', size=12, color='002060', bold=True, underline='single')
-        font_style3 = Font(name='Cambria', size=14, color='002060', bold=True)
+        cambria_12_sapphire_no_bold = Font(name='Cambria', size=12, color='002060', bold=False)
+        cambria_12_sapphire_bold_underline = Font(name='Cambria', size=12, color='002060', bold=True, underline='single')
+        cambria_14_sapphire_bold = Font(name='Cambria', size=14, color='002060', bold=True)
 
         # Cell merge for headers implementation
         ws.merge_cells('A1:E1')
@@ -255,23 +294,23 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         # Headers formatting and styling
         for row in ws.iter_rows(min_row=1, min_col=1, max_row=5, max_col=1):
             for cell in row:
-                cell.font = font_style3
+                cell.font = cambria_14_sapphire_bold
 
         for row in ws.iter_rows(min_row=7, min_col=1, max_row=7, max_col=1):
             for cell in row:
-                cell.font = font_style2
+                cell.font = cambria_12_sapphire_bold_underline
 
         for row in ws.iter_rows(min_row=10, min_col=1, max_row=10, max_col=1):
             for cell in row:
-                cell.font = font_style2
+                cell.font = cambria_12_sapphire_bold_underline
 
         for row in ws.iter_rows(min_row=8, min_col=1, max_row=8, max_col=1):
             for cell in row:
-                cell.font = font_style1
+                cell.font = cambria_12_sapphire_no_bold
 
         for row in ws.iter_rows(min_row=11, min_col=1, max_row=12, max_col=1):
             for cell in row:
-                cell.font = font_style1
+                cell.font = cambria_12_sapphire_no_bold
 
         ws.sheet_view.showGridLines = False
 

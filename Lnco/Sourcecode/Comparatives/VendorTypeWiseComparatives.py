@@ -44,6 +44,61 @@ def vendor_comparatives_top_weight(vendor_comparatives_dataframe, main_config, p
             File_creation_error))
         raise File_creation_error
 
+    # Load excel file
+    workbook = openpyxl.load_workbook(main_config['Output_File_Path'])
+
+    # Load sheet
+    worksheet = workbook[main_config['Output_Comparatives_Weightage_sheetname']]
+
+    # Set column widths
+    for column_letter in ['x', 'y', 'z', 'aa', 'ab', 'ac']:
+        column_length = max(len(str(cell.value)) for cell in worksheet[column_letter])
+        worksheet.column_dimensions[column_letter].width = column_length * 1.25
+
+    # row 3 font format, fill color
+
+    calibri_11_black_bold = Font(name="Calibri", size=11, color="000000", bold=True)
+    light_blue_solid_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
+    thin = Side(border_style="thin", color='b1c5e7')
+    thin_border = Border(top=thin, left=thin, right=thin, bottom=thin)
+    cambria_11_black = Font(name='Calibri', size=11, color='000000', bold=False)
+
+    for row in worksheet["X3:AC3"]:
+        for cell in row:
+            cell.fill = light_blue_solid_fill
+            cell.font = calibri_11_black_bold
+
+    max_row = len(vendor_comparatives_weightage.index)
+    for row in worksheet["X" + str(3 + 1) + ":AC" + str(max_row + 3)]:
+        for cell in row:
+            cell.font = cambria_11_black
+            cell.border = thin_border
+
+    # Number format implementation
+    for cell in worksheet['Z']:
+        cell.number_format = "#,###,##"
+        if cell.value == 0:
+            cell.value = '-'
+            cell.alignment = Alignment(horizontal='center')
+
+    for cell in worksheet['AA']:
+        cell.number_format = "#,###,##"
+        if cell.value == 0:
+            cell.value = '-'
+            cell.alignment = Alignment(horizontal='center')
+
+    for cell in worksheet['AB']:
+        cell.number_format = "#,###,##"
+        if cell.value == 0:
+            cell.value = '-'
+            cell.alignment = Alignment(horizontal='center')
+
+    # Format Variance
+    for cell in worksheet['AC']:
+        cell.number_format = '0.0%'
+
+    workbook.save(main_config['Output_File_Path'])
+
 
 # Defining a Function
 def create_vendor_wise(main_config, in_config, present_quarter_pd, previous_quarter_pd):

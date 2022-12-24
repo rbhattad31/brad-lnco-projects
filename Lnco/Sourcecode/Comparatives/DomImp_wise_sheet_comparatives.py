@@ -43,6 +43,49 @@ def dom_imp_comparatives_top_weight(dom_imp_comparatives_dataframe, main_config)
             File_creation_error))
         raise File_creation_error
 
+    # Load excel file
+    workbook = openpyxl.load_workbook(main_config['Output_File_Path'])
+
+    # Load sheet
+    worksheet = workbook[main_config['Output_Comparatives_Weightage_sheetname']]
+
+    # Set column widths
+    for column_letter in ['s', 't', 'u', 'v']:
+        column_length = max(len(str(cell.value)) for cell in worksheet[column_letter])
+        worksheet.column_dimensions[column_letter].width = column_length * 1.25
+
+    # row 3 font format, fill color
+
+    calibri_11_black_bold = Font(name="Calibri", size=11, color="000000", bold=True)
+    light_blue_solid_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
+    thin = Side(border_style="thin", color='b1c5e7')
+    thin_border = Border(top=thin, left=thin, right=thin, bottom=thin)
+    cambria_11_black = Font(name='Calibri', size=11, color='000000', bold=False)
+
+    for row in worksheet["S3:V3"]:
+        for cell in row:
+            cell.fill = light_blue_solid_fill
+            cell.font = calibri_11_black_bold
+
+    max_row = len(dom_imp_comparatives_weightage.index)
+    for row in worksheet["S" + str(3 + 1) + ":V" + str(max_row + 3)]:
+        for cell in row:
+            cell.font = cambria_11_black
+            cell.border = thin_border
+
+    # Number format implementation
+    for cell in worksheet['T']:
+        cell.number_format = "#,###,##"
+
+    for cell in worksheet['U']:
+        cell.number_format = "#,###,##"
+
+    # Format Variance
+    for cell in worksheet['V']:
+        cell.number_format = '0.0%'
+
+    workbook.save(main_config['Output_File_Path'])
+
 
 def generate_domestic_and_import_wise(main_config, in_config, present_quarter_pd, previous_quarter_pd):
     try:

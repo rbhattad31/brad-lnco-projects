@@ -48,6 +48,46 @@ def month_concentration_top_weight(month_concentration_dataframe, main_config):
         logging.error("Exception occurred while creating purchase type wise concentration sheet")
         raise File_creation_error
 
+    # Load excel file
+    workbook = openpyxl.load_workbook(main_config['Output_File_Path'])
+
+    # Load sheet
+    worksheet = workbook[main_config['Output_Concentration_Weightage_sheetname']]
+
+    # Set column widths
+    for column_letter in ['h', 'i', 'j']:
+        column_length = max(len(str(cell.value)) for cell in worksheet[column_letter])
+        worksheet.column_dimensions[column_letter].width = column_length * 1.25
+
+    # row 3 font format, fill color
+
+    calibri_11_black_bold = Font(name="Calibri", size=11, color="000000", bold=True)
+    light_blue_solid_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
+    thin = Side(border_style="thin", color='b1c5e7')
+    thin_border = Border(top=thin, left=thin, right=thin, bottom=thin)
+    cambria_11_black = Font(name='Calibri', size=11, color='000000', bold=False)
+
+    for row in worksheet["H3:J3"]:
+        for cell in row:
+            cell.fill = light_blue_solid_fill
+            cell.font = calibri_11_black_bold
+
+    max_row = len(month_concentration_weightage.index)
+    for row in worksheet["H" + str(3 + 1) + ":J" + str(max_row + 3)]:
+        for cell in row:
+            cell.font = cambria_11_black
+            cell.border = thin_border
+
+    # Number format implementation
+    for cell in worksheet['I']:
+        cell.number_format = "#,###,##"
+
+    # Format Variance
+    for cell in worksheet['J']:
+        cell.number_format = '0.0%'
+
+    workbook.save(main_config['Output_File_Path'])
+
 
 def month_wise(main_config, in_config, present_quarter_pd):
     try:

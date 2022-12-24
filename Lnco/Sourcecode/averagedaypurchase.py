@@ -14,17 +14,17 @@ def average_day_purchase_weightage(pivot_present_quarter, main_config):
     average_day_purchase_weightage = pd.DataFrame(columns=pivot_present_quarter.columns)
 
     lowest_negative_row = pivot_present_quarter.tail(1)
-    print(lowest_negative_row)
+    # print(lowest_negative_row)
     lowest_negative_percentage = float(lowest_negative_row['Percentage'])
-    print(lowest_negative_percentage)
+    # print(lowest_negative_percentage)
     highest_positive_row = pivot_present_quarter.head(1)
-    print(highest_positive_row)
+    # print(highest_positive_row)
     highest_positive_percentage = float(highest_positive_row['Percentage'])
-    print(highest_positive_percentage)
+    # print(highest_positive_percentage)
     lowest_positive_percentage = highest_positive_percentage
-    print(lowest_positive_percentage)
+    # print(lowest_positive_percentage)
     highest_negative_percentage = lowest_negative_percentage
-    print(highest_negative_percentage)
+    # print(highest_negative_percentage)
     lowest_positive_row = highest_positive_row
     highest_negative_row = lowest_negative_row
     for index, row in pivot_present_quarter.iterrows():
@@ -47,6 +47,7 @@ def average_day_purchase_weightage(pivot_present_quarter, main_config):
             average_day_purchase_weightage.to_excel(writer, sheet_name=main_config[
                 "Output_Average_Day_Weightage_Sheetname"], index=False, startrow=0, startcol=0)
             print("Average day purchase highest and lowest entries are logged in the output file")
+            logging.info("Average day purchase highest and lowest entries are logged in the output file")
 
     except Exception as File_creation_error:
         logging.error("Exception occurred while creating Average day purchase highest and lowest entries sheet: \n {0}".format(
@@ -58,9 +59,6 @@ def average_day_purchase_weightage(pivot_present_quarter, main_config):
 
     # Load sheet
     worksheet = workbook[main_config['Output_Average_Day_Weightage_Sheetname']]
-
-    # Assign max row value to variable
-    m_row = worksheet.max_row
 
     # Set column widths
     for c in ascii_lowercase:
