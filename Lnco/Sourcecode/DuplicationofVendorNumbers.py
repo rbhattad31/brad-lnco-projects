@@ -109,13 +109,29 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
         # Delete row where vendor number columns values as zero
         pivot_sheet.drop(pivot_sheet.index[(pivot_sheet[col_name[0]] == 0)], inplace=True)
 
-        # Sort Table
-        pivot_sheet = pivot_sheet.sort_values(by='Vendor', ascending=True)
+        # Select only Duplicate Vendors and sort
+        duplicate_vendors_dataframe = pivot_sheet.loc[(pivot_sheet['Duplicate'] == 'Yes')]
+        duplicate_vendors_dataframe.sort_values(by='Vendor Name', ascending=True, inplace=True)
+        # print(duplicate_vendors_dataframe)
+        # Select only Single Vendors
+        single_vendors_dataframe = pivot_sheet.loc[(pivot_sheet['Duplicate'] == 'No')]
+        # print(single_vendors_dataframe)
+
+        vendor_duplication_dataframe = duplicate_vendors_dataframe.append(single_vendors_dataframe, ignore_index=True)
+
+        # # Sort Table
+        # print(pivot_sheet)
+        # pivot_sheet.sort_values(by='Vendor Code', ascending=True, inplace=True)
+        #
+        # # sort pivot table - by Vendor Code in ascending order, by Duplicate in Alphabetical order
+        # print(pivot_sheet)
+        # pivot_sheet.sort_values(by='Duplicate', ascending=False, inplace=True)
+        # print(pivot_sheet)
 
         # Log Sheet
         with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
                             if_sheet_exists="replace") as writer:
-            pivot_sheet.to_excel(writer, sheet_name=main_config["Output_Duplication_of_Vendor_sheetname"], index=False)
+            vendor_duplication_dataframe.to_excel(writer, sheet_name=main_config["Output_Duplication_of_Vendor_sheetname"], index=False)
 
         # Check outfile creation
         if os.path.exists(main_config["Output_File_Path"]):
@@ -131,17 +147,17 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
         ws = wb[main_config["Output_Duplication_of_Vendor_sheetname"]]
 
         # Header Fill
-        format_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
+        light_blue_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
         for c in ascii_lowercase:
-            ws[c + "1"].fill = format_fill
+            ws[c + "1"].fill = light_blue_fill
             if c == 'c':
                 break
 
         # Highlight row
-        format_fill = PatternFill(patternType='solid', fgColor='FFFF00')
+        yellow_fill = PatternFill(patternType='solid', fgColor='FFFF00')
         for cell in ws['d']:
             if cell.value == 'Yes':
-                ws['B' + str(cell.row)].fill = format_fill
+                ws['B' + str(cell.row)].fill = yellow_fill
 
         # Set Width
         for c in ascii_lowercase:
@@ -171,41 +187,41 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(file_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Duplication Process-", end="")
+        print("Duplication Process-", file_error)
         print("Please close the file")
         return file_error
     except FileNotFoundError as notfound_error:
         subject = in_config["FileNotFound_Subject"]
         body = in_config["FileNotFound_Body"]
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Duplication Process-", end="")
+        print("Duplication Process-", notfound_error)
         return notfound_error
     except BusinessException as business_error:
-        print("Duplication Process-", end="")
+        print("Duplication Process-", business_error)
         return business_error
     except ValueError as value_error:
         subject = in_config["SheetMiss_Subject"]
         body = in_config["SheetMiss_Body"]
         body = body.replace("ValueError +", str(value_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Duplication Process-", end="")
+        print("Duplication Process-", value_error)
         return value_error
     except TypeError as type_error:
-        print("Duplication Process-", end="")
+        print("Duplication Process-", type_error)
         return type_error
     except (OSError, ImportError, MemoryError, RuntimeError, Exception) as error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Duplication Process-", end="")
+        print("Duplication Process-", error)
         return error
     except KeyError as key_error:
         subject = in_config["SystemError_Subject"]
         body = in_config["SystemError_Body"]
         body = body.replace("SystemError +", str(key_error))
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"], subject=subject, body=body)
-        print("Duplication Process-", end="")
+        print("Duplication Process-", key_error)
         print("Please check the given keyword is correct")
         return key_error
 
