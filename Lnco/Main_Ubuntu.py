@@ -28,6 +28,7 @@ import Sourcecode.averagedaypurchase as averagedaypurchase
 import Sourcecode.SameMaterialPurchasesfromDVDP as smpdvdp
 import Sourcecode.Unit_Price_Comparsion as upc
 import Sourcecode.Inventory_Mapping as im
+import Sourcecode.SecurityCutoff as sc
 
 from send_mail_reusable_task import send_mail, send_mail_with_attachment
 
@@ -197,7 +198,7 @@ def process_execution(input_files,
             read_present_quarter_pd.columns.name = None
         read_present_quarter_pd = \
             read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
-
+        present_quarter_all_columns_dataframe = read_present_quarter_pd
         print(
             "Reading purchase register present quarter sheet is complete, creating new input file only with required columns")
         logging.info(
@@ -210,9 +211,15 @@ def process_execution(input_files,
                                                                   filtered_purchase_present_file_name)
         filtered_purchase_present_sheet_name = present_quarter_sheet_name
 
-        read_present_quarter_pd = purchase_present_quarter_file_creation(read_present_quarter_pd, json_data_list,
-                                                                         filtered_purchase_present_file_saving_path,
-                                                                         filtered_purchase_present_sheet_name)
+        purchase_present_quarter_file_creation_output = purchase_present_quarter_file_creation(config_main,
+                                                                                               read_present_quarter_pd,
+                                                                                               json_data_list,
+                                                                                               filtered_purchase_present_file_saving_path,
+                                                                                               filtered_purchase_present_sheet_name)
+
+        read_present_quarter_pd = purchase_present_quarter_file_creation_output[0]
+        config_main = purchase_present_quarter_file_creation_output[1]
+
         logging.info("new purchase register present quarter file is created in input folder in request ID folder")
 
         # reading previous quarter sheet
@@ -606,6 +613,22 @@ def process_execution(input_files,
     except Exception as e:
         print("Exception caught for Process: Inventory mapping code ", e)
 
+    print("*******************************************")
+
+    print("Executing Security Cutoff code")
+
+    try:
+        if env_file('Security_Cutoff') == 'YES':
+            read_present_quarter_pd_security_cutoff = present_quarter_all_columns_dataframe
+            sc.security_cutoff(config_main, read_present_quarter_pd_security_cutoff)
+
+        elif env_file('Inventory_Mapping') == 'NO':
+            print("Security Cutoff process is skipped as per env file")
+        else:
+            print("select YES/NO for Security Cutoff process in env file")
+            raise Exception("Error in Env file for Security Cutoff")
+    except Exception as e:
+        print("Exception caught for Process: Security Cutoff code ", e)
     print("*******************************************")
 
     final_output_file = openpyxl.load_workbook(output_file_path)

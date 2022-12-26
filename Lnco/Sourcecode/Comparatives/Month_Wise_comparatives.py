@@ -91,16 +91,17 @@ def purchase_month(main_config, in_config, present_quarter_pd, previous_quarter_
     try:
         read_present_quarter_pd = present_quarter_pd
 
-        # Create Month Column
+        # Create Month Column in present quarter sheet
         read_present_quarter_pd['GR Posting Date'] = pd.to_datetime(read_present_quarter_pd['GR Posting Date'], errors='coerce')
 
         read_present_quarter_pd['GR Posting Date'] = read_present_quarter_pd['GR Posting Date'].dt.month_name().str[:3]
 
         read_present_quarter_pd['Month'] = read_present_quarter_pd['GR Posting Date']
 
+        # Create Month Column in previous quarter sheet
+
         read_previous_quarter_pd = previous_quarter_pd
 
-        # Create Month Column
         read_previous_quarter_pd['GR Posting Date'] = pd.to_datetime(read_previous_quarter_pd['GR Posting Date'], errors='coerce')
         read_previous_quarter_pd['GR Posting Date'] = read_previous_quarter_pd['GR Posting Date'].dt.month_name().str[:3]
         read_previous_quarter_pd['Month'] = read_previous_quarter_pd['GR Posting Date']
@@ -257,18 +258,18 @@ def purchase_month(main_config, in_config, present_quarter_pd, previous_quarter_
             cell.number_format = '0.0%'
 
         # Format Header
-        format_font = Font(name="Calibri", size=11, color="000000", bold=True)
-        font_style1 = Font(name='Cambria', size=12, color='002060', bold=False)
-        font_style2 = Font(name='Cambria', size=12, color='002060', bold=True, underline='single')
-        font_style3 = Font(name='Cambria', size=14, color='002060', bold=True)
+        calibri_11_black_bold = Font(name="Calibri", size=11, color="000000", bold=True)
+        cambria_12_sapphire = Font(name='Cambria', size=12, color='002060', bold=False)
+        cambria_12_sapphire_bold_underline = Font(name='Cambria', size=12, color='002060', bold=True, underline='single')
+        cambria_14_sapphire_bold = Font(name='Cambria', size=14, color='002060', bold=True)
 
         for c in ascii_lowercase:
-            ws[c + "17"].font = format_font
+            ws[c + "17"].font = calibri_11_black_bold
 
         # Format Footer
         m_row = ws.max_row
         for c in ascii_lowercase:
-            ws[c + str(m_row)].font = format_font
+            ws[c + str(m_row)].font = calibri_11_black_bold
 
         # Header Fill
         format_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
@@ -318,23 +319,23 @@ def purchase_month(main_config, in_config, present_quarter_pd, previous_quarter_
         # Headers formatting and styling
         for row in ws.iter_rows(min_row=1, min_col=1, max_row=5, max_col=1):
             for cell in row:
-                cell.font = font_style3
+                cell.font = cambria_14_sapphire_bold
 
         for row in ws.iter_rows(min_row=7, min_col=1, max_row=7, max_col=1):
             for cell in row:
-                cell.font = font_style2
+                cell.font = cambria_12_sapphire_bold_underline
 
         for row in ws.iter_rows(min_row=10, min_col=1, max_row=10, max_col=1):
             for cell in row:
-                cell.font = font_style2
+                cell.font = cambria_12_sapphire_bold_underline
 
         for row in ws.iter_rows(min_row=8, min_col=1, max_row=8, max_col=1):
             for cell in row:
-                cell.font = font_style1
+                cell.font = cambria_12_sapphire
 
         for row in ws.iter_rows(min_row=11, min_col=1, max_row=12, max_col=1):
             for cell in row:
-                cell.font = font_style1
+                cell.font = cambria_12_sapphire
 
         ws.sheet_view.showGridLines = False
         print(wb.sheetnames)

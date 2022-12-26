@@ -119,15 +119,6 @@ def vendor_numbers_duplication(main_config, in_config, vendor_file_location, ven
 
         vendor_duplication_dataframe = duplicate_vendors_dataframe.append(single_vendors_dataframe, ignore_index=True)
 
-        # # Sort Table
-        # print(pivot_sheet)
-        # pivot_sheet.sort_values(by='Vendor Code', ascending=True, inplace=True)
-        #
-        # # sort pivot table - by Vendor Code in ascending order, by Duplicate in Alphabetical order
-        # print(pivot_sheet)
-        # pivot_sheet.sort_values(by='Duplicate', ascending=False, inplace=True)
-        # print(pivot_sheet)
-
         # Log Sheet
         with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
                             if_sheet_exists="replace") as writer:

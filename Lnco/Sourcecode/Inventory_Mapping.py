@@ -186,10 +186,14 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         # print(mb51_sheet_sum)
 
         # Creating Output File
-        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
-                            if_sheet_exists="replace") as writer:
-            inventory_mapping_file.to_excel(writer, sheet_name=main_config["Output_Inventory_Mapping_Sheetname"],
-                                            index=False, startrow=9)
+        try:
+            with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                                if_sheet_exists="replace") as writer:
+                inventory_mapping_file.to_excel(writer, sheet_name=main_config["Output_Inventory_Mapping_Sheetname"],
+                                                index=False, startrow=9)
+        except Exception as File_creation_error:
+            logging.error("Exception occurred while creating inventory mapping sheet")
+            raise File_creation_error
 
         # Opening and Reading Output File.
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
