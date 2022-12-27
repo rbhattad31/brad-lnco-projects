@@ -15,6 +15,58 @@ class BusinessException(Exception):
     pass
 
 
+def inventory_mapping_business_exception(inventory_mapping_file, main_config):
+    inventory_mapping_columns_list = inventory_mapping_file.columns.tolist()
+    inventory_mapping_exception_percentage = main_config['Inventory_mapping_exception_percentage'] / 100
+    inventory_mapping_business_exception_pd = inventory_mapping_file.loc[
+        inventory_mapping_file['Variance'] >= inventory_mapping_exception_percentage, inventory_mapping_columns_list]
+    # print(inventory_mapping_business_exception_pd)
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="replace") as writer:
+            inventory_mapping_business_exception_pd.to_excel(writer, sheet_name=main_config[
+                "Output_inventory_mapping_exceptions_sheetname"], index=False, startrow=1)
+
+    except Exception as File_creation_error:
+        logging.error("Exception occurred while creating inventory mapping business exceptions sheet")
+        raise File_creation_error
+
+    # Opening and Reading Output File.
+    workbook = openpyxl.load_workbook(main_config["Output_File_Path"])
+    worksheet = workbook[main_config["Output_inventory_mapping_exceptions_sheetname"]]
+
+    # Adding Background Color
+    light_blue_fill = PatternFill(patternType="solid", fgColor="ADD8E6")
+    yellow_fill = PatternFill("solid", fgColor="ffff00")
+    for j in ascii_uppercase:
+        worksheet[j + "2"].fill = light_blue_fill
+        if j == 'E':
+            break
+    worksheet["C2"].fill = yellow_fill
+
+    # # Adding Auto Filter Option
+    full_range = "A2:E" + str(worksheet.max_row)
+    worksheet.auto_filter.ref = full_range
+
+    # Auto Width Setting
+    for c in ascii_uppercase:
+        column_length = max(len(str(cell.value)) for cell in worksheet[c])
+        worksheet.column_dimensions[c].width = column_length * 1.5
+        if c == 'E':
+            break
+
+    for cell in worksheet['B']:
+        cell.number_format = '#,###.##'
+    for cell in worksheet['C']:
+        cell.number_format = '#,###.##'
+    for cell in worksheet['E']:
+        cell.number_format = '0.0%'
+
+    # Saving the File
+    print(workbook.sheetnames)
+    workbook.save(main_config["Output_File_Path"])
+
+
 def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, mb51_file_location, mb51_sheet_name,
                                    json_data_list):
     try:
@@ -60,6 +112,7 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
             pass
 
         read_excel_data = read_excel_data[['GR Document Number', 'GR Qty']]
+
         pivot1_df = pd.pivot_table(read_excel_data, index=["GR Document Number"],
                                    values="GR Qty",
                                    aggfunc=numpy.sum)
@@ -108,7 +161,7 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
             raise BusinessException("Sheet is empty")
 
         mb51_sheet_col = mb51_pd.columns.values.tolist()
-        for col in ["Material Document", "Qty in unit of entry"]:
+        for col in ["Material Document", "Qty in unit of entry", "Movement type"]:
             if col not in mb51_sheet_col:
                 subject = in_config["MB51_ColumnMiss_Subject"]
                 body = in_config["MB51_ColumnMiss_Body"]
@@ -121,7 +174,7 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         # Filter Rows
         material_document_pd = mb51_pd[mb51_pd['Material Document'].notna()]
         qty_unit_of_entry_pd = mb51_pd[mb51_pd['Qty in unit of entry'].notna()]
-
+        movement_type_pd = mb51_pd[mb51_pd['Movement type'].notna()]
         if len(material_document_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Material_Document_subject"],
@@ -133,13 +186,32 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
                       subject=in_config["Qty_unit_of_entry_Subject"],
                       body=in_config["Qty_unit_of_entry_Body"])
             raise BusinessException("Qty in unit of entry Column is empty")
+        elif len(movement_type_pd) == 0:
+            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
+                      subject=in_config["Movement Type Subject"],
+                      body=in_config["Movement Type Body"])
+            raise BusinessException("Movement Type Column is empty")
         else:
             pass
 
         # Taking Required Column to create pivot table
-        mb51_pd = mb51_pd[['Material Document', 'Qty in unit of entry']]
+        mb51_pd = mb51_pd[['Material Document', 'Qty in unit of entry', 'Movement type']]
+        # print(mb51_pd)
+        # write logic to filter only
+        movement_types_list = main_config['MB51_Movement_types_list']
+        # print(movement_types_list)
+        # print(type(movement_types_list))
+        # mb51_data_with_movement_type = pd.DataFrame(columns=mb51_pd.columns.values.tolist())
+        # for index, row in mb51_pd.iterrows():
+        #     if str(row['Movement type']) in movement_types_list:
+        #         mb51_data_with_movement_type = mb51_data_with_movement_type.append(row)
+        movement_types_list = movement_types_list.strip('][').split(',')
+        movement_types_list = [int(item.strip()) for item in movement_types_list]
+        # print(movement_types_list)
+        mb51_data_with_movement_type = mb51_pd[mb51_pd['Movement type'].isin(movement_types_list)]
+        # print(mb51_data_with_movement_type)
 
-        pivot2_df = pd.pivot_table(mb51_pd, index=["Material Document"],
+        pivot2_df = pd.pivot_table(mb51_data_with_movement_type, index=["Material Document"],
                                    values="Qty in unit of entry",
                                    aggfunc=numpy.sum)
         pivot2_df = pivot2_df.reset_index()
@@ -149,9 +221,9 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         # print(pivot2_df)
 
         # Merging 2 Pivots
-        merge_pd = pd.merge(pivot1_df, pivot2_df, how="outer", on=["GR Document Number"])
-        # print("at merging")
-        # print(merge_pd.head(10))
+        merge_pd = pd.merge(pivot1_df, pivot2_df, how="outer", on=["GR Document Number"]).fillna(0)
+        # print(merge_pd)
+
         columns_list = merge_pd.columns.values.tolist()
 
         # create a new column - Success
@@ -164,9 +236,9 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         # variance formula for index
         for index in merge_pd.index:
             present_quarter = merge_pd[columns_list[1]][index]
-            previous_quarter = merge_pd[columns_list[2]][index]
+            mb51 = merge_pd[columns_list[2]][index]
 
-            if present_quarter == previous_quarter:
+            if round(present_quarter, 2) == round(mb51, 2):
                 check = True
             else:
                 check = False
@@ -185,6 +257,20 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         mb51_sheet_sum = inventory_mapping_file[in_config["Rename_Column3"]].sum()
         # print(mb51_sheet_sum)
 
+        # create variance column
+        inventory_mapping_file['Variance'] = 0.0
+        columns = inventory_mapping_file.columns.tolist()
+        # variance formula for index
+        for index in inventory_mapping_file.index:
+            present_quarter_row_value = inventory_mapping_file[columns[1]][index]
+            mb51_row_value = inventory_mapping_file[columns[2]][index]
+
+            if present_quarter_row_value == 0:
+                variance = 0
+            else:
+                variance = (present_quarter_row_value - mb51_row_value) / present_quarter_row_value
+            inventory_mapping_file['Variance'][index] = variance
+        # print(inventory_mapping_file)
         # Creating Output File
         try:
             with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
@@ -195,33 +281,39 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
             logging.error("Exception occurred while creating inventory mapping sheet")
             raise File_creation_error
 
+        try:
+            inventory_mapping_business_exception(inventory_mapping_file, main_config)
+        except Exception as inventory_mapping_business_exception_error:
+            print("Exception occurred while creating inventory mapping business exception entries sheet: \n {0}".format(
+                inventory_mapping_business_exception_error))
+
         # Opening and Reading Output File.
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         ws = wb[main_config["Output_Inventory_Mapping_Sheetname"]]
 
         # Header
         font_style = Font(name="Cambria", size=12, bold=True, color="000000")
-        for i in ascii_uppercase:
-            ws[i + "1"].font = font_style
+        # for i in ascii_uppercase:
+        #     ws[i + "1"].font = font_style
 
         # Adding Background Color
         fill_pattern = PatternFill(patternType="solid", fgColor="ADD8E6")
 
         for j in ascii_uppercase:
             ws[j + "10"].fill = fill_pattern
-            if j == 'D':
+            if j == 'E':
                 break
         ws["C10"].fill = PatternFill("solid", fgColor="ffff00")
 
         # # Adding Auto Filter Option
-        full_range = "A10:D" + str(ws.max_row)
+        full_range = "A10:E" + str(ws.max_row)
         ws.auto_filter.ref = full_range
 
         # Auto Width Setting
         for c in ascii_uppercase:
             column_length = max(len(str(cell.value)) for cell in ws[c])
             ws.column_dimensions[c].width = column_length * 1.5
-            if c == 'D':
+            if c == 'E':
                 break
 
         # Passing Column Values
@@ -235,6 +327,13 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         # Font-style
         ws['B9'].font = font_style
         ws['C9'].font = font_style
+
+        for cell in ws['B']:
+            cell.number_format = '#,###.##'
+        for cell in ws['C']:
+            cell.number_format = '#,###.##'
+        for cell in ws['E']:
+            cell.number_format = '0.0%'
 
         # Saving the File
         print(wb.sheetnames)

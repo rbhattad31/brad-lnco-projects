@@ -114,8 +114,8 @@ def purchase_present_quarter_file_creation(config_main, purchase_present_client_
 
         # Below 4 columns are int datatype and converting them from Object to int datatype.
         # and raise exception if contains any data rather than numbers.
-        purchase_present_new_dataframe[["Plant", "GR Document Number", "Valuation Class", "GR Qty"]] = \
-            purchase_present_new_dataframe[["Plant", "GR Document Number", "Valuation Class", "GR Qty"]].fillna(
+        purchase_present_new_dataframe[["Plant", "GR Document Number", "Valuation Class"]] = \
+            purchase_present_new_dataframe[["Plant", "GR Document Number", "Valuation Class"]].fillna(
                 0).astype(int, errors='raise')
 
         # Below 4 datatypes are object when read from excel, converting back to String, raises exception if not suitable datatype is found
@@ -133,8 +133,8 @@ def purchase_present_quarter_file_creation(config_main, purchase_present_client_
             '').astype(str, errors='ignore')
 
         # Gr amount in loc cur & Unit price - float datatype and can have nan values, replace them with 0
-        purchase_present_new_dataframe[["GR Amt.in loc.cur.", "Unit Price"]] = purchase_present_new_dataframe[
-            ["GR Amt.in loc.cur.", "Unit Price"]].fillna(0).astype(float, errors='ignore')
+        purchase_present_new_dataframe[["GR Amt.in loc.cur.", "Unit Price", "GR Qty"]] = purchase_present_new_dataframe[
+            ["GR Amt.in loc.cur.", "Unit Price", "GR Qty"]].fillna(0).astype(float, errors='ignore')
 
         # print(purchase_present_new_dataframe.dtypes.tolist())
         logging.info("purchase register previous quarter datatypes are changed successfully ")
