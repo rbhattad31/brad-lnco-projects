@@ -92,17 +92,69 @@ def purchase_comparatives_top_weight(purchase_comparatives_dataframe, main_confi
     workbook.save(main_config['Output_File_Path'])
 
 
+def major_vendor_analysis(main_config, present_quarter_final_pivot_pd, present_quarter_pd, previous_quarter_pd):
+    present_quarter_columns_list = present_quarter_pd.columns.tolist()
+    print(present_quarter_columns_list)
+
+    for index, row in present_quarter_final_pivot_pd.iterrows():
+        print(row[0])
+        print(row[1])
+        if row[2] == 0 or row[1] == 0:
+            continue
+        # temp_present_quarter_pd = pd.DataFrame(columns=present_quarter_columns_list)
+        # print(temp_present_quarter_pd)
+        temp_present_quarter_pd = present_quarter_pd[present_quarter_pd['Valuation Class Text'].isin([row[1]])]
+        # print(temp_present_quarter_pd)
+        temp_present_quarter_pd = pd.pivot_table(temp_present_quarter_pd,
+                                                 index=["Valuation Class", "Valuation Class Text", "Vendor Name"],
+                                                 values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=False)
+        # print(temp_present_quarter_pd)
+        temp_present_quarter_pd.sort_values(by="GR Amt.in loc.cur.", ascending=False, inplace=True)
+        # print(temp_present_quarter_pd)
+        temp_present_quarter_pd = temp_present_quarter_pd.head(5)
+        # print(temp_present_quarter_pd)
+        temp_present_quarter_pd.reset_index(inplace=True)
+
+        print(temp_present_quarter_pd)
+        temp_previous_quarter_pd = previous_quarter_pd[previous_quarter_pd['Valuation Class Text'].isin([row[1]])]
+        print(temp_previous_quarter_pd)
+        for index_temp, row_temp in temp_present_quarter_pd:
+            temp_previous_vendor_name = row_temp[2]
+            print(temp_previous_vendor_name)
+            temp_previous_quarter_pd = temp_previous_quarter_pd[temp_previous_quarter_pd["Vendor Name"]].isin(
+                [temp_previous_vendor_name])
+            print(temp_previous_quarter_pd)
+            temp_previous_quarter_pd = pd.pivot_table(temp_previous_quarter_pd,
+                                                      index=["Valuation Class", "Valuation Class Text", "Vendor Name"],
+                                                      values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=False)
+            print(temp_previous_quarter_pd)
+            temp_previous_quarter_pd.reset_index(inplace=True)
+            print(temp_previous_quarter_pd)
+
+        # filter present quarter pd with
+        pass
+
+    major_vendor_analysis_pd = pd.DataFrame()
+    try:
+        with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
+                            if_sheet_exists="replace") as writer:
+            major_vendor_analysis_pd.to_excel(writer, sheet_name=main_config[
+                "Output_Major_Vendor_analysis"], index=False, startrow=1)
+
+    except Exception as File_creation_error:
+        logging.error("Exception occurred while creating Major Vendor analysis sheet")
+        raise File_creation_error
+
+
 # Defining a Function
 def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previous_quarter_pd):
     try:
         # Read Purchase Register Sheets
         read_present_quarter_pd = present_quarter_pd
-        read_present_quarter_pd = read_present_quarter_pd.loc[:,
-                                  ~read_present_quarter_pd.columns.duplicated(keep='first')]
+        # read_present_quarter_pd = read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
 
         read_previous_quarter_pd = previous_quarter_pd
-        read_previous_quarter_pd = read_previous_quarter_pd.loc[:,
-                                   ~read_previous_quarter_pd.columns.duplicated(keep='first')]
+        # read_previous_quarter_pd = read_previous_quarter_pd.loc[:, ~read_previous_quarter_pd.columns.duplicated(keep='first')]
 
         # Check Exception
         if read_present_quarter_pd.shape[0] == 0 or read_previous_quarter_pd.shape[0] == 0:
@@ -111,9 +163,9 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
                       body=in_config["Body_mail"])
             raise BusinessException("Input Sheet Data is empty")
 
-        PreviousQuarterSheet_col = read_previous_quarter_pd.columns.values.tolist()
+        previous_quarter_columns_list = read_previous_quarter_pd.columns.values.tolist()
         for col in ["Valuation Class", "Valuation Class Text", "GR Amt.in loc.cur."]:
-            if col not in PreviousQuarterSheet_col:
+            if col not in previous_quarter_columns_list:
                 subject = in_config["ColumnMiss_Subject"]
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
@@ -122,9 +174,9 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
                           body=body)
                 raise BusinessException(col + " Column is missing")
 
-        PresentQuarterSheetColumns = read_present_quarter_pd.columns.values.tolist()
+        present_quarter_columns_list = read_present_quarter_pd.columns.values.tolist()
         for col in ["Valuation Class", "Valuation Class Text", "GR Amt.in loc.cur."]:
-            if col not in PresentQuarterSheetColumns:
+            if col not in present_quarter_columns_list:
                 subject = in_config["ColumnMiss_Subject"]
                 body = in_config["ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
@@ -134,23 +186,24 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
                 raise BusinessException(col + " Column is missing")
 
         # Filter Rows
-        Valuation_pd = read_present_quarter_pd[read_present_quarter_pd['Valuation Class'].notna()]
-        Valuation_Text_pd = read_present_quarter_pd[read_present_quarter_pd['Valuation Class Text'].notna()]
-        Gr_Amt_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
+        present_valuation_class_pd = read_present_quarter_pd[read_present_quarter_pd['Valuation Class'].notna()]
+        present_valuation_class_text_pd = read_present_quarter_pd[
+            read_present_quarter_pd['Valuation Class Text'].notna()]
+        present_gr_amount_pd = read_present_quarter_pd[read_present_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
-        if len(Valuation_pd) == 0:
+        if len(present_valuation_class_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Valuation Class_subject"],
                       body=in_config["Valuation Class_Body"])
             raise BusinessException("Valuation Class Column is empty")
 
-        elif len(Valuation_Text_pd) == 0:
+        elif len(present_valuation_class_text_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Valuation Class Text_Subject"],
                       body=in_config["Valuation Class Text_Body"])
             raise BusinessException("Valuation Class Text Column is empty")
 
-        elif len(Gr_Amt_pd) == 0:
+        elif len(present_gr_amount_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
@@ -158,23 +211,24 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
         else:
             pass
 
-        Valuation_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['Valuation Class'].notna()]
-        Valuation_Text_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['Valuation Class Text'].notna()]
-        Gr_Amt_pd_2 = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
+        previous_valuation_class_pd = read_previous_quarter_pd[read_previous_quarter_pd['Valuation Class'].notna()]
+        previous_valuation_class_text_pd = read_previous_quarter_pd[
+            read_previous_quarter_pd['Valuation Class Text'].notna()]
+        previous_gr_amount_pd = read_previous_quarter_pd[read_previous_quarter_pd['GR Amt.in loc.cur.'].notna()]
 
-        if len(Valuation_pd_2) == 0:
+        if len(previous_valuation_class_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Valuation Class_subject"],
                       body=in_config["Valuation Class_Body"])
             raise BusinessException("Valuation Class Column is empty")
 
-        elif len(Valuation_Text_pd_2) == 0:
+        elif len(previous_valuation_class_text_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Valuation Class Text_Subject"],
                       body=in_config["Valuation Class Text_Body"])
             raise BusinessException("Valuation Class Text Column is empty")
 
-        elif len(Gr_Amt_pd_2) == 0:
+        elif len(previous_gr_amount_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["Gr Amt_Subject"],
                       body=in_config["Gr Amt_Body"])
@@ -183,28 +237,26 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
             pass
 
         # create pivot table
-        purchase_type_wise_pd = pd.pivot_table(read_present_quarter_pd,
-                                               index=["Valuation Class", "Valuation Class Text"],
-                                               values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=True,
-                                               margins_name="Grand Total")
-
-        # reset "indices created during pivot table creation" - for merging
-        purchase_type_wise_pd = purchase_type_wise_pd.reset_index()
-        # print(purchase_type_wise_pd)
-        # print(purchase_type_wise_pd.dtypes)
-        # read previous quarters final working file - pd will be replaced with Nan in any blank cells
-        previous_quarter_final_file_pd = pd.pivot_table(read_previous_quarter_pd,
+        present_quarter_final_pivot_pd = pd.pivot_table(read_present_quarter_pd,
                                                         index=["Valuation Class", "Valuation Class Text"],
                                                         values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=True,
                                                         margins_name="Grand Total")
 
+        # reset "indices created during pivot table creation" - for merging
+        present_quarter_final_pivot_pd = present_quarter_final_pivot_pd.reset_index()
+
+        # read previous quarters final working file - pd will be replaced with Nan in any blank cells
+        previous_quarter_final_pivot_pd = pd.pivot_table(read_previous_quarter_pd,
+                                                         index=["Valuation Class", "Valuation Class Text"],
+                                                         values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=True,
+                                                         margins_name="Grand Total")
+
         # replace Nan with blank
-        previous_quarter_final_file_pd = previous_quarter_final_file_pd.replace(numpy.nan, '', regex=True)
-        previous_quarter_final_file_pd = previous_quarter_final_file_pd.reset_index()
-        # print(previous_quarter_final_file_pd)
-        # print(previous_quarter_final_file_pd.dtypes)
+        previous_quarter_final_pivot_pd = previous_quarter_final_pivot_pd.replace(numpy.nan, '', regex=True)
+        previous_quarter_final_pivot_pd = previous_quarter_final_pivot_pd.reset_index()
+
         # merging present and previous quarter purchase type wise data -  pd will be replaced with Nan in any blank cells
-        merge_pd = pd.merge(purchase_type_wise_pd, previous_quarter_final_file_pd, how="outer",
+        merge_pd = pd.merge(present_quarter_final_pivot_pd, previous_quarter_final_pivot_pd, how="outer",
                             on=["Valuation Class", "Valuation Class Text"])
 
         # print(merge_pd)
@@ -212,14 +264,14 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
         merge_pd = merge_pd.replace(numpy.nan, 0, regex=True)
         # print(merge_pd)
 
-        Col_List = merge_pd.columns.values.tolist()
+        merge_pd_column_list = merge_pd.columns.values.tolist()
         # returns as ['Valuation Class', 'Valuation Class Text', 'GR Amt.in loc.cur.', 'Previous Quarter']
 
         # dropping columns present and previous quarters both have values as zero
-        # print(merge_pd[[Col_List[2], Col_List[3]]])
-        merge_pd.drop(merge_pd.index[(merge_pd[Col_List[2]] == 0) & (merge_pd[Col_List[3]] == 0)],
-                      inplace=True)
-        # print(merge_pd[[Col_List[2], Col_List[3]]])
+        merge_pd.drop(
+            merge_pd.index[(merge_pd[merge_pd_column_list[2]] == 0) & (merge_pd[merge_pd_column_list[3]] == 0)],
+            inplace=True)
+
         # create a new column - Success
         merge_pd['Variance'] = 0
         # print(merge_pd)
@@ -227,8 +279,8 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
 
         # variance formula implementation using index
         for index in merge_pd.index:
-            present_quarter_row_value = merge_pd[Col_List[2]][index]
-            previous_quarter_row_value = merge_pd[Col_List[3]][index]
+            present_quarter_row_value = merge_pd[merge_pd_column_list[2]][index]
+            previous_quarter_row_value = merge_pd[merge_pd_column_list[3]][index]
             if previous_quarter_row_value == 0:
                 variance = 1
             else:
@@ -236,20 +288,20 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
             merge_pd['Variance'][index] = variance
 
         # copy present quarter Amount column Grand total, set it as zero, sort the data frame and reassign the value.
-        grand_total = merge_pd[Col_List[2]].values[-1]
-        merge_pd[Col_List[2]].values[-1] = 0
+        grand_total = merge_pd[merge_pd_column_list[2]].values[-1]
+        merge_pd[merge_pd_column_list[2]].values[-1] = 0
 
-        merge_pd[Col_List[2]].values[-1] = grand_total
+        merge_pd[merge_pd_column_list[2]].values[-1] = grand_total
 
         purchase_type_wise_comparatives_pd = merge_pd.rename(
-            columns={Col_List[2]: main_config["PresentQuarterColumnName"]})
+            columns={merge_pd_column_list[2]: main_config["PresentQuarterColumnName"]})
         purchase_type_wise_comparatives_pd = purchase_type_wise_comparatives_pd.rename(
-            columns={Col_List[3]: main_config["PreviousQuarterColumnName"]})
+            columns={merge_pd_column_list[3]: main_config["PreviousQuarterColumnName"]})
         try:
             with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
                                 if_sheet_exists="replace") as writer:
-                purchase_type_wise_comparatives_pd.to_excel(writer,sheet_name=main_config[
-                                                                "Output_Comparatives_Purchase_sheetname"],
+                purchase_type_wise_comparatives_pd.to_excel(writer, sheet_name=main_config[
+                    "Output_Comparatives_Purchase_sheetname"],
                                                             index=False, startrow=16)
         except Exception as File_creation_error:
             logging.error("Exception occurred while creating purchase type wise comparatives sheet")
@@ -257,9 +309,14 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
 
         try:
             purchase_comparatives_top_weight(purchase_type_wise_comparatives_pd, main_config)
-        except Exception as purchase_comparatives_top_weight_error:
+        except Exception as major_vendor_analysis_error:
+            print("Exception occurred while creating purchase type wise comparatives top weight sheet: \n {0}".format(
+                major_vendor_analysis_error))
+        try:
+            major_vendor_analysis(main_config, present_quarter_final_pivot_pd, present_quarter_pd, previous_quarter_pd)
+        except Exception as major_vendor_analysis_error:
             print("Exception occurred while creating purchase type wise concentration sheet: \n {0}".format(
-                purchase_comparatives_top_weight_error))
+                major_vendor_analysis_error))
 
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         ws = wb[main_config["Output_Comparatives_Purchase_sheetname"]]

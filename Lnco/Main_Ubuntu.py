@@ -290,11 +290,11 @@ def process_execution(input_files,
         if env_file('comparatives_purchase_wise') == 'YES':
             read_present_quarter_pd_comp_purchase = read_present_quarter_pd
             read_present_quarter_pd_comp_purchase = \
-                read_present_quarter_pd_comp_purchase[["Valuation Class", "Valuation Class Text", "GR Amt.in loc.cur."]]
+                read_present_quarter_pd_comp_purchase[["Valuation Class", "Valuation Class Text", "GR Amt.in loc.cur.", "Vendor Name"]]
             read_previous_quarter_pd_comp_purchase = read_previous_quarter_pd
             read_previous_quarter_pd_comp_purchase = \
                 read_previous_quarter_pd_comp_purchase[
-                    ["Valuation Class", "Valuation Class Text", "GR Amt.in loc.cur."]]
+                    ["Valuation Class", "Valuation Class Text", "GR Amt.in loc.cur.", "Vendor Name"]]
             config_purchase_comparatives = reading_sheet_config_data_to_dict(
                 sheet_name=config_main["Config_Comparatives_Purchase_sheetname"])
             ptcomp.create_purchase_type_wise(config_main, config_purchase_comparatives,
