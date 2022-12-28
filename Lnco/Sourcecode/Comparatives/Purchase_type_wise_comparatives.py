@@ -93,13 +93,18 @@ def purchase_comparatives_top_weight(purchase_comparatives_dataframe, main_confi
 
 
 def major_vendor_analysis(main_config, present_quarter_final_pivot_pd, present_quarter_pd, previous_quarter_pd):
-    present_quarter_columns_list = present_quarter_pd.columns.tolist()
-    print(present_quarter_columns_list)
-
+    present_quarter_final_pivot_pd.drop(present_quarter_final_pivot_pd.tail(1).index, inplace=True)
+    # present_quarter_columns_list = present_quarter_pd.columns.tolist()
+    # print(present_quarter_columns_list)
+    major_vendor_analysis_pd = pd.DataFrame(
+        columns=['Valuation Class', 'Valuation Class Text', 'Vendor Name', 'GR Amt.in loc.cur._x',
+                 'GR Amt.in loc.cur._y'])
     for index, row in present_quarter_final_pivot_pd.iterrows():
-        print(row[0])
-        print(row[1])
+        # print(row[0])
+        # print(row[1])
+        # print(row[2])
         if row[2] == 0 or row[1] == 0:
+            # print("Gr amount or Valuation class text field is empty ")
             continue
         # temp_present_quarter_pd = pd.DataFrame(columns=present_quarter_columns_list)
         # print(temp_present_quarter_pd)
@@ -114,36 +119,122 @@ def major_vendor_analysis(main_config, present_quarter_final_pivot_pd, present_q
         temp_present_quarter_pd = temp_present_quarter_pd.head(5)
         # print(temp_present_quarter_pd)
         temp_present_quarter_pd.reset_index(inplace=True)
+        # print(temp_present_quarter_pd)
 
-        print(temp_present_quarter_pd)
         temp_previous_quarter_pd = previous_quarter_pd[previous_quarter_pd['Valuation Class Text'].isin([row[1]])]
-        print(temp_previous_quarter_pd)
-        for index_temp, row_temp in temp_present_quarter_pd:
-            temp_previous_vendor_name = row_temp[2]
-            print(temp_previous_vendor_name)
-            temp_previous_quarter_pd = temp_previous_quarter_pd[temp_previous_quarter_pd["Vendor Name"]].isin(
-                [temp_previous_vendor_name])
-            print(temp_previous_quarter_pd)
-            temp_previous_quarter_pd = pd.pivot_table(temp_previous_quarter_pd,
-                                                      index=["Valuation Class", "Valuation Class Text", "Vendor Name"],
-                                                      values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=False)
-            print(temp_previous_quarter_pd)
-            temp_previous_quarter_pd.reset_index(inplace=True)
-            print(temp_previous_quarter_pd)
+        if len(temp_previous_quarter_pd.index) == 0:
+            # print("Length of dataframe is zero")
+            continue
+        # print(temp_previous_quarter_pd)
+        temp_previous_quarter_pd = pd.pivot_table(temp_previous_quarter_pd,
+                                                  index=["Valuation Class", "Valuation Class Text", "Vendor Name"],
+                                                  values="GR Amt.in loc.cur.", aggfunc=numpy.sum, margins=False)
+        # print(temp_previous_quarter_pd)
+        temp_merge_pd = pd.merge(temp_present_quarter_pd, temp_previous_quarter_pd, how='left',
+                                 on=["Valuation Class", "Valuation Class Text", "Vendor Name"]).fillna(0)
+        # print(temp_merge_pd)
+        major_vendor_analysis_pd = major_vendor_analysis_pd.append(temp_merge_pd)
 
-        # filter present quarter pd with
-        pass
+    # print(major_vendor_analysis_pd)
+    major_vendor_column_names = major_vendor_analysis_pd.columns.values.tolist()
+    # print(major_vendor_column_names)
 
-    major_vendor_analysis_pd = pd.DataFrame()
+    # create a new column - Success
+    major_vendor_analysis_pd['Variance'] = 0
+    # print(major_vendor_analysis_pd)
+    major_vendor_analysis_pd.reset_index(drop=True, inplace=True)
+    # print(major_vendor_analysis_pd)
+    pd.options.mode.chained_assignment = None
+
+    # variance formula implementation using index
+    for index, row in major_vendor_analysis_pd.iterrows():
+        # print(row)
+        present_quarter_row_value = major_vendor_analysis_pd[major_vendor_column_names[3]][index]
+        # print('present_quarter_row_value')
+        # print(present_quarter_row_value)
+        previous_quarter_row_value = major_vendor_analysis_pd[major_vendor_column_names[4]][index]
+        # print('previous_quarter_row_value')
+        # print(previous_quarter_row_value)
+        if previous_quarter_row_value == 0:
+            variance = 1
+        else:
+            variance = (present_quarter_row_value - previous_quarter_row_value) / previous_quarter_row_value
+        # print(variance)
+        major_vendor_analysis_pd['Variance'][index] = variance
+        # print(major_vendor_analysis_pd['Variance'][index])
+    # print(major_vendor_analysis_pd)
+    major_vendor_analysis_pd.drop(['Valuation Class'], axis=1, inplace=True)
+    # print(major_vendor_analysis_pd)
+    present_quarter_column_name = main_config['PresentQuarterColumnName']
+    previous_quarter_column_name = main_config['PreviousQuarterColumnName']
+
+    major_vendor_analysis_pd.set_axis(["Purchase Type", "Major Vendor", "₹ in " + present_quarter_column_name,
+                                       "₹ in " + previous_quarter_column_name, "Variance"], axis='columns', inplace=True)
+    # print(major_vendor_analysis_pd)
+    # major_vendor_analysis_pd.columns = ["Purchase Type", "Major Vendor", "₹ in current quarter",
+    #                                     "₹ in Previous quarter", "Variance"]
+    major_vendor_column_names = major_vendor_analysis_pd.columns.values.tolist()
+    # print(major_vendor_column_names)
+    major_vendor_analysis_pd.drop(major_vendor_analysis_pd.loc[(major_vendor_analysis_pd[major_vendor_column_names[2]] == 0) & (major_vendor_analysis_pd[major_vendor_column_names[3]] == 0)].index, inplace=True)
+    # print(major_vendor_analysis_pd)
+    major_vendor_analysis_pd.fillna(0, inplace=True)
+    major_vendor_analysis_pd = pd.DataFrame(major_vendor_analysis_pd).set_index(["Purchase Type", "Major Vendor"])
     try:
         with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
                             if_sheet_exists="replace") as writer:
             major_vendor_analysis_pd.to_excel(writer, sheet_name=main_config[
-                "Output_Major_Vendor_analysis"], index=False, startrow=1)
+                "Output_Major_Vendor_analysis_Sheet_name"], index=True, startrow=1)
+        print("Major Vendor Analysis sheet is created in output file")
 
     except Exception as File_creation_error:
-        logging.error("Exception occurred while creating Major Vendor analysis sheet")
+        logging.error(
+            "Exception occurred while creating Major Vendor analysis sheet \n\t {0}".format(File_creation_error))
         raise File_creation_error
+
+    # Load excel file
+    workbook = openpyxl.load_workbook(main_config['Output_File_Path'])
+
+    # Load sheet
+    worksheet = workbook[main_config['Output_Major_Vendor_analysis_Sheet_name']]
+
+    # Set column widths
+    for column_letter in ['a', 'b', 'c', 'd', 'e']:
+        column_length = max(len(str(cell.value)) for cell in worksheet[column_letter])
+        worksheet.column_dimensions[column_letter].width = column_length * 1.25
+
+    # row 3 font format, fill color
+
+    calibri_11_black_bold = Font(name="Calibri", size=11, color="000000", bold=True)
+    light_blue_solid_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
+    thin = Side(border_style="thin", color='000000')
+    thin_border = Border(top=thin, left=thin, right=thin, bottom=thin)
+    cambria_11_black = Font(name='Calibri', size=11, color='000000', bold=False)
+
+    for row in worksheet["A2:E2"]:
+        for cell in row:
+            cell.fill = light_blue_solid_fill
+            cell.font = calibri_11_black_bold
+
+    max_row = len(major_vendor_analysis_pd.index)
+    for row in worksheet["A3" + ":E" + str(max_row + 2)]:
+        for cell in row:
+            cell.font = cambria_11_black
+    for row in worksheet["C3" + ":E" + str(max_row + 2)]:
+        for cell in row:
+            cell.border = thin_border
+
+    # Number format implementation
+    for cell in worksheet['C']:
+        cell.number_format = "#,###,##"
+
+    for cell in worksheet['D']:
+        cell.number_format = "#,###,##"
+
+    # Format Variance
+    for cell in worksheet['E']:
+        cell.number_format = '0.0%'
+
+    workbook.save(main_config['Output_File_Path'])
 
 
 # Defining a Function
@@ -315,7 +406,7 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
         try:
             major_vendor_analysis(main_config, present_quarter_final_pivot_pd, present_quarter_pd, previous_quarter_pd)
         except Exception as major_vendor_analysis_error:
-            print("Exception occurred while creating purchase type wise concentration sheet: \n {0}".format(
+            print("Exception occurred while creating major vendor analysis sheet: \n {0}".format(
                 major_vendor_analysis_error))
 
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
