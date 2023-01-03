@@ -26,7 +26,7 @@ import Sourcecode.Concentrations.VendorWiseConcentration as vwc
 import Sourcecode.DuplicationofVendorNumbers as duplication
 import Sourcecode.averagedaypurchase as averagedaypurchase
 import Sourcecode.SameMaterialPurchasesfromDVDP as smpdvdp
-import Sourcecode.Unit_Price_Comparsion as upc
+import Sourcecode.Unit_Price_Comparison as upc
 import Sourcecode.Inventory_Mapping as im
 import Sourcecode.SecurityCutoff as sc
 

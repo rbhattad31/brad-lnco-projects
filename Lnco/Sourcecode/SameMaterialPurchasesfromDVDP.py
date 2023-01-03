@@ -51,14 +51,14 @@ def same_mat_dvp(main_config, in_config, present_quarter_pd):
 
         com_file = com_file.replace(numpy.nan, 0, regex=True)
 
-        com_file["Variance"] = com_file["Deference"] / com_file["Unit Price_y"]
+        com_file["Percentage"] = com_file["Deference"] / com_file["Unit Price_y"]
 
         col_name = com_file.columns.values.tolist()
 
         com_file.sort_values(by=col_name[5], axis=0, ascending=False, inplace=True)
         # com_file[col_name[4]].values[-1] = grand_total
-        com_file = com_file.rename(columns={col_name[3]: "Max of uint price"})
-        com_file = com_file.rename(columns={col_name[4]: "Min of uint price"})
+        com_file = com_file.rename(columns={col_name[3]: "Max of unit price"})
+        com_file = com_file.rename(columns={col_name[4]: "Min of unit price"})
         with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
             com_file.to_excel(writer, sheet_name=main_config["Output_Same_Material_Purchases_DVDP_sheetname"], index=False, startrow=21)
 
