@@ -7,10 +7,10 @@ import logging
 import pandas as pd
 import xlsxwriter
 
-import send_mail_reusable_task
+import purchase_send_mail_reusable_task
 from AWS_and_SQL_programs.downloadFilesFromS3Bucket import download_files_from_s3
 from AWS_and_SQL_programs.UploadFilesToS3Bucket import upload_file
-from Main_Ubuntu import process_execution
+from Main_Purchase_Register import process_execution
 from decouple import Config, RepositoryEnv
 from sys import platform
 from psutil import process_iter

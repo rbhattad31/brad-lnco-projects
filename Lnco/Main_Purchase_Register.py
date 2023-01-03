@@ -30,7 +30,7 @@ import Sourcecode.Unit_Price_Comparison as upc
 import Sourcecode.Inventory_Mapping as im
 import Sourcecode.SecurityCutoff as sc
 
-from send_mail_reusable_task import send_mail, send_mail_with_attachment
+from purchase_send_mail_reusable_task import send_mail, send_mail_with_attachment
 
 
 def reading_sheets_names_from_config_main_sheet(path, sheet_name):

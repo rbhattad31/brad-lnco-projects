@@ -1,11 +1,11 @@
 import sys
 from AWS_and_SQL_programs.Process import audit_process
 from decouple import Config, RepositoryEnv
-from Main_Ubuntu import reading_sheets_names_from_config_main_sheet
+from Main_Purchase_Register import reading_sheets_names_from_config_main_sheet
 import os
 import logging
 import datetime
-from send_mail_reusable_task import send_mail
+from purchase_send_mail_reusable_task import send_mail
 
 # read env file name from config file
 

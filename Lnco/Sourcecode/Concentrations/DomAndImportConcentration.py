@@ -1,5 +1,5 @@
 import os
-from send_mail_reusable_task import send_mail
+from purchase_send_mail_reusable_task import send_mail
 import pandas as pd
 import numpy
 import openpyxl

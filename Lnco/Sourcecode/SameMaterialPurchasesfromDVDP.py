@@ -5,7 +5,7 @@ import numpy
 
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font, Side, Border
-from send_mail_reusable_task import send_mail
+from purchase_send_mail_reusable_task import send_mail
 from openpyxl.utils import get_column_letter
 
 

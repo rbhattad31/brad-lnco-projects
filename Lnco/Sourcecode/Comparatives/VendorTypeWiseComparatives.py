@@ -5,7 +5,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Side, Border
 from string import ascii_uppercase
 import logging
-from send_mail_reusable_task import send_mail
+from purchase_send_mail_reusable_task import send_mail
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)

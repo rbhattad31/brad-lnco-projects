@@ -6,7 +6,7 @@ import numpy
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Side, Border
 from string import ascii_uppercase
-from send_mail_reusable_task import send_mail
+from purchase_send_mail_reusable_task import send_mail
 import logging
 
 

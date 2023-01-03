@@ -6,7 +6,7 @@ import os
 from openpyxl.styles import Font, PatternFill
 from string import ascii_uppercase
 
-from send_mail_reusable_task import send_mail
+from purchase_send_mail_reusable_task import send_mail
 
 from AWS_and_SQL_programs.mb51_file_creation import mb51_file_creation
 

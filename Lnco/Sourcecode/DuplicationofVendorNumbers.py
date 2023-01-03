@@ -3,7 +3,7 @@ import pandas as pd
 import numpy
 import openpyxl
 from openpyxl.styles import PatternFill, Side, Border
-from send_mail_reusable_task import send_mail
+from purchase_send_mail_reusable_task import send_mail
 import os
 from AWS_and_SQL_programs.vendor_file_creation import vendor_file_creation
 import logging

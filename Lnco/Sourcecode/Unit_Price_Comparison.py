@@ -1,6 +1,6 @@
 import logging
 from string import ascii_lowercase
-from send_mail_reusable_task import send_mail
+from purchase_send_mail_reusable_task import send_mail
 
 import numpy
 import pandas as pd
