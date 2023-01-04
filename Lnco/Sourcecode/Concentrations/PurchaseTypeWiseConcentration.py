@@ -193,10 +193,7 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         except Exception as File_creation_error:
             logging.error("Exception occurred while creating purchase type wise concentration sheet")
             raise File_creation_error
-        try:
-            purchase_concentration_top_weight(pivot_sheet, main_config)
-        except Exception as purchase_concentration_top_weight_error:
-            print("Exception occurred while creating purchase type wise concentration top weight table: \n {0}".format(purchase_concentration_top_weight_error))
+
         # Check outfile creation
         if os.path.exists(main_config["Output_File_Path"]):
             print("Type Wise Comparatives Logged")
@@ -320,7 +317,11 @@ def purchase_type(main_config, in_config, present_quarter_pd):
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
-        return ws
+
+        try:
+            purchase_concentration_top_weight(pivot_sheet, main_config)
+        except Exception as purchase_concentration_top_weight_error:
+            print("Exception occurred while creating purchase type wise concentration top weight table: \n {0}".format(purchase_concentration_top_weight_error))
 
     except PermissionError as file_error:
         subject = in_config["SystemError_Subject"]

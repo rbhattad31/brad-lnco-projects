@@ -634,6 +634,8 @@ def process_execution(input_files,
     final_output_file = openpyxl.load_workbook(output_file_path)
     if 'Sheet1' in final_output_file.sheetnames:
         final_output_file.remove(final_output_file['Sheet1'])
+    new_order = [0, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 21, 1, 2, 8, 15, 18, 19, 20, 22, 23]
+    final_output_file._sheets = [final_output_file._sheets[i] for i in new_order]
     final_output_file.save(output_file_path)
 
     # ------------------------------------------------------------------------------------

@@ -62,6 +62,11 @@ def inventory_mapping_business_exception(inventory_mapping_file, main_config):
     for cell in worksheet['E']:
         cell.number_format = '0.0%'
 
+    if len(inventory_mapping_business_exception_pd.index) == 0:
+        message = "NOTE: No entries found in Inventory Mapping that have Variance > {0}%".format(main_config['Inventory_mapping_exception_percentage'])
+        worksheet.merge_cells('A1:E1')
+        worksheet['A1'] = message
+
     # Saving the File
     print(workbook.sheetnames)
     workbook.save(main_config["Output_File_Path"])
@@ -281,12 +286,6 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
             logging.error("Exception occurred while creating inventory mapping sheet")
             raise File_creation_error
 
-        try:
-            inventory_mapping_business_exception(inventory_mapping_file, main_config)
-        except Exception as inventory_mapping_business_exception_error:
-            print("Exception occurred while creating inventory mapping business exception entries sheet: \n {0}".format(
-                inventory_mapping_business_exception_error))
-
         # Opening and Reading Output File.
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         ws = wb[main_config["Output_Inventory_Mapping_Sheetname"]]
@@ -338,6 +337,12 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         # Saving the File
         print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
+
+        try:
+            inventory_mapping_business_exception(inventory_mapping_file, main_config)
+        except Exception as inventory_mapping_business_exception_error:
+            print("Exception occurred while creating inventory mapping business exception entries sheet: \n {0}".format(
+                inventory_mapping_business_exception_error))
 
         return create_inventory_mapping_sheet
 

@@ -174,11 +174,6 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
         except Exception as File_creation_error:
             logging.error("Exception occurred while creating average day purchases sheet")
             raise File_creation_error
-        try:
-            average_day_purchase_weightage(pivot_present_quarter, main_config)
-        except Exception as average_day_high_low_entries_error:
-            print("Exception occurred while creating average day Highest and Least Values Table in excel sheet: \n {0}".format(
-                average_day_high_low_entries_error))
 
         #   Formatting and styling the Excel data
         # Load excel file
@@ -339,6 +334,12 @@ def average_day_purchase(main_config, in_config, present_quarter_pd):
         wb = openpyxl.load_workbook(main_config['Output_File_Path'])
         print(wb.sheetnames)
         wb.save(main_config['Output_File_Path'])
+
+        try:
+            average_day_purchase_weightage(pivot_present_quarter, main_config)
+        except Exception as average_day_high_low_entries_error:
+            print("Exception occurred while creating average day Highest and Least Values Table in excel sheet: \n {0}".format(
+                average_day_high_low_entries_error))
 
     #  Exceptions handling
     except FileNotFoundError:

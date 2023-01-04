@@ -398,17 +398,6 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
             logging.error("Exception occurred while creating purchase type wise comparatives sheet")
             raise File_creation_error
 
-        try:
-            purchase_comparatives_top_weight(purchase_type_wise_comparatives_pd, main_config)
-        except Exception as major_vendor_analysis_error:
-            print("Exception occurred while creating purchase type wise comparatives top weight sheet: \n {0}".format(
-                major_vendor_analysis_error))
-        try:
-            major_vendor_analysis(main_config, present_quarter_final_pivot_pd, present_quarter_pd, previous_quarter_pd)
-        except Exception as major_vendor_analysis_error:
-            print("Exception occurred while creating major vendor analysis sheet: \n {0}".format(
-                major_vendor_analysis_error))
-
         wb = openpyxl.load_workbook(main_config["Output_File_Path"])
         ws = wb[main_config["Output_Comparatives_Purchase_sheetname"]]
 
@@ -499,6 +488,17 @@ def create_purchase_type_wise(main_config, in_config, present_quarter_pd, previo
         ws.sheet_view.showGridLines = False
         print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
+
+        try:
+            purchase_comparatives_top_weight(purchase_type_wise_comparatives_pd, main_config)
+        except Exception as major_vendor_analysis_error:
+            print("Exception occurred while creating purchase type wise comparatives top weight sheet: \n {0}".format(
+                major_vendor_analysis_error))
+        try:
+            major_vendor_analysis(main_config, present_quarter_final_pivot_pd, present_quarter_pd, previous_quarter_pd)
+        except Exception as major_vendor_analysis_error:
+            print("Exception occurred while creating major vendor analysis sheet: \n {0}".format(
+                major_vendor_analysis_error))
 
         return purchase_type_wise_comparatives_pd
 

@@ -9,7 +9,7 @@ import sys
 from decouple import Config, RepositoryEnv
 
 from sales_send_mail_reusable_task import send_mail, send_mail_with_attachment
-
+from programs.gst_rate_check import gst_rate_check
 
 def reading_sheets_names_from_config_main_sheet(path, sheet_name):
     try:
@@ -255,7 +255,7 @@ def process_execution(input_files,
 
             config_gst_rate_check = reading_sheet_config_data_to_dict(
                 sheet_name=config_main["Config_GST_Rate_Check_sheet_name"])
-            ptcomp.create_purchase_type_wise(config_main, config_gst_rate_check, sales_present_quarter_pd)
+            gst_rate_check()
 
         elif env_file('GST Rate Check') == 'NO':
             print("GST Rate Check process is skipped as per env file")
@@ -270,6 +270,7 @@ def process_execution(input_files,
     final_output_file = openpyxl.load_workbook(output_file_path)
     if 'Sheet1' in final_output_file.sheetnames:
         final_output_file.remove(final_output_file['Sheet1'])
+
     final_output_file.save(output_file_path)
 
     # ------------------------------------------------------------------------------------

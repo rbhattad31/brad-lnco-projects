@@ -43,7 +43,7 @@ def send_mail(to, cc, subject, body):
         smtp.login(smtp_username, smtp_password)
         logging.debug("SMTP connection is established")
         smtp.ehlo()
-        # smtp.sendmail(sender, to, str(msg))
+        smtp.sendmail(sender, to, str(msg))
         print("sent mail")
         logging.info("Notification mail has been sent")
     except smtplib.SMTPException as smtp_exception:
@@ -105,7 +105,7 @@ def send_mail_with_attachment(to, cc, subject, body, attachment_path=None):
         smtp.login(smtp_username, smtp_password)
         logging.debug("SMTP connection is established")
         smtp.ehlo()
-        # smtp.sendmail(sender, to, str(msg))
+        smtp.sendmail(sender, to, str(msg))
         print("sent mail")
         logging.info("Notification mail has been sent")
     except smtplib.SMTPException as smtp_exception:

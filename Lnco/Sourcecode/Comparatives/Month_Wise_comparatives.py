@@ -94,17 +94,14 @@ def purchase_month(main_config, in_config, present_quarter_pd, previous_quarter_
         # Create Month Column in present quarter sheet
         read_present_quarter_pd['GR Posting Date'] = pd.to_datetime(read_present_quarter_pd['GR Posting Date'], errors='coerce')
 
-        read_present_quarter_pd['GR Posting Date'] = read_present_quarter_pd['GR Posting Date'].dt.month_name().str[:3]
-
-        read_present_quarter_pd['Month'] = read_present_quarter_pd['GR Posting Date']
+        read_present_quarter_pd['Month'] = read_present_quarter_pd['GR Posting Date'].dt.month_name().str[:3]
 
         # Create Month Column in previous quarter sheet
 
         read_previous_quarter_pd = previous_quarter_pd
 
         read_previous_quarter_pd['GR Posting Date'] = pd.to_datetime(read_previous_quarter_pd['GR Posting Date'], errors='coerce')
-        read_previous_quarter_pd['GR Posting Date'] = read_previous_quarter_pd['GR Posting Date'].dt.month_name().str[:3]
-        read_previous_quarter_pd['Month'] = read_previous_quarter_pd['GR Posting Date']
+        read_previous_quarter_pd['Month'] = read_previous_quarter_pd['GR Posting Date'].dt.month_name().str[:3]
 
         # Check Exception
         if read_present_quarter_pd.shape[0] == 0 or read_previous_quarter_pd.shape[0] == 0:

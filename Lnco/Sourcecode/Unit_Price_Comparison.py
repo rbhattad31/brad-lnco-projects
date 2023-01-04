@@ -250,7 +250,7 @@ def unit_price_high_low_average(main_config, unit_price_present_previous_merge_p
         material_number = row["Material No."]
         # print(row["Material No."])
         if row["Material No."] in output_pd["Material No."].values:
-            print("Material number is already evaluated")
+            # print("Material number is already evaluated")
             continue
         else:
             # filter rows with material number
@@ -281,9 +281,9 @@ def unit_price_high_low_average(main_config, unit_price_present_previous_merge_p
             # print(min_row)
             output_pd = output_pd.append(min_row)
 
-    print(output_pd)
+    # print(output_pd)
     output_pd.drop(['Concat'], axis=1, inplace=True)
-    print(output_pd)
+    # print(output_pd)
     output_pd = pd.DataFrame(output_pd).set_index(["Material No.", "Valuation Class Text"])
     try:
         with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
