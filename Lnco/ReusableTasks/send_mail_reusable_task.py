@@ -11,7 +11,7 @@ from decouple import Config, RepositoryEnv
 
 
 def send_mail(to, cc, subject, body):
-    env_file = 'envfiles/sales_register_quality.env'
+    env_file = '../PurchaseRegister/envfiles/purchase_register_quality.env'
     env_file = Config(RepositoryEnv(env_file))
     logging.info("Sending Notification mail")
     smtp_username = env_file('SMTP_USER_NAME')
@@ -43,7 +43,7 @@ def send_mail(to, cc, subject, body):
         smtp.login(smtp_username, smtp_password)
         logging.debug("SMTP connection is established")
         smtp.ehlo()
-        # smtp.sendmail(sender, to, str(msg))
+        smtp.sendmail(sender, to, str(msg))
         print("sent mail")
         logging.info("Notification mail has been sent")
     except smtplib.SMTPException as smtp_exception:
@@ -54,7 +54,8 @@ def send_mail(to, cc, subject, body):
 
 
 def send_mail_with_attachment(to, cc, subject, body, attachment_path=None):
-    env_file = 'envfiles/sales_register_quality.env'
+    # env_file = '../envfiles/quality.env'
+    env_file = '../PurchaseRegister/envfiles/purchase_register_quality.env'
     env_file = Config(RepositoryEnv(env_file))
     logging.info("Sending Notification mail")
     sender = env_file('DEFAULT_SENDER_EMAIL')
@@ -105,7 +106,7 @@ def send_mail_with_attachment(to, cc, subject, body, attachment_path=None):
         smtp.login(smtp_username, smtp_password)
         logging.debug("SMTP connection is established")
         smtp.ehlo()
-        # smtp.sendmail(sender, to, str(msg))
+        smtp.sendmail(sender, to, str(msg))
         print("sent mail")
         logging.info("Notification mail has been sent")
     except smtplib.SMTPException as smtp_exception:
