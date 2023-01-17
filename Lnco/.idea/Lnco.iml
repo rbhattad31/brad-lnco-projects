@@ -9,6 +9,8 @@
       <excludeFolder url="file://$MODULE_DIR$/SalesRegister/Data/Output/audit_requests/20" />
       <excludeFolder url="file://$MODULE_DIR$/PurchaseRegister/Data/Input/audit_requests/20" />
       <excludeFolder url="file://$MODULE_DIR$/PurchaseRegister/Data/Output/audit_requests/20" />
+      <excludeFolder url="file://$MODULE_DIR$/PurchaseRegister/Data/Input/audit_requests/53" />
+      <excludeFolder url="file://$MODULE_DIR$/PurchaseRegister/Data/Output/audit_requests/53" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.10" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

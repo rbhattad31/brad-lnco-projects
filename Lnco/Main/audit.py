@@ -1,5 +1,5 @@
 import sys
-from SalesRegister.sales_register_process import audit_process
+from Main.process import audit_process
 from decouple import Config, RepositoryEnv
 from ReusableTasks.create_main_config_dictionary import create_main_config_dictionary
 import os
@@ -8,14 +8,14 @@ import datetime
 from ReusableTasks.send_mail_reusable_task import send_mail
 
 # read env file name from config file
-ENV_FILE = 'envfiles/sales_register_local.env'
-
+present_working_directory = os.getcwd()
+env_file_path = os.path.join(os.path.dirname(present_working_directory), 'ENV', 'env.env')
 try:
-    env_file = Config(RepositoryEnv(ENV_FILE))
+    env_file = Config(RepositoryEnv(env_file_path))
     print("Env file is successfully read")
 except Exception as e:
     # no possibility of exception once the correct env file is created and path is correctly provided.
-    print("Exception ", e, "occurred during the reading of env file: ", ENV_FILE)
+    print("Exception ", e, "occurred during the reading of env file in path: ", env_file_path)
     print("stopping the process execution...")
     sys.exit("Failed to read env file.")
 
@@ -33,6 +33,7 @@ print("log file name is ", log_file_name)
 
 # create log file absolute path
 log_file_path = os.path.join(os.path.dirname(os.getcwd()), 'Logs', log_file_name)
+# log_file_path = os.path.abspath(log_file_path)
 print("log file path is \n\t ", log_file_path)
 
 # create log file
@@ -74,15 +75,17 @@ except Exception as log_file_config_exception:
                         format='%(asctime)s::%(levelname)s::%(message)s')
 
 logging.info("Program Execution is started")
-logging.info("ENV_FILE used for the program: {}".format(ENV_FILE))
+logging.info("ENV_FILE used for the program: {}".format(env_file_path))
 
 # read config file
-path = "Input/Config.xlsx"
+present_working_directory = os.getcwd()
+config_file_path = os.path.join(os.path.dirname(present_working_directory), 'Input', 'Config.xlsx')
+
 config_sheet_name = "Main"
 
 try:
     print("Reading config sheet")
-    config_main = create_main_config_dictionary(path, config_sheet_name)
+    config_main = create_main_config_dictionary(config_file_path, config_sheet_name)
     config_main['To_Mail_Address'] = default_to_mail_address
     config_main['CC_Mail_Address'] = default_cc_mail_address
     config_main['Sender_Mail_Address'] = default_sender_mail_address
@@ -118,17 +121,42 @@ LnCo
 
 try:
     # get values from Env file to start the audit process
-    db_host = env_file('DB_HOST')
-    db_name = env_file('DB_NAME')
+    # if run on Windows:
+    if sys.platform == 'win32':
+        print("OS Platform is Windows")
+        logging.info("OS Platform is Windows")
 
-    db_username = env_file('DB_USERNAME')
-    db_password = env_file('DB_PASSWORD')
+        db_host = env_file('LOCAL_DB_HOST')
+        db_name = env_file('LOCAL_DB_NAME')
+
+        db_username = env_file('LOCAL_DB_USERNAME')
+        db_password = env_file('LOCAL_DB_PASSWORD')
+
+    # elif run on Linux:
+    elif sys.platform == 'linux':
+        print("OS Platform is Linux")
+        logging.info("OS Platform is Linux")
+
+        db_host = env_file('QUALITY_DB_HOST')
+        db_name = env_file('QUALITY_DB_NAME')
+
+        db_username = env_file('QUALITY_DB_USERNAME')
+        db_password = env_file('QUALITY_DB_PASSWORD')
+
+    else:
+        print("OS Platform is neither Windows nor Linux")
+        logging.warning("OS Platform is neither Windows nor Linux")
+
+        db_host = env_file('QUALITY_DB_HOST')
+        db_name = env_file('QUALITY_DB_NAME')
+
+        db_username = env_file('QUALITY_DB_USERNAME')
+        db_password = env_file('QUALITY_DB_PASSWORD')
 
     aws_bucket_name = env_file('AWS_BUCKET_NAME')
     aws_access_key = env_file('AWS_ACCESS_KEY')
     aws_secret_key = env_file('AWS_SECRET_KEY')
 
-    file_name_to_be_saved_as_in_s3 = env_file('OUTPUT_FILE_NAME')
 except Exception as env_file_variables_read_exception:
     logging.critical("Exception occurred while reading env variables hence stopping the bot")
     body = '''
@@ -160,7 +188,7 @@ try:
                   db_password,
                   db_name,
                   aws_bucket_name, aws_access_key, aws_secret_key,
-                  file_name_to_be_saved_as_in_s3, config_main)
+                  config_main)
 
 except Exception as audit_process_exception:
     logging.exception(audit_process_exception)

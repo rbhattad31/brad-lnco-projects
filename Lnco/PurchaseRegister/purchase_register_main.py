@@ -58,7 +58,7 @@ def process_execution(input_files,
 
     # reading env file
     # env_file = '../envfiles/quality.env'
-    env_file = 'envfiles/purchase_register_quality.env'
+    env_file = '../ENV/env.env'
     print("ENV_FILE: ", env_file)
 
     env_file = Config(RepositoryEnv(env_file))

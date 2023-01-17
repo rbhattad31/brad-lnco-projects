@@ -89,6 +89,7 @@ def purchase_comparatives_top_weight(purchase_comparatives_dataframe, main_confi
     for cell in worksheet['F']:
         cell.number_format = '0.0%'
 
+    print(workbook.sheetnames)
     workbook.save(main_config['Output_File_Path'])
 
 
@@ -233,7 +234,7 @@ def major_vendor_analysis(main_config, present_quarter_final_pivot_pd, present_q
     # Format Variance
     for cell in worksheet['E']:
         cell.number_format = '0.0%'
-
+    print(workbook.sheetnames)
     workbook.save(main_config['Output_File_Path'])
 
 

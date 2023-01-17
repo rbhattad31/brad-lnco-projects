@@ -7,7 +7,7 @@ import sys
 import logging
 from decouple import Config, RepositoryEnv
 
-from sales_send_mail_reusable_task import send_mail, send_mail_with_attachment
+from ReusableTasks.send_mail_reusable_task import send_mail, send_mail_with_attachment
 from SourceCode.gst_rate_check import gst_rate_check
 from SourceCode.sequence_check import sequence_check
 
@@ -72,7 +72,9 @@ def create_config_dict_from_config_file(path, sheet_name):
 def reading_sheet_config_data_to_dict(sheet_name):
     try:
         config = {}
-        work_book = openpyxl.load_workbook("Input/Config.xlsx")
+        present_working_directory = os.getcwd()
+        config_file_path = os.path.join(os.path.dirname(present_working_directory), 'Input', 'Config.xlsx')
+        work_book = openpyxl.load_workbook(config_file_path)
         work_sheet = work_book[sheet_name]
         maximum_row = work_sheet.max_row
         maximum_col = work_sheet.max_column
@@ -121,7 +123,7 @@ def process_execution(input_files,
     config_main['FinancialYear'] = financial_year
 
     # reading env file
-    env_file = 'envfiles/sales_register_quality.env'
+    env_file = '../ENV/env.env'
     print("ENV_FILE: ", env_file)
 
     env_file = Config(RepositoryEnv(env_file))
@@ -468,7 +470,8 @@ if __name__ == '__main__':
     statutory_audit_quarter = ''
     financial_year = '2022-23'
 
-    config_file_path = 'Input/Config.xlsx'
+    present_working_directory = os.getcwd()
+    config_file_path = os.path.join(os.path.dirname(present_working_directory), 'Input', 'Config.xlsx')
     config_sheet_name = 'Main'
     config_main = create_config_dict_from_config_file(path=config_file_path, sheet_name=config_sheet_name)
 

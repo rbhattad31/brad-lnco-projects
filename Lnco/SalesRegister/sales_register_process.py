@@ -20,7 +20,7 @@ from datetime import datetime
 def audit_process(host, username, password, database, aws_bucket_name, aws_access_key, aws_secret_key,
                   file_name_to_be_saved_as_in_s3, config_main):
     present_working_directory = os.getcwd()
-    env_file = os.path.join(present_working_directory, 'envfiles', 'sales_register_quality.env')
+    env_file = os.path.join(present_working_directory, '../ENV/env.env')
     env_file = Config(RepositoryEnv(env_file))
     default_to_mail_address = env_file('DEFAULT_TO_EMAIL')
     default_cc_mail_address = env_file('DEFAULT_CC_EMAIL')
