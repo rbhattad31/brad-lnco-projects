@@ -40,7 +40,7 @@ def process_execution(input_files,
                       vendor_master_sheet_name,
                       mb51_sheet_name, present_quarter_column_name, previous_quarter_column_name,
                       company_name, statutory_audit_quarter, financial_year, config_main, request_id,
-                      json_data_list
+                      json_data_list, env_file
                       ):
     print("Starting audit process for the input files")
     logging.info("Starting audit process for the input files")
@@ -56,27 +56,10 @@ def process_execution(input_files,
     config_main['StatutoryAuditQuarter'] = statutory_audit_quarter
     config_main['FinancialYear'] = financial_year
 
-    # reading env file
-    # env_file = '../envfiles/quality.env'
-    env_file = '../ENV/env.env'
-    print("ENV_FILE: ", env_file)
-
-    env_file = Config(RepositoryEnv(env_file))
-
-    print("*******************************************")
-    # send Bot starting mail
-    start_to = config_main['To_Mail_Address']
-    start_cc = config_main['CC_Mail_Address']
-    start_subject = config_main['Start_Mail_Subject']
-    start_body = config_main['Start_Mail_Body']
-    send_mail(to=start_to, cc=start_cc, body=start_body, subject=start_subject)
-    print("Process start mail notification is sent")
-
     print("*******************************************")
     print("Check if Output file exists")
-    # output_file_path = config_main["Output_File_Path"]
-    # output_file_path = "Output/Output.xlsx"
-    project_home_directory = os.getcwd()
+    main_file_directory = os.getcwd()
+    project_home_directory = os.path.dirname(main_file_directory)
     output_file_path = os.path.join(project_home_directory, 'Data', 'Output', 'audit_requests', str(request_id))
     print("Output file folder is : ", output_file_path)
     if not os.path.exists(output_file_path):

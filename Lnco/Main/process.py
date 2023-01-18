@@ -313,6 +313,16 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
         except Exception as client_details_Exception:
             print(client_details_Exception)
             raise client_details_Exception
+
+        # send Bot starting mail
+        start_to = config_main['To_Mail_Address']
+        start_cc = config_main['CC_Mail_Address']
+        start_subject = config_main['Start_Mail_Subject']
+        start_body = config_main['Start_Mail_Body']
+        send_mail(to=start_to, cc=start_cc, body=start_body, subject=start_subject)
+        print("Process start mail notification is sent")
+        logging.info("Process start mail notification is sent")
+
         print(earliest_request_row)
         inputs_string = earliest_request_row[1]
         print(inputs_string)
@@ -327,7 +337,9 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
                                                     )
         elif sales_register_keyword in inputs_string:
             print("The processing request is identified as Sales register request")
-            sales_register_process.audit_process()
+            sales_register_process.audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
+                                                 config_main, earliest_request_row, env_file, db_connection,
+                                                 company_name)
     except Exception as request_process_exception:
         print(str(request_process_exception))
 

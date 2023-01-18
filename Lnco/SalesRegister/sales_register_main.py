@@ -8,140 +8,44 @@ import logging
 from decouple import Config, RepositoryEnv
 
 from ReusableTasks.send_mail_reusable_task import send_mail, send_mail_with_attachment
-from SourceCode.gst_rate_check import gst_rate_check
-from SourceCode.sequence_check import sequence_check
 
+from SalesRegister.SourceCode.Customer_Wise_Concentration import customer_wise_concentration
+from SalesRegister.SourceCode.gst_rate_check import gst_rate_check
+from SalesRegister.SourceCode.sequence_check import sequence_check
 
-class configException(Exception):
-    pass
+from SalesRegister.File_Creation_Programs.sales_present_quarter_file_creation import sales_present_quarter_file_creation
+from SalesRegister.File_Creation_Programs.sales_previous_quarter_file_creation import sales_previous_quarter_file_creation
 
-
-def create_config_dict_from_config_file(path, sheet_name):
-    try:
-
-        dict_config_main = {}
-
-        if not os.path.exists(path):
-            raise configException("Exception: Config file is not exist in the path provided {0}".format(path))
-        try:
-            print("Config file path: {0} is exist".format(path))
-            logging.info("Config file path: {0} is exist".format(path))
-            workbook = openpyxl.load_workbook(path)
-            print("Config file is loaded")
-        except Exception as config_file_error:
-            exception_message = "Exception is occurred while loading Config file from path {0} because {1}".format(path,
-                                                                                                                   config_file_error)
-            raise configException(exception_message)
-
-        try:
-            worksheet = workbook[sheet_name]
-            print("Config sheet '{0}' is read".format(sheet_name))
-            logging.info("Config sheet '{0}' is read".format(sheet_name))
-        except Exception as work_sheet_exception:
-            exception_message = "Exception is occurred while loading Config Excel file sheet {0} because {1}".format(
-                sheet_name, work_sheet_exception)
-            raise configException(exception_message)
-
-        maximum_row = worksheet.max_row
-        maximum_col = worksheet.max_column
-
-        for config_details in worksheet.iter_rows(min_row=2, min_col=1, max_row=maximum_row, max_col=maximum_col):
-            key = config_details[0].value
-            value = config_details[1].value
-            dict_config_main[key] = value
-        print("Config dictionary is created from config file")
-        logging.info("Config dictionary is created from config file")
-        logging.debug(dict_config_main)
-
-        try:
-            workbook.close()
-        except Exception as config_save_exception:
-            exception_message = "Exception occurred while closing Config file in path {0} because {1}".format(path,
-                                                                                                              config_save_exception)
-            raise configException(exception_message)
-
-        return dict_config_main
-
-    except Exception as config_file_read_error:
-        logging.critical(config_file_read_error)
-        logging.exception(config_file_read_error)
-        raise configException(config_file_read_error)
-
-
-# function "reading_sheet_config_data_to_dict" reads sheet wise config file and creates sheet specific config dictionary
-def reading_sheet_config_data_to_dict(sheet_name):
-    try:
-        config = {}
-        present_working_directory = os.getcwd()
-        config_file_path = os.path.join(os.path.dirname(present_working_directory), 'Input', 'Config.xlsx')
-        work_book = openpyxl.load_workbook(config_file_path)
-        work_sheet = work_book[sheet_name]
-        maximum_row = work_sheet.max_row
-        maximum_col = work_sheet.max_column
-
-        for config_details in work_sheet.iter_rows(min_row=2, min_col=1, max_row=maximum_row, max_col=maximum_col):
-            cell_name = config_details[0].value
-            cell_value = config_details[1].value
-            config[cell_name] = cell_value
-
-        return config
-
-    except Exception as config_error:
-        print("Failed to load config file for sheet:", sheet_name)
-        print(config_error)
-        to = "kalyan.gundu@bradsol.com"
-        cc = "kalyan.gundu@bradsol.com"
-        subject = "Config reading is failed for sheet: " + sheet_name
-        body = '''
-Hello,
-
-Config file is failed to load. Continuing with next process.
-
-Thanks & Regards,
-L & Co  
-
-'''
-        send_mail(to=to, cc=cc, subject=subject, body=body)
-        raise Exception
+from ReusableTasks.create_sheet_wise_config_dictionary import create_sheet_wise_config_dict
 
 
 def process_execution(input_files,
                       present_quarter_sheet_name, previous_quarter_sheet_name,
+                      hsn_codes_file_sheet_name, mb51_sheet_name,
                       present_quarter_column_name, previous_quarter_column_name,
                       company_name, statutory_audit_quarter, financial_year, config_main, request_id,
-                      hsn_sheet_name):
+                      json_data_list,
+                      env_file
+                      ):
     print("Starting audit process for the input files")
     logging.info("Starting audit process for the input files")
     print(input_files)
-    sales_register_present_quarter_file_path = input_files[0]
-    sales_register_previous_quarter_file_path = input_files[1]
-    hsn_file_path = input_files[2]
+    mb51_file_path = input_files[0]
+    hsn_file_path = input_files[1]
+    sales_register_present_quarter_file_path = input_files[2]
+    sales_register_previous_quarter_file_path = input_files[3]
+
     config_main['PresentQuarterColumnName'] = present_quarter_column_name
     config_main['PreviousQuarterColumnName'] = previous_quarter_column_name
     config_main['CompanyName'] = company_name
     config_main['StatutoryAuditQuarter'] = statutory_audit_quarter
     config_main['FinancialYear'] = financial_year
 
-    # reading env file
-    env_file = '../ENV/env.env'
-    print("ENV_FILE: ", env_file)
-
-    env_file = Config(RepositoryEnv(env_file))
-
-    print("*******************************************")
-    # send Bot starting mail
-    start_to = config_main['To_Mail_Address']
-    start_cc = config_main['CC_Mail_Address']
-    start_subject = config_main['Start_Mail_Subject']
-    start_body = config_main['Start_Mail_Body']
-    send_mail(to=start_to, cc=start_cc, body=start_body, subject=start_subject)
-    print("Process start mail notification is sent")
-
     print("*******************************************")
     print("Check if Output file exists")
-    # output_file_path = config_main["Output_File_Path"]
-    # output_file_path = "Output/Output.xlsx"
-    project_home_directory = os.getcwd()
+
+    main_file_directory = os.getcwd()
+    project_home_directory = os.path.dirname(main_file_directory)
     output_file_folder = os.path.join(project_home_directory, 'Data', 'Output', 'audit_requests', str(request_id))
     print("Output file folder is : ", output_file_folder)
     if not os.path.exists(output_file_folder):
@@ -212,42 +116,28 @@ def process_execution(input_files,
         read_present_quarter_pd = \
             read_present_quarter_pd.loc[:, ~read_present_quarter_pd.columns.duplicated(keep='first')]
 
-        read_present_quarter_pd['Billing Date'] = pd.to_datetime(read_present_quarter_pd['Billing Date'],
-                                                                 errors='coerce')
+        # print(read_present_quarter_pd)
+        print(
+            "Reading Sales register present quarter sheet is complete, creating new input file only with required columns")
+        logging.info(
+            "Reading Sales register present quarter sheet is complete, creating new input file only with required columns")
+        sales_register_present_quarter_folder_path = os.path.dirname(sales_register_present_quarter_file_path)
+        sales_register_present_quarter_file_name = os.path.basename(
+            sales_register_present_quarter_file_path).lower()
+        filtered_sales_present_file_name = "filtered_" + str(sales_register_present_quarter_file_name)
+        filtered_sales_present_file_saving_path = os.path.join(sales_register_present_quarter_folder_path,
+                                                               filtered_sales_present_file_name)
+        filtered_sales_present_sheet_name = present_quarter_sheet_name
+        sales_present_quarter_file_creation_output = sales_present_quarter_file_creation(config_main,
+                                                                                         read_present_quarter_pd,
+                                                                                         json_data_list,
+                                                                                         filtered_sales_present_file_saving_path,
+                                                                                         filtered_sales_present_sheet_name)
 
-        read_present_quarter_pd['Month'] = read_present_quarter_pd['Billing Date'].dt.month_name().str[:3]
-        print(read_present_quarter_pd)
-        read_present_quarter_pd['Type of sale'] = ''
-        read_present_quarter_pd.loc[(read_present_quarter_pd['Doc. Type Text'].str.lower() == 'Export Order'.lower()) | (read_present_quarter_pd['Doc. Type Text'].str.lower() == 'Export Ordr w/o Duty'.lower()), 'Type of sale'] = 'Export sales'
-        read_present_quarter_pd.loc[read_present_quarter_pd['Doc. Type Text'].str.lower() == 'Scrap Order'.lower(), 'Type of sale'] = 'Scrap sales'
-        read_present_quarter_pd.loc[(read_present_quarter_pd['Doc. Type Text'].str.lower() == 'Service Order'.lower()) | (read_present_quarter_pd['Doc. Type Text'].str.lower() == 'SEZ Sales order'.lower()) | (read_present_quarter_pd['Doc. Type Text'].str.lower() == 'Standard Order'.lower()) | (read_present_quarter_pd['Doc. Type Text'].str.lower() == 'Trade Order'.lower()), 'Type of sale'] = 'Domestic sales'
-        read_present_quarter_pd.loc[read_present_quarter_pd['Doc. Type Text'].str.lower() == 'Asset Sale Order'.lower(), 'Type of sale'] = 'Sale of asset'
-        read_present_quarter_pd.loc[read_present_quarter_pd['Doc. Type Text'].str.lower() == 'INTER PLANT SERVICES'.lower(), 'Type of sale'] = 'Job work services'
-        read_present_quarter_pd.loc[(read_present_quarter_pd['Doc. Type Text'].str.lower() == 'Returns'.lower()) | (read_present_quarter_pd['Doc. Type Text'].str.lower() == 'PLL credit memo req'.lower()), 'Type of sale'] = 'Sales return'
-        read_present_quarter_pd.loc[read_present_quarter_pd['Doc. Type Text'].str.lower() == 'Debit memo request'.lower(), 'Type of sale'] = 'Debit memo'
+        read_present_quarter_pd = sales_present_quarter_file_creation_output[0]
+        config_main = sales_present_quarter_file_creation_output[1]
 
-        print(read_present_quarter_pd)
-        # print(
-        #     "Reading purchase register present quarter sheet is complete, creating new input file only with required columns")
-        # logging.info(
-        #     "Reading purchase register present quarter sheet is complete, creating new input file only with required columns")
-        # purchase_register_present_quarter_folder_path = os.path.dirname(purchase_register_present_quarter_file_path)
-        # purchase_register_present_quarter_file_name = os.path.basename(
-        #     purchase_register_present_quarter_file_path).lower()
-        # filtered_purchase_present_file_name = "filtered_" + str(purchase_register_present_quarter_file_name)
-        # filtered_purchase_present_file_saving_path = os.path.join(purchase_register_present_quarter_folder_path,
-        #                                                           filtered_purchase_present_file_name)
-        # filtered_purchase_present_sheet_name = present_quarter_sheet_name
-        # purchase_present_quarter_file_creation_output = purchase_present_quarter_file_creation(config_main,
-        #                                                                                        read_present_quarter_pd,
-        #                                                                                        json_data_list,
-        #                                                                                        filtered_purchase_present_file_saving_path,
-        #                                                                                        filtered_purchase_present_sheet_name)
-        #
-        # read_present_quarter_pd = purchase_present_quarter_file_creation_output[0]
-        # config_main = purchase_present_quarter_file_creation_output[1]
-        #
-        # logging.info("new purchase register present quarter file is created in input folder in request ID folder")
+        logging.info("new sales register present quarter file is created in input folder in request ID folder")
         print("Reading Sales register present quarter sheet is completed")
         # -----------------------------------------------------------------------------------------------
         # print("Reading Sales register previous quarter sheet is started")
@@ -304,7 +194,7 @@ def process_execution(input_files,
         print("Reading HSN Cose summary sheet is started")
 
         print(hsn_file_path)
-        hsn_code_pd = pd.read_excel(hsn_file_path, hsn_sheet_name)
+        hsn_code_pd = pd.read_excel(hsn_file_path, hsn_codes_file_sheet_name)
 
         hsn_code_pd = \
             hsn_code_pd.loc[:, ~hsn_code_pd.columns.duplicated(keep='first')]
@@ -369,13 +259,30 @@ def process_execution(input_files,
         raise sheetNotFound_error
 
     print("*******************************************")
+    # ------------------------------------------------------------------------------------
+    try:
+        if env_file('CONCENTRATION_CUSTOMER_WISE') == 'YES':
+            print("Executing customer wise concentration program")
+            sales_present_quarter_pd = read_present_quarter_pd
+            config_concentration_customer_wise = create_sheet_wise_config_dict(sheet_name=config_main[""])
+            customer_wise_concentration(main_config=config_main, in_config=config_concentration_customer_wise,
+                                        present_quarter_pd=sales_present_quarter_pd)
 
+
+        elif env_file('CONCENTRATION_CUSTOMER_WISE') == 'NO':
+            print("GST Rate Check process is skipped as per env file")
+        else:
+            print("select YES/NO for GST Rate Check process in env file")
+            raise Exception("Error in Env file for 'GST Rate Check' sheet")
+    except Exception as e:
+        print("Exception caught for Process: 'GST Rate Check' Sheet: ", e)
+    # ------------------------------------------------------------------------------------
     try:
         if env_file('GST_Rate_Check') == 'YES':
             print("Executing GST Rate Check program")
             sales_present_quarter_pd = read_present_quarter_pd
             hsn_pd = hsn_code_pd
-            config_gst_rate_check = reading_sheet_config_data_to_dict(
+            config_gst_rate_check = create_sheet_wise_config_dict(
                 sheet_name=config_main["Config_GST_Rate_Check_sheet_name"])
             gst_rate_check(config_main, config_gst_rate_check, sales_present_quarter_pd, hsn_pd)
 
@@ -386,12 +293,12 @@ def process_execution(input_files,
             raise Exception("Error in Env file for 'GST Rate Check' sheet")
     except Exception as e:
         print("Exception caught for Process: 'GST Rate Check' Sheet: ", e)
-
+    # ------------------------------------------------------------------------------------
     try:
         if env_file('Sequence_Check') == 'YES':
             print("Executing Sequence Check program")
             sales_present_quarter_pd = read_present_quarter_pd
-            config_sequence_check = reading_sheet_config_data_to_dict(
+            config_sequence_check = create_sheet_wise_config_dict(
                 sheet_name=config_main["Config_Sequence_Check_sheet_name"])
             sequence_check(config_main, config_sequence_check, sales_present_quarter_pd)
 
@@ -402,6 +309,9 @@ def process_execution(input_files,
             raise Exception("Error in Env file for 'Sequence Check' sheet")
     except Exception as e:
         print("Exception caught for Process: 'Sequence Check' Sheet: ", e)
+    # ------------------------------------------------------------------------------------
+
+
 
     print("*******************************************")
 
@@ -410,6 +320,56 @@ def process_execution(input_files,
         final_output_file.remove(final_output_file['Sheet1'])
 
     final_output_file.save(output_file_path)
+
+    # ------------------------------------------------------------------------------------
+    output_sheets_list = final_output_file._sheets
+    print(output_sheets_list)
+
+    all_sheets_list = [
+        '<Worksheet "Purchase Wise Comparatives">',
+        '<Worksheet "Month Wise Comparatives">',
+        '<Worksheet "Plant Wise Comparatives">',
+        '<Worksheet "DOM&IMP Wise Comparatives">',
+        '<Worksheet "Vendor Wise Comparatives">',
+
+        '<Worksheet "Purchase Wise Concentration">',
+        '<Worksheet "Month Wise Concentration">',
+        '<Worksheet "Plant Wise Concentration">',
+        '<Worksheet "Dom&Imp Wise Concentration">',
+        '<Worksheet "Vendor Wise Concentration">',
+
+        '<Worksheet "Duplication Of Vendor">',
+        '<Worksheet "Average Day Purchase">',
+        '<Worksheet "SMP from DVnDP">',
+        '<Worksheet "Unit Price Comparison">',
+        '<Worksheet "Inventory Mapping">',
+
+        '<Worksheet "Major Vendor Analysis">',
+
+        '<Worksheet "exceptions – COMPARATIVES">',
+        '<Worksheet "exceptions – CONCENTRATIONS">',
+
+        '<Worksheet "Unit price as per Unit Price">',
+        '<Worksheet "Unit price as per quantity">',
+        '<Worksheet "Unit price- change in amount">',
+
+        '<Worksheet "exceptions average day">',
+
+        '<Worksheet "exceptions – inventory mapping">',
+
+        '<Worksheet "Security Cutoff">'
+    ]
+
+    sheets_order_list = []
+    for sheet in all_sheets_list:
+        for output_sheet in output_sheets_list:
+            if str(sheet) == str(output_sheet):
+                sheets_order_list.append(output_sheet)
+                break
+    final_output_file._sheets = sheets_order_list
+    final_output_file.save(output_file_path)
+
+    # ------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------
 
@@ -438,6 +398,8 @@ def process_execution(input_files,
         line_number = exception_traceback.tb_lineno
         logging.warning(str(exception_type))
         logging.warning("Exception occurred in file : {} at line number: {}".format(filename, line_number))
+    else:
+        print("Saved updated config data to an excel file in output folder in the request folder")
     # ------------------------------------------------------------------------------------
     print("Saved config data to an excel file")
 
@@ -455,29 +417,30 @@ def process_execution(input_files,
 
 
 if __name__ == '__main__':
-    sales_present_quarter_file_path = 'sales register q1.xlsx'
-    sales_previous_quarter_file_path = None
-    hsn_file_path = 'HSN_code_summary.xlsx'
-    input_files = [sales_present_quarter_file_path, sales_previous_quarter_file_path, hsn_file_path]
-
-    present_quarter_sheet_name = 'Sheet1'
-    previous_quarter_sheet_name = ''
-    hsn_sheet_name = 'HSN Code summary'
-
-    present_quarter_column_name = 'Q1 FY 2022-23'
-    previous_quarter_column_name = 'Q4 FY 2021-22'
-    company_name = 'Pitti Engineering Limited'
-    statutory_audit_quarter = ''
-    financial_year = '2022-23'
-
-    present_working_directory = os.getcwd()
-    config_file_path = os.path.join(os.path.dirname(present_working_directory), 'Input', 'Config.xlsx')
-    config_sheet_name = 'Main'
-    config_main = create_config_dict_from_config_file(path=config_file_path, sheet_name=config_sheet_name)
-
-    request_id = 20
-    process_execution(input_files,
-                      present_quarter_sheet_name, previous_quarter_sheet_name,
-                      present_quarter_column_name, previous_quarter_column_name,
-                      company_name, statutory_audit_quarter, financial_year, config_main, request_id, hsn_sheet_name
-                      )
+    pass
+    # sales_present_quarter_file_path = 'sales register q1.xlsx'
+    # sales_previous_quarter_file_path = None
+    # hsn_file_path = 'HSN_code_summary.xlsx'
+    # input_files = [sales_present_quarter_file_path, sales_previous_quarter_file_path, hsn_file_path]
+    #
+    # present_quarter_sheet_name = 'Sheet1'
+    # previous_quarter_sheet_name = ''
+    # hsn_sheet_name = 'HSN Code summary'
+    #
+    # present_quarter_column_name = 'Q1 FY 2022-23'
+    # previous_quarter_column_name = 'Q4 FY 2021-22'
+    # company_name = 'Pitti Engineering Limited'
+    # statutory_audit_quarter = ''
+    # financial_year = '2022-23'
+    #
+    # present_working_directory = os.getcwd()
+    # config_file_path = os.path.join(os.path.dirname(present_working_directory), 'Input', 'Config.xlsx')
+    # config_sheet_name = 'Main'
+    # config_main = create_config_dict_from_config_file(path=config_file_path, sheet_name=config_sheet_name)
+    #
+    # request_id = 20
+    # process_execution(input_files,
+    #                   present_quarter_sheet_name, previous_quarter_sheet_name,
+    #                   present_quarter_column_name, previous_quarter_column_name,
+    #                   company_name, statutory_audit_quarter, financial_year, config_main, request_id, hsn_sheet_name
+    #                   )
