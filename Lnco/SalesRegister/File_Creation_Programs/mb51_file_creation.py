@@ -15,11 +15,6 @@ def mb51_file_creation(mb51_client_dataframe, json_data_list, filtered_mb51_file
         mb51_new_dataframe[quantity_in_unit_of_entry_default_name] = mb51_client_dataframe[
             quantity_in_unit_of_entry_client_name]
 
-        # Movement type
-        movement_type_default_name = "Movement type"
-        movement_type_client_name = "Movement type"
-        mb51_new_dataframe[movement_type_default_name] = mb51_client_dataframe[movement_type_client_name]
-
     except Exception as mb51_json_exception:
         logging.error(
             "Exception occurred while getting column names from the JSON data in 'input file configuration' datatable")

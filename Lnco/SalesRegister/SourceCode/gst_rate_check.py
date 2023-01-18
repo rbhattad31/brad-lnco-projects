@@ -9,7 +9,7 @@ import numpy as np
 
 
 def gst_rate_check(main_config, in_config, sales_present_quarter_pd, hsn_pd):
-    sales_present_quarter_pd = sales_present_quarter_pd[['Plant', 'Ref.Doc.No.', 'Payer Name(Customer Name)',
+    sales_present_quarter_pd = sales_present_quarter_pd[['Plant', 'Ref.Doc.No.', 'Payer Name',
                                                          'Base Price in INR', 'CGST Value', 'SGST Value', 'IGST Value',
                                                          'JTCS Value', 'Grand Total Value(IN', 'HSN Code']]
 
@@ -52,7 +52,7 @@ def gst_rate_check(main_config, in_config, sales_present_quarter_pd, hsn_pd):
     print(gst_rate_check_pd)
     print(gst_rate_check_pd.columns.values.tolist())
     gst_rate_check_pd = gst_rate_check_pd[
-        ['Plant', 'Ref.Doc.No.', 'Payer Name(Customer Name)', 'Base Price in INR', 'CGST Value', 'SGST Value',
+        ['Plant', 'Ref.Doc.No.', 'Payer Name', 'Base Price in INR', 'CGST Value', 'SGST Value',
          'IGST Value', 'JTCS Value', 'Grand Total Value(IN', 'HSN Code', 'Total GST as per client', 'GST as per client',
          'GST Rate']]
     gst_rate_check_pd['Difference'] = 0

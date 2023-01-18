@@ -183,9 +183,9 @@ def sales_present_quarter_file_creation(config_main, sales_present_client_datafr
                 0).astype(int, errors='raise')
 
         # Below 4 datatypes are object when read from excel, converting back to String, raises exception if not suitable datatype is found
-        sales_present_new_dataframe[["Doc. Type Text", "Payer Name", "Material No.", "Material Description", "Product Type Descp.", "Ref.Doc.No"]] = \
+        sales_present_new_dataframe[["Doc. Type Text", "Payer Name", "Material No.", "Material Description", "Product Type Descp.", "Ref.Doc.No."]] = \
             sales_present_new_dataframe[
-                ["Doc. Type Text", "Payer Name", "Material No.", "Material Description", "Product Type Descp.", "Ref.Doc.No"]].astype(str, errors='raise')
+                ["Doc. Type Text", "Payer Name", "Material No.", "Material Description", "Product Type Descp.", "Ref.Doc.No."]].astype(str, errors='raise')
 
         # Gr amount in loc cur & Unit price - float datatype and can have nan values, replace them with 0
         sales_present_new_dataframe[["Base Price in INR", "Billing Qty.", "CGST Value", "SGST Value", "IGST Value", "JTCS Value", "Grand Total Value(IN"]] = sales_present_new_dataframe[
