@@ -1,7 +1,7 @@
 
 import openpyxl
 import pandas as pd
-from openpyxl.styles import Border, Side, PatternFill, Alignment, Font
+from openpyxl.styles import Border, Side, PatternFill
 import logging
 import re
 from openpyxl.utils import get_column_letter
@@ -10,15 +10,15 @@ from openpyxl.utils import get_column_letter
 def sequence_check(main_config, in_config, sales_present_quarter_pd):
     sales_present_quarter_pd = sales_present_quarter_pd[
         ['Plant', 'Month', 'Billing Date', 'Type of sale', 'Ref.Doc.No.']]
-    print(sales_present_quarter_pd)
+    # print(sales_present_quarter_pd)
     sales_present_quarter_pd = sales_present_quarter_pd.drop_duplicates(keep='first')
-    print(sales_present_quarter_pd)
+    # print(sales_present_quarter_pd)
     sales_columns_list = sales_present_quarter_pd.columns.values.tolist()
     # pd.options.mode.chained_assignment = None
 
     # get unique values in a column
     list_plants = sales_present_quarter_pd['Plant'].unique().tolist()
-    print(list_plants)
+    # print(list_plants)
     count = 0
     for plant in list_plants:
         # plant_as_list = list(plant)
@@ -32,7 +32,7 @@ def sequence_check(main_config, in_config, sales_present_quarter_pd):
         temp_df['Ref.Doc.No.Numbers'] = 0
         temp_df['Difference'] = 0
 
-        print(temp_df)
+        # print(temp_df)
 
         temp_df[["Ref.Doc.No."]] = temp_df[["Ref.Doc.No."]].fillna('').astype(str, errors='ignore')
         temp_df['Billing Date'] = pd.to_datetime(temp_df['Billing Date'], errors='coerce').dt.strftime("%d-%m-%Y")
@@ -61,7 +61,7 @@ def sequence_check(main_config, in_config, sales_present_quarter_pd):
 
             temp_df.at[index, 'Difference'] = temp_df.loc[index]['Ref.Doc.No.Numbers'] - temp_df.loc[
                 index - 1]['Ref.Doc.No.Numbers']
-        print(temp_df)
+        # print(temp_df)
 
         try:
             with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
@@ -105,6 +105,7 @@ def sequence_check(main_config, in_config, sales_present_quarter_pd):
         worksheet.column_dimensions[column_letter].width = max_cell_length * 1.25
 
     worksheet.sheet_view.showGridLines = False
+    print(workbook.sheetnames)
     workbook.save(main_config["Output_File_Path"])
 
 

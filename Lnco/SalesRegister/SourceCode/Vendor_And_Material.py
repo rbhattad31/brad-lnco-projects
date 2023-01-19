@@ -152,15 +152,15 @@ def Vendor_And_Material(main_config, in_config, present_quarter_pd, previous_qua
         # print(Excel_data)
         sales_register_data = sales_register_data.loc[:, ~sales_register_data.columns.duplicated(keep='first')]
         columns = sales_register_data.columns
-        if main_config["sales_register_q4_1st_column_name"] in columns and \
-                main_config["Sales_register_q4_2nd_column_name"] in columns:
+        if main_config["sales_register_1st_column_name"] in columns and \
+                main_config["sales_register_2nd_column_name"] in columns:
             print("Previous quarter q4 - The data is starting from first row only")
             pass
 
         else:
             print("Previous quarter q4 - The data is not starting from first row ")
             for index, row in sales_register_data.iterrows():
-                if row[0] != main_config["sales_register_q4_1st_column_name"]:
+                if row[0] != main_config["sales_register_1st_column_name"]:
                     sales_register_data.drop(index, axis=0, inplace=True)
                 else:
                     break
@@ -382,7 +382,7 @@ def Vendor_And_Material(main_config, in_config, present_quarter_pd, previous_qua
 
         #  Rename Columns
 
-        print(vendor_and_material)
+        # print(vendor_and_material)
         vendor_and_material = vendor_and_material.rename(
             columns={columns[3]: "Sum of Billing Qty."})
         # print(vendor_and_material)
@@ -504,6 +504,7 @@ def Vendor_And_Material(main_config, in_config, present_quarter_pd, previous_qua
         # ws['N1'] = '=SUBTOTAL(9,N4:N' + str(ws.max_row) + ')'
 
         # Save File
+        print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
         logging.info("Completed Vendor and Material wise Comparison code execution")
         return Vendor_And_Material
@@ -561,10 +562,5 @@ def Vendor_And_Material(main_config, in_config, present_quarter_pd, previous_qua
         return key_error
 
 
-config = {}
-main_config = {}
-present_quarter_pd = pd.DataFrame()
-# previous_quarter_pd = pd.DataFrame()
-previous_quarter_sheet_name = ''
 if __name__ == "__main__":
-    print(Vendor_And_Material(main_config, config, present_quarter_pd, previous_quarter_sheet_name))
+    pass

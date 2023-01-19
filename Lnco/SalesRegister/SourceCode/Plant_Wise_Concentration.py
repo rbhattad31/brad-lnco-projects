@@ -168,6 +168,7 @@ def plant_wise_concentration(main_config, in_config, present_quarter_pd):
                 break
 
         # Save File
+        print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
         logging.info("Completed Plant wise concentration code execution")
         return ws
@@ -236,10 +237,5 @@ def plant_wise_concentration(main_config, in_config, present_quarter_pd):
         return attributeError
 
 
-# Read config details and parse to dictionary
-config = {}
-main_config = {}
-present_quarter_pd = pd.DataFrame()
-
 if __name__ == "__main__":
-    print(plant_wise_concentration(main_config, config, present_quarter_pd))
+    pass

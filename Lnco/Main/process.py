@@ -224,7 +224,8 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
 
         # create config file creation folder
         try:
-            project_home_directory = os.getcwd()
+            main_file_directory = os.getcwd()
+            project_home_directory = os.path.dirname(main_file_directory)
             print("Project home directory:\n\t", project_home_directory)
 
             config_download_file_path_in_input = os.path.join(project_home_directory, 'Data', 'Input', 'audit_requests',

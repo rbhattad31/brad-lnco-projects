@@ -26,7 +26,7 @@ def gst_rate_check(main_config, in_config, sales_present_quarter_pd, hsn_pd):
         except Exception as error:
             # print('%s (%s-%s): %s' % (error.filename, error.lineno, error.offset, error.text))
             print(error)
-    print(sales_present_quarter_pd)
+    # print(sales_present_quarter_pd)
     print("Total GST as per client")
     sales_present_quarter_pd['GST as per client'] = 0
     for index in sales_present_quarter_pd.index:
@@ -43,13 +43,13 @@ def gst_rate_check(main_config, in_config, sales_present_quarter_pd, hsn_pd):
             print("error")
             print(error)
 
-    print(sales_present_quarter_pd)
+    # print(sales_present_quarter_pd)
     print("Columns are created")
     hsn_pd.rename(columns={'HSN Codes': 'HSN Code'}, inplace=True)
     # hsn_pd.columns.values = ['HSN Code', 'GST Rate', 'Description']
     print(hsn_pd.columns.values.tolist())
     gst_rate_check_pd = pd.merge(sales_present_quarter_pd, hsn_pd, on='HSN Code', how='left')
-    print(gst_rate_check_pd)
+    # print(gst_rate_check_pd)
     print(gst_rate_check_pd.columns.values.tolist())
     gst_rate_check_pd = gst_rate_check_pd[
         ['Plant', 'Ref.Doc.No.', 'Payer Name', 'Base Price in INR', 'CGST Value', 'SGST Value',
@@ -121,6 +121,7 @@ def gst_rate_check(main_config, in_config, sales_present_quarter_pd, hsn_pd):
             ws.cell(i, 14).fill = fill_red_orange
 
     ws.sheet_view.showGridLines = False
+    print(wb.sheetnames)
     wb.save(main_config["Output_File_Path"])
 
 

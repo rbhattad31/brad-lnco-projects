@@ -21,14 +21,14 @@ def type_of_sale_wise_concentration(main_config, in_config, present_quarter_pd):
         read_present_quarter_pd = present_quarter_pd
         read_present_quarter_pd['Type of Sale'] = read_present_quarter_pd['Doc. Type Text']
         # column = read_present_quarter_pd.columns.values.tolist()
-        """for x in read_present_quarter_pd['Type of Sale']:
-            print(x)
-            if read_present_quarter_pd['Type of Sale'][x] == 'Scrap Order':
-                read_present_quarter_pd['Type of Sale'][x] = 'Scrap Sales'
-            elif read_present_quarter_pd['Type of Sale'][x] == 'INTER PLANT SERVICES':
-                read_present_quarter_pd['Type of Sale'][x] = 'Job work services'
-            else:
-                pass"""
+        # """for x in read_present_quarter_pd['Type of Sale']:
+        #     print(x)
+        #     if read_present_quarter_pd['Type of Sale'][x] == 'Scrap Order':
+        #         read_present_quarter_pd['Type of Sale'][x] = 'Scrap Sales'
+        #     elif read_present_quarter_pd['Type of Sale'][x] == 'INTER PLANT SERVICES':
+        #         read_present_quarter_pd['Type of Sale'][x] = 'Job work services'
+        #     else:
+        #         pass"""
 
         # Fetch To Address
         to_address = main_config["To_Mail_Address"]
@@ -213,6 +213,7 @@ def type_of_sale_wise_concentration(main_config, in_config, present_quarter_pd):
                 break
 
         # Save File
+        print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
         logging.info("Completed Plant wise concentration code execution")
         return ws
@@ -281,10 +282,5 @@ def type_of_sale_wise_concentration(main_config, in_config, present_quarter_pd):
         return attributeError
 
 
-# Read config details and parse to dictionary
-config = {}
-main_config = {}
-present_quarter_pd = pd.DataFrame()
-
 if __name__ == "__main__":
-    print(type_of_sale_wise_concentration(main_config, config, present_quarter_pd))
+    pass

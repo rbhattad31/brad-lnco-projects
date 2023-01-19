@@ -5,7 +5,6 @@ import os.path
 import os
 import sys
 import logging
-from decouple import Config, RepositoryEnv
 
 from ReusableTasks.send_mail_reusable_task import send_mail, send_mail_with_attachment
 
@@ -18,8 +17,19 @@ from SalesRegister.SourceCode.Product_Mix_Comparison import product_mix_comparis
 from SalesRegister.SourceCode.Vendor_And_Material import Vendor_And_Material
 
 from SalesRegister.SourceCode.gst_rate_check import gst_rate_check
-from SalesRegister.SourceCode.sequence_check import sequence_check
+from SalesRegister.SourceCode.TCS_Rate_Check import tcs_rate_check
+from SalesRegister.SourceCode.Average_Day_Sales import average_day_sales
+from SalesRegister.SourceCode.Related_parties_transaction import related_parties_transaction
 
+from SalesRegister.SourceCode.Same_Material_Scrap import same_material_scrap
+from SalesRegister.SourceCode.Same_Material_Domestic import same_material_domestic
+
+from SalesRegister.SourceCode.Customer_specific import customer_specific
+from SalesRegister.SourceCode.Sales_Register_vs_Sales_Ledger import sr_vs_sl
+from SalesRegister.SourceCode.open_po_reports import open_po_reports
+
+from SalesRegister.SourceCode.sequence_check import sequence_check
+from SalesRegister.SourceCode.Cash_Discount import cash_discount
 from SalesRegister.File_Creation_Programs.sales_present_quarter_file_creation import sales_present_quarter_file_creation
 from SalesRegister.File_Creation_Programs.sales_previous_quarter_file_creation import \
     sales_previous_quarter_file_creation
@@ -377,7 +387,8 @@ def process_execution(input_files,
             config_vendor_material_comparison = create_sheet_wise_config_dict(
                 sheet_name=config_main["Config_VendorAndMaterial_Comparison_sheetname"])
             Vendor_And_Material(main_config=config_main, in_config=config_vendor_material_comparison,
-                                present_quarter_pd=sales_present_quarter_pd, previous_quarter_path=sales_register_previous_quarter_file_path)
+                                present_quarter_pd=sales_present_quarter_pd,
+                                previous_quarter_path=sales_register_previous_quarter_file_path)
 
         elif env_file('VENDOR_AND_MATERIAL_COMPARISON') == 'NO':
             print("Vendor and Material comparison program is skipped as per env file")
@@ -411,120 +422,120 @@ def process_execution(input_files,
             sales_present_quarter_pd = read_present_quarter_pd
             config_tcs_rate_check = create_sheet_wise_config_dict(
                 sheet_name=config_main["Config_TCS_Rate_Check_sheetname"])
-            customer_wise_concentration(main_config=config_main, in_config=config_tcs_rate_check,
-                                        present_quarter_pd=sales_present_quarter_pd)
+            tcs_rate_check(main_config=config_main, in_config=config_tcs_rate_check,
+                           present_quarter_pd=sales_present_quarter_pd)
 
-        elif env_file('CONCENTRATION_CUSTOMER_WISE') == 'NO':
-            print("customer wise concentration program is skipped as per env file")
+        elif env_file('TCS_RATE_CHECK') == 'NO':
+            print("TCS Rate Check program is skipped as per env file")
         else:
-            print("select YES/NO for customer wise concentration program in env file")
-            raise Exception("Error in Env file for 'customer wise concentration program' sheet")
+            print("select YES/NO for TCS Rate Check program in env file")
+            raise Exception("Error in Env file for 'TCS Rate Check program' sheet")
     except Exception as e:
-        print("Exception caught for Process: 'customer wise concentration program' Sheet: ", e)
+        print("Exception caught for Process: 'TCS Rate Check program' Sheet: ", e)
     # ------------------------------------------------------------------------------------
     try:
-        if env_file('CONCENTRATION_CUSTOMER_WISE') == 'YES':
-            print("Executing customer wise concentration program")
+        if env_file('AVERAGE_DAY_SALES') == 'YES':
+            print("Executing Average Day Sales program")
             sales_present_quarter_pd = read_present_quarter_pd
-            config_concentration_customer_wise = create_sheet_wise_config_dict(
-                sheet_name=config_main["Config_Concentrations_Customer_sheetname"])
-            customer_wise_concentration(main_config=config_main, in_config=config_concentration_customer_wise,
-                                        present_quarter_pd=sales_present_quarter_pd)
+            average_day_sales(sales_register_df=sales_present_quarter_pd, main_config=config_main)
 
-        elif env_file('CONCENTRATION_CUSTOMER_WISE') == 'NO':
-            print("customer wise concentration program is skipped as per env file")
+        elif env_file('AVERAGE_DAY_SALES') == 'NO':
+            print("Average Day Sales program is skipped as per env file")
         else:
-            print("select YES/NO for customer wise concentration program in env file")
-            raise Exception("Error in Env file for 'customer wise concentration program' sheet")
+            print("select YES/NO for Average Day Sales program in env file")
+            raise Exception("Error in Env file for 'Average Day Sales program' sheet")
     except Exception as e:
-        print("Exception caught for Process: 'customer wise concentration program' Sheet: ", e)
+        print("Exception caught for Process: 'Average Day Sales program' Sheet: ", e)
     # ------------------------------------------------------------------------------------
     try:
-        if env_file('CONCENTRATION_CUSTOMER_WISE') == 'YES':
-            print("Executing customer wise concentration program")
+        if env_file('RELATED_PARTY_TRANSACTION') == 'YES':
+            print("Executing 'related party transaction' program")
             sales_present_quarter_pd = read_present_quarter_pd
-            config_concentration_customer_wise = create_sheet_wise_config_dict(
-                sheet_name=config_main["Config_Concentrations_Customer_sheetname"])
-            customer_wise_concentration(main_config=config_main, in_config=config_concentration_customer_wise,
-                                        present_quarter_pd=sales_present_quarter_pd)
-
-        elif env_file('CONCENTRATION_CUSTOMER_WISE') == 'NO':
-            print("customer wise concentration program is skipped as per env file")
+            related_parties_transaction(rpt_df=sales_present_quarter_pd, dict_main_config=config_main)
+        elif env_file('RELATED_PARTY_TRANSACTION') == 'NO':
+            print("Related party transaction program is skipped as per env file")
         else:
-            print("select YES/NO for customer wise concentration program in env file")
-            raise Exception("Error in Env file for 'customer wise concentration program' sheet")
+            print("select YES/NO for Related party transaction program in env file")
+            raise Exception("Error in Env file for 'Related party transaction program' sheet")
     except Exception as e:
-        print("Exception caught for Process: 'customer wise concentration program' Sheet: ", e)
+        print("Exception caught for Process: 'Related party transaction program' Sheet: ", e)
     # ------------------------------------------------------------------------------------
     try:
-        if env_file('CONCENTRATION_CUSTOMER_WISE') == 'YES':
-            print("Executing customer wise concentration program")
+        if env_file('SAME_MATERIAL_SCRAP') == 'YES':
+            print("Executing 'same material scrap' program")
             sales_present_quarter_pd = read_present_quarter_pd
-            config_concentration_customer_wise = create_sheet_wise_config_dict(
-                sheet_name=config_main["Config_Concentrations_Customer_sheetname"])
-            customer_wise_concentration(main_config=config_main, in_config=config_concentration_customer_wise,
-                                        present_quarter_pd=sales_present_quarter_pd)
+            config_same_material_scrap = create_sheet_wise_config_dict(
+                sheet_name=config_main["Config_Same_Material_Scrap_sheetname"])
+            same_material_scrap(dict_main_config=config_main, dict_in_config=config_same_material_scrap,
+                                sales_present_quarter_pd=sales_present_quarter_pd)
 
-        elif env_file('CONCENTRATION_CUSTOMER_WISE') == 'NO':
-            print("customer wise concentration program is skipped as per env file")
+        elif env_file('SAME_MATERIAL_SCRAP') == 'NO':
+            print("'same material scrap' program is skipped as per env file")
         else:
-            print("select YES/NO for customer wise concentration program in env file")
-            raise Exception("Error in Env file for 'customer wise concentration program' sheet")
+            print("select YES/NO for 'same material scrap' program in env file")
+            raise Exception("Error in Env file for ''same material scrap' program sheet")
     except Exception as e:
-        print("Exception caught for Process: 'customer wise concentration program' Sheet: ", e)
+        print("Exception caught for Process: 'same material scrap' Sheet: ", e)
     # ------------------------------------------------------------------------------------
     try:
-        if env_file('CONCENTRATION_CUSTOMER_WISE') == 'YES':
-            print("Executing customer wise concentration program")
+        if env_file('SAME_MATERIAL_DOMESTIC') == 'YES':
+            print("Executing 'same material domestic' program")
             sales_present_quarter_pd = read_present_quarter_pd
             config_concentration_customer_wise = create_sheet_wise_config_dict(
-                sheet_name=config_main["Config_Concentrations_Customer_sheetname"])
-            customer_wise_concentration(main_config=config_main, in_config=config_concentration_customer_wise,
-                                        present_quarter_pd=sales_present_quarter_pd)
+                sheet_name=config_main["Config_Same_Material_Domestic_sheetname"])
+            same_material_domestic(dict_main_config=config_main, dict_in_config=config_concentration_customer_wise,
+                                   sales_present_quarter_pd=sales_present_quarter_pd)
 
-        elif env_file('CONCENTRATION_CUSTOMER_WISE') == 'NO':
-            print("customer wise concentration program is skipped as per env file")
+        elif env_file('SAME_MATERIAL_DOMESTIC') == 'NO':
+            print("same material domestic program is skipped as per env file")
         else:
-            print("select YES/NO for customer wise concentration program in env file")
-            raise Exception("Error in Env file for 'customer wise concentration program' sheet")
+            print("select YES/NO for same material domestic program in env file")
+            raise Exception("Error in Env file for 'same material domestic' sheet")
     except Exception as e:
-        print("Exception caught for Process: 'customer wise concentration program' Sheet: ", e)
+        print("Exception caught for Process: same material domestic Sheet: ", e)
     # ------------------------------------------------------------------------------------
     try:
-        if env_file('CONCENTRATION_CUSTOMER_WISE') == 'YES':
-            print("Executing customer wise concentration program")
+        if env_file('CUSTOMER_SPECIFIC') == 'YES':
+            print("Executing customer specific program")
             sales_present_quarter_pd = read_present_quarter_pd
-            config_concentration_customer_wise = create_sheet_wise_config_dict(
-                sheet_name=config_main["Config_Concentrations_Customer_sheetname"])
-            customer_wise_concentration(main_config=config_main, in_config=config_concentration_customer_wise,
-                                        present_quarter_pd=sales_present_quarter_pd)
+            customer_specific(sales_register_df=sales_present_quarter_pd, dict_config_main=config_main)
 
-        elif env_file('CONCENTRATION_CUSTOMER_WISE') == 'NO':
-            print("customer wise concentration program is skipped as per env file")
+        elif env_file('CUSTOMER_SPECIFIC') == 'NO':
+            print("customer specific program is skipped as per env file")
         else:
-            print("select YES/NO for customer wise concentration program in env file")
-            raise Exception("Error in Env file for 'customer wise concentration program' sheet")
+            print("select YES/NO for customer specific program in env file")
+            raise Exception("Error in Env file for 'customer specific program' sheet")
     except Exception as e:
-        print("Exception caught for Process: 'customer wise concentration program' Sheet: ", e)
+        print("Exception caught for Process: 'customer specific' Sheet: ", e)
     # ------------------------------------------------------------------------------------
     try:
-        if env_file('CONCENTRATION_CUSTOMER_WISE') == 'YES':
-            print("Executing customer wise concentration program")
+        if env_file('SR_VS_SL') == 'YES':
+            print("Executing Sales Register Vs Sales Ledger program")
             sales_present_quarter_pd = read_present_quarter_pd
-            config_concentration_customer_wise = create_sheet_wise_config_dict(
-                sheet_name=config_main["Config_Concentrations_Customer_sheetname"])
-            customer_wise_concentration(main_config=config_main, in_config=config_concentration_customer_wise,
-                                        present_quarter_pd=sales_present_quarter_pd)
+            sr_vs_sl(data_of_sales_register=sales_present_quarter_pd, main_config=config_main)
 
-        elif env_file('CONCENTRATION_CUSTOMER_WISE') == 'NO':
-            print("customer wise concentration program is skipped as per env file")
+        elif env_file('SR_VS_SL') == 'NO':
+            print("Sales Register vs Sales Ledger program is skipped as per env file")
         else:
-            print("select YES/NO for customer wise concentration program in env file")
-            raise Exception("Error in Env file for 'customer wise concentration program' sheet")
+            print("select YES/NO for Sales Register vs Sales Ledger program in env file")
+            raise Exception("Error in Env file for 'Sales Register vs Sales Ledger' sheet")
     except Exception as e:
-        print("Exception caught for Process: 'customer wise concentration program' Sheet: ", e)
+        print("Exception caught for Process: 'Sales Register vs Sales Ledger' Sheet: ", e)
     # ------------------------------------------------------------------------------------
+    try:
+        if env_file('OPEN_PO') == 'YES':
+            print("Executing Open PO Reports program")
+            sales_present_quarter_pd = read_present_quarter_pd
+            open_po_reports(open_po_df=sales_present_quarter_pd, main_config=config_main)
 
+        elif env_file('OPEN_PO') == 'NO':
+            print(" Open PO Reports program is skipped as per env file")
+        else:
+            print("select YES/NO for  Open PO Reports program in env file")
+            raise Exception("Error in Env file for  Open PO Reports sheet")
+    except Exception as e:
+        print("Exception caught for Process:  Open PO Reports Sheet: ", e)
+    # ------------------------------------------------------------------------------------
     try:
         if env_file('SEQUENCE_CHECK') == 'YES':
             print("Executing Sequence Check program")
@@ -541,7 +552,22 @@ def process_execution(input_files,
     except Exception as e:
         print("Exception caught for Process: 'Sequence Check' Sheet: ", e)
     # ------------------------------------------------------------------------------------
+    try:
+        if env_file('CASH_DISCOUNT') == 'YES':
+            print("Executing Cash discount report program")
+            sales_present_quarter_pd = read_present_quarter_pd
+            config_cash_discount = create_sheet_wise_config_dict(
+                sheet_name=config_main["Config_Cash_Discount_sheetname"])
+            cash_discount(dict_main_config=config_main, dict_in_config=config_cash_discount, sales_present_quarter_pd=sales_present_quarter_pd)
 
+        elif env_file('CASH_DISCOUNT') == 'NO':
+            print("Cash discount report process is skipped as per env file")
+        else:
+            print("select YES/NO for Cash discount report process in env file")
+            raise Exception("Error in Env file for 'Cash discount report' sheet")
+    except Exception as e:
+        print("Exception caught for Process: 'Cash discount report' Sheet: ", e)
+    # ------------------------------------------------------------------------------------
     print("*******************************************")
 
     final_output_file = openpyxl.load_workbook(output_file_path)

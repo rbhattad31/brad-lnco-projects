@@ -116,7 +116,7 @@ def customer_wise_concentration(main_config, in_config, present_quarter_pd):
 
         # Change Column names of Base Price in INR
         pivot_sheet = pivot_sheet.rename(columns={col_name[1]: main_config["PresentQuarterColumnName"]})
-        pivot_sheet = pivot_sheet.rename(columns={col_name[0]: in_config["PresentQuarterColumnName1"]})
+        pivot_sheet = pivot_sheet.rename(columns={col_name[0]: 'Payer Name'})
         try:
             # Log Sheet
             with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
@@ -172,6 +172,7 @@ def customer_wise_concentration(main_config, in_config, present_quarter_pd):
                 break
 
         # Save File
+        print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
         logging.info("Completed Customer wise concentration code execution")
         return ws

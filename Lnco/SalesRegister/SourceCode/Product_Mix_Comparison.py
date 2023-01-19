@@ -160,6 +160,7 @@ def product_mix_comparison(main_config, in_config, present_quarter_pd):
         ws['B2'] = '=SUBTOTAL(9,B4:B' + str(ws.max_row) + ')'
         ws['C2'] = '=SUBTOTAL(9,C4:C' + str(ws.max_row) + ')'
         # Save File
+        print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
         logging.info("Completed Product mix Comparison code execution")
         return ws
@@ -228,10 +229,5 @@ def product_mix_comparison(main_config, in_config, present_quarter_pd):
         return attributeError
 
 
-# Read config details and parse to dictionary
-config = {}
-main_config = {}
-present_quarter_pd = pd.DataFrame()
-
 if __name__ == "__main__":
-    print(product_mix_comparison(main_config, config, present_quarter_pd))
+    pass

@@ -94,7 +94,7 @@ def month_wise_concentration(main_config, in_config, present_quarter_pd):
 
         # Remove Index
         pivot_sales = pivot_sales.reset_index()
-        print(pivot_sales)
+        # print(pivot_sales)
 
         month_dict = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9,
                       'Oct': 10, 'Nov': 11, 'Dec': 12, 'Grand Total': 13}
@@ -201,6 +201,7 @@ def month_wise_concentration(main_config, in_config, present_quarter_pd):
                 break
 
         # Save File
+        print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
         logging.info("Completed Month wise concentration code execution")
         return ws
