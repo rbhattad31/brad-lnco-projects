@@ -24,7 +24,7 @@ def sales_ledger_pivot_table(sales_ledger_df):
     return sales_ledger_df_pivot_table
 
 
-def sr_vs_sl(data_of_sales_register, main_config):
+def sr_vs_sl(data_of_sales_register, main_config, sales_ledger_new_dataframe):
     out_put_file_path = main_config["Output_File_Path"]
     out_put_sheet_name = main_config["Output_Sales_Register_vs_Ledger_sheetname"]
 
@@ -43,8 +43,7 @@ def sr_vs_sl(data_of_sales_register, main_config):
     dataframe_to_pivot_table_of_register = dataframe_to_pivot_table_of_register.reset_index()
 
     try:
-        str_sale_ledger_file_path = "Formatted Sales ledger new.xlsx"
-        df_sales_ledger = pd.read_excel(str_sale_ledger_file_path, sheet_name='Formatted Sales ledgers', skiprows=2)
+        df_sales_ledger = sales_ledger_new_dataframe
         # print(df_sales_ledger)
         dataframe_to_pivot_table_of_ledger = sales_ledger_pivot_table(df_sales_ledger)
     except Exception as sales_ledger_exception:

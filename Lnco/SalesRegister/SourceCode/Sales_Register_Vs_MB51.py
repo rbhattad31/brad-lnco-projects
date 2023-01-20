@@ -11,10 +11,10 @@ class BusinessException(Exception):
     pass
 
 
-def create_sales_register_vs_mb51_sheet(main_config, in_config, present_quarter_pd, mb51_file_path, mb51_sheet_name):
+def create_sales_register_vs_mb51_sheet(main_config, in_config, sales_present_quarter_pd, mb51_pd):
     try:
         logging.info("Starting Sales Register Vs MB51 code execution")
-        read_excel_data = present_quarter_pd
+        read_excel_data = sales_present_quarter_pd
         read_excel_data = read_excel_data.loc[:, ~read_excel_data.columns.duplicated(keep='first')]
 
         if read_excel_data.shape[0] == 0:
@@ -85,29 +85,7 @@ def create_sales_register_vs_mb51_sheet(main_config, in_config, present_quarter_
         pivot1_df[["Material No."]] = pivot1_df[["Material No."]].fillna('').astype(str, errors='ignore')
 
         # Reading MB 51 File
-        read_mb51_excel_data = pd.read_excel(mb51_file_path, mb51_sheet_name)
-        read_mb51_excel_data = read_mb51_excel_data.loc[:, ~read_mb51_excel_data.columns.duplicated(keep='first')]
-        columns = read_mb51_excel_data.columns
-        if main_config["MB51_first_column"] in columns and \
-                main_config["MB51_second_column"] in columns:
-            print("MB51 - The data is starting from first row only")
-            pass
-
-        else:
-            print("MB51 - The data is not starting from first row ")
-            for index, row in read_mb51_excel_data.iterrows():
-                if row[0] != main_config["MB51_first_column"]:
-                    read_mb51_excel_data.drop(index, axis=0, inplace=True)
-                else:
-                    break
-            # print(read_mb51_excel_data)
-            new_header = read_mb51_excel_data.iloc[0]
-            # print(new_header)
-            read_mb51_excel_data = read_mb51_excel_data[1:]
-            read_mb51_excel_data.columns = new_header
-            read_mb51_excel_data.reset_index(drop=True, inplace=True)
-            read_mb51_excel_data.columns.name = None
-        read_mb51_excel_data = read_mb51_excel_data.loc[:, ~read_mb51_excel_data.columns.duplicated(keep='first')]
+        read_mb51_excel_data = mb51_pd
         # print(read_excel_data_2.head(5))
         # Check Exception
         if read_mb51_excel_data.shape[0] == 0:

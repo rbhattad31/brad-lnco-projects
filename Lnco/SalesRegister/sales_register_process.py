@@ -103,6 +103,22 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
             logging.debug("Sales register previous quarter financial year is {}".format(
                 sales_register_previous_quarter_financial_year))
 
+            sales_ledger_file_path = inputs_json_object['inputs']['Sales_Ledger']['input_url']
+            print(sales_ledger_file_path)
+            logging.debug("Sales register previous quarter file name is {}".format(sales_ledger_file_path))
+
+            sales_ledger_sheet_name = inputs_json_object['inputs']['Sales_Ledger']['sheet_name']
+            print(sales_ledger_sheet_name)
+            logging.debug("Sales register previous quarter sheet name is {}".format(sales_ledger_sheet_name))
+
+            open_po_file_path = inputs_json_object['inputs']['Open_PO']['input_url']
+            print(open_po_file_path)
+            logging.debug("Sales register previous quarter file name is {}".format(open_po_file_path))
+
+            open_po_sheet_name = inputs_json_object['inputs']['Open_PO']['sheet_name']
+            print(open_po_sheet_name)
+            logging.debug("Sales register previous quarter sheet name is {}".format(open_po_sheet_name))
+
             present_quarter_column_name = sales_register_present_quarter_name + " FY " + sales_register_present_quarter_financial_year
             print(present_quarter_column_name)
             logging.debug("present quarter is {}".format(present_quarter_column_name))
@@ -217,9 +233,51 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
             raise hsn_codes_file_save_exception
 
         print("--------------------------------------------------------------------")
+        try:
+            print("downloading Sales Ledger file from AWS S3 Bucket")
+            logging.info("downloading Sales Ledger file from AWS S3 Bucket")
+            sales_ledger_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name,
+                                                                  prefix_name=sales_ledger_file_path,
+                                                                  aws_access_key_id=aws_access_key,
+                                                                  aws_secret_access_key=aws_secret_key,
+                                                                  request_id=request_id
+                                                                  )
+            print("Sales Ledger file is downloaded...")
+            logging.info("Sales Ledger file is downloaded...")
+            print("Sales Ledger file path: ", sales_ledger_file_saved_path)
+            logging.info("Sales Ledger file path: {}".format(sales_ledger_file_saved_path))
+            config_main['sales_ledger_file_saved_path'] = sales_ledger_file_saved_path
+
+        except Exception as sales_ledger_file_save_exception:
+            logging.critical("Exception occurred while downloading sales ledger file from AWS s3 bucket")
+            raise sales_ledger_file_save_exception
+
+        print("--------------------------------------------------------------------")
+
+        try:
+            print("downloading Open PO file from AWS S3 Bucket")
+            logging.info("downloading Open PO file from AWS S3 Bucket")
+            open_po_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name,
+                                                             prefix_name=open_po_file_path,
+                                                             aws_access_key_id=aws_access_key,
+                                                             aws_secret_access_key=aws_secret_key,
+                                                             request_id=request_id
+                                                             )
+            print("Open PO file is downloaded...")
+            logging.info("Open PO file is downloaded...")
+            print("Open PO file path: ", open_po_file_saved_path)
+            logging.info("Open PO file path: {}".format(open_po_file_saved_path))
+            config_main['open_po_file_saved_path'] = open_po_file_saved_path
+
+        except Exception as open_po_file_save_exception:
+            logging.critical("Exception occurred while downloading open po file from AWS s3 bucket")
+            raise open_po_file_save_exception
+
+        print("--------------------------------------------------------------------")
 
         # create new input files based on column names provided by client
         # get column names from input configuration table -
+        # -------------------------------------------------------------------------------
         mb51_file_id_in_db = env_file('MB51_FILE_ID_IN_DB')
         query_to_get_mb51_column_names = \
             "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(
@@ -230,7 +288,7 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
         mb51_column_names_json = db_cursor.fetchall()
         mb51_column_names_json_object = json.loads(mb51_column_names_json[0][0])
         logging.info("MB51 file column names data in json format : \n\t {}".format(mb51_column_names_json_object))
-
+        # -------------------------------------------------------------------------------
         hsn_codes_file_id_in_db = env_file('HSN_CODES_FILE_ID_IN_DB')
         query_to_get_hsn_codes_file_column_names = \
             "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(
@@ -241,32 +299,60 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
         hsn_codes_file_column_names_json = db_cursor.fetchall()
         hsn_codes_file_column_names_json_object = json.loads(hsn_codes_file_column_names_json[0][0])
         logging.info("HSN Codes file column data read from database: \n\t {}".format(hsn_codes_file_column_names_json_object))
-
-        sales_file_id_in_db = env_file('SALES_FILE_ID_IN_DB')
-        query_to_get_sales_column_names = \
+        # -------------------------------------------------------------------------------
+        sales_register_file_id_in_db = env_file('SALES_REGISTER_FILE_ID_IN_DB')
+        query_to_get_sales_register_column_names = \
             "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(
-                client_id) + " AND `file_id` = " + str(sales_file_id_in_db)
+                client_id) + " AND `file_id` = " + str(sales_register_file_id_in_db)
         logging.info(
-            "query to get sales register file column names is: \n\t {}".format(str(query_to_get_sales_column_names)))
-        db_cursor.execute(query_to_get_sales_column_names)
-        sales_column_names_json = db_cursor.fetchall()
-        sales_column_names_json_object = json.loads(sales_column_names_json[0][0])
+            "query to get sales register file column names is: \n\t {}".format(str(query_to_get_sales_register_column_names)))
+        db_cursor.execute(query_to_get_sales_register_column_names)
+        sales_register_column_names_json = db_cursor.fetchall()
+        sales_register_column_names_json_object = json.loads(sales_register_column_names_json[0][0])
         logging.info(
-            "Sales register file column data read from database: \n\t {}".format(sales_column_names_json_object))
-
+            "Sales register file column data read from database: \n\t {}".format(sales_register_column_names_json_object))
+        # -------------------------------------------------------------------------------
+        sales_ledger_file_id_in_db = env_file('SALES_LEDGER_FILE_ID_IN_DB')
+        query_to_get_sales_ledger_column_names = \
+            "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(
+                client_id) + " AND `file_id` = " + str(sales_ledger_file_id_in_db)
+        logging.info(
+            "query to get sales ledger file column names is: \n\t {}".format(
+                str(query_to_get_sales_ledger_column_names)))
+        db_cursor.execute(query_to_get_sales_ledger_column_names)
+        sales_ledger_column_names_json = db_cursor.fetchall()
+        sales_ledger_column_names_json_object = json.loads(sales_ledger_column_names_json[0][0])
+        logging.info(
+            "Sales register file column data read from database: \n\t {}".format(sales_ledger_column_names_json_object))
+        # -------------------------------------------------------------------------------
+        open_po_file_id_in_db = env_file('OPEN_PO_FILE_ID_IN_DB')
+        query_to_get_open_po_column_names = \
+            "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(
+                client_id) + " AND `file_id` = " + str(open_po_file_id_in_db)
+        logging.info(
+            "query to get open po file column names is: \n\t {}".format(str(query_to_get_open_po_column_names)))
+        db_cursor.execute(query_to_get_open_po_column_names)
+        open_po_column_names_json = db_cursor.fetchall()
+        open_po_column_names_json_object = json.loads(open_po_column_names_json[0][0])
+        logging.info(
+            "Open PO file column data read from database: \n\t {}".format(open_po_column_names_json_object))
+        # -------------------------------------------------------------------------------
         # create files with required columns using default columns in input folder under ID Folder
 
         # Check and change datatypes of each column in the updated files
 
         input_files = [mb51_file_saved_path, hsn_codes_file_saved_path, sales_register_present_quarter_saved_path,
-                       sales_register_previous_quarter_saved_path]
+                       sales_register_previous_quarter_saved_path, sales_ledger_file_saved_path, open_po_file_saved_path]
         logging.info("mb51 file path is {}".format(input_files[0]))
         logging.info("HSN Codes file path is {}".format(input_files[1]))
         logging.info("purchase register present quarter file path is {}".format(input_files[2]))
         logging.info("purchase register previous quarter file path is {}".format(input_files[3]))
+        logging.info("Sales Ledger file path is {}".format(input_files[4]))
+        logging.info("Open PO report file path is {}".format(input_files[0]))
 
         json_data_list = [mb51_column_names_json_object, hsn_codes_file_column_names_json_object,
-                          sales_column_names_json_object]
+                          sales_register_column_names_json_object, sales_ledger_column_names_json_object,
+                          open_po_column_names_json_object]
 
         try:
             output_file_path = \
@@ -275,6 +361,8 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
                                   previous_quarter_sheet_name=sales_register_previous_quarter_sheet_name,
                                   hsn_codes_file_sheet_name=hsn_codes_file_sheet_name,
                                   mb51_sheet_name=mb51_sheet_name,
+                                  sales_ledger_sheet_name=sales_ledger_sheet_name,
+                                  open_po_sheet_name=open_po_sheet_name,
                                   present_quarter_column_name=present_quarter_column_name,
                                   previous_quarter_column_name=previous_quarter_column_name,
                                   company_name=company_name,

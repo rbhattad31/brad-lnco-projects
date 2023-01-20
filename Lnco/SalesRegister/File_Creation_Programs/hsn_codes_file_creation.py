@@ -2,47 +2,48 @@ import pandas as pd
 import logging
 
 
-def vendor_file_creation(vendor_file_client_dataframe, json_data_list, filtered_vendor_file_saving_path, filtered_vendor_file_sheet_name):
+def hsn_codes_file_creation(config_main, hsn_codes_file_dataframe, json_data_list, filtered_hsn_code_file_saving_path, filtered_hsn_codes_file_sheet_name):
     try:
-        vendor_json_data = json_data_list[1]
-        vendor_new_dataframe = pd.DataFrame()
-        vendor_code_default_name = vendor_json_data['Vendor_Code']['default_column_name']
-        vendor_code_client_name = vendor_json_data['Vendor_Code']['client_column_name']
-        vendor_new_dataframe[vendor_code_default_name] = vendor_file_client_dataframe[vendor_code_client_name]
+        hsn_codes_json_data = json_data_list[1]
+        hsn_codes_new_dataframe = pd.DataFrame()
+        hsn_codes_default_name = hsn_codes_json_data['HSN_Codes']['default_column_name']
+        hsn_codes_client_name = hsn_codes_json_data['HSN_Codes']['client_column_name']
+        hsn_codes_new_dataframe[hsn_codes_default_name] = hsn_codes_file_dataframe[hsn_codes_client_name]
+        config_main['hsn_codes_default_name'] = hsn_codes_default_name
+        config_main[hsn_codes_default_name] = hsn_codes_client_name
 
-        vendor_name_default_name = vendor_json_data['Vendor_Name']['default_column_name']
-        vendor_name_client_name = vendor_json_data['Vendor_Name']['client_column_name']
-        vendor_new_dataframe[vendor_name_default_name] = vendor_file_client_dataframe[vendor_name_client_name]
+        gst_rate_default_name = hsn_codes_json_data['GST_Rate']['default_column_name']
+        gst_rate_client_name = hsn_codes_json_data['GST_Rate']['client_column_name']
+        hsn_codes_new_dataframe[gst_rate_default_name] = hsn_codes_file_dataframe[gst_rate_client_name]
+        config_main['gst_rate_default_name'] = gst_rate_default_name
+        config_main[gst_rate_default_name] = gst_rate_client_name
 
-        tax_number_default_name = vendor_json_data['Tax_Number']['default_column_name']
-        tax_number_client_name = vendor_json_data['Tax_Number']['client_column_name']
-        vendor_new_dataframe[tax_number_default_name] = vendor_file_client_dataframe[tax_number_client_name]
-
-    except Exception as vendor_json_exception:
+    except Exception as hsn_codes_json_exception:
         logging.error(
             "Exception occurred while getting column names from the JSON data in 'input file configuration' datatable")
-        logging.exception(vendor_json_exception)
-        raise vendor_json_exception
+        logging.exception(hsn_codes_json_exception)
+        raise hsn_codes_json_exception
 
     try:
-        vendor_new_dataframe.columns = ['Vendor Code', 'Vendor Name', 'Tax Number']
-        vendor_new_dataframe[["Vendor Code"]] = vendor_new_dataframe[["Vendor Code"]].fillna('').astype(int, errors='ignore')
-        vendor_new_dataframe[["Vendor Name"]] = vendor_new_dataframe[["Vendor Name"]].fillna('').astype(str, errors='ignore')
-        vendor_new_dataframe[['Tax Number']] = vendor_new_dataframe[['Tax Number']].fillna('').astype(str, errors='ignore')
-
+        hsn_codes_new_dataframe.columns = ['HSN Codes', 'GST Rate']
+        hsn_codes_new_dataframe[["HSN Codes"]] = hsn_codes_new_dataframe[["HSN Codes"]].fillna('').astype(int, errors='ignore')
+        print("Check GST Rate Column")
+        print(hsn_codes_new_dataframe)
+        hsn_codes_new_dataframe[["GST Rate"]] = hsn_codes_new_dataframe[["GST Rate"]].fillna('').astype(float, errors='ignore')
+        print(hsn_codes_new_dataframe)
     except Exception as datatype_conversion_exception:
         logging.error("Exception occurred while converting datatypes of vendor file")
         raise datatype_conversion_exception
 
     # create new Excel file in ID folder in Input folder
     try:
-        with pd.ExcelWriter(filtered_vendor_file_saving_path, engine="openpyxl") as writer:
-            vendor_new_dataframe.to_excel(writer, sheet_name=filtered_vendor_file_sheet_name, index=False)
-            return vendor_new_dataframe
-    except Exception as filtered_vendor_file_error:
-        logging.error("Exception occurred while creating filtered purchase register previous quarter file")
-        logging.exception(filtered_vendor_file_error)
-        raise filtered_vendor_file_error
+        with pd.ExcelWriter(filtered_hsn_code_file_saving_path, engine="openpyxl") as writer:
+            hsn_codes_new_dataframe.to_excel(writer, sheet_name=filtered_hsn_codes_file_sheet_name, index=False)
+            return [hsn_codes_new_dataframe, config_main]
+    except Exception as filtered_hsn_code_file_error:
+        logging.error("Exception occurred while creating filtered hsn codes file")
+        logging.exception(filtered_hsn_code_file_error)
+        raise filtered_hsn_code_file_error
 
 
 if __name__ == '__main__':
