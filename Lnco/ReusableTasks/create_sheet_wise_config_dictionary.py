@@ -8,7 +8,7 @@ def create_sheet_wise_config_dict(sheet_name):
     try:
         config = {}
         present_working_directory = os.getcwd()
-        config_file_path = os.path.join(os.path.dirname(present_working_directory), 'Input', 'Config.xlsx')
+        config_file_path = os.path.join(present_working_directory, 'Input', 'Config.xlsx')
         work_book = openpyxl.load_workbook(config_file_path)
         work_sheet = work_book[sheet_name]
         maximum_row = work_sheet.max_row

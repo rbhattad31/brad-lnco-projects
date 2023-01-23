@@ -70,8 +70,7 @@ def process_execution(input_files,
     print("*******************************************")
     print("Check if Output file exists")
 
-    main_file_directory = os.getcwd()
-    project_home_directory = os.path.dirname(main_file_directory)
+    project_home_directory = os.getcwd()
     output_file_folder = os.path.join(project_home_directory, 'Data', 'Output', 'audit_requests', str(request_id))
     print("Output file folder is : ", output_file_folder)
     if not os.path.exists(output_file_folder):
@@ -793,9 +792,9 @@ def process_execution(input_files,
 
 if __name__ == '__main__':
     pass
-    # sales_present_quarter_file_path = 'sales register q1.xlsx'
+
     # sales_previous_quarter_file_path = None
-    # hsn_file_path = 'HSN_code_summary.xlsx'
+
     # input_files = [sales_present_quarter_file_path, sales_previous_quarter_file_path, hsn_file_path]
     #
     # present_quarter_sheet_name = 'Sheet1'

@@ -58,8 +58,7 @@ def process_execution(input_files,
 
     print("*******************************************")
     print("Check if Output file exists")
-    main_file_directory = os.getcwd()
-    project_home_directory = os.path.dirname(main_file_directory)
+    project_home_directory = os.getcwd()
     output_file_path = os.path.join(project_home_directory, 'Data', 'Output', 'audit_requests', str(request_id))
     print("Output file folder is : ", output_file_path)
     if not os.path.exists(output_file_path):
