@@ -28,7 +28,7 @@ def open_po_reports(open_po_df, main_config):
         logging.error("Exception occurred while recent audit date exception the date format")
         raise open_po_Exception(exception_message)
     open_po_df["no of days"] = 0
-    output_file_path = main_config['Output_File_path']
+    output_file_path = main_config['Output_File_Path']
     print(output_file_path)
     output_sheet_name = main_config['Output_Open_PO_sheetname']
     print(output_sheet_name)
@@ -54,7 +54,7 @@ def open_po_reports(open_po_df, main_config):
         # open_po_df.to_excel(output_file_path, sheet_name=output_sheet_name, startrow=1, index=False)
         with pd.ExcelWriter(output_file_path, engine="openpyxl", mode="a",
                             if_sheet_exists="replace") as writer:
-            open_po_df.to_excel(writer, sheet_name=output_sheet_name, index=False)
+            open_po_df.to_excel(writer, sheet_name=output_sheet_name, index=False, startrow=1)
     except Exception as file_saving_exception:
         exception_message = file_saving_exception
         logging.error("Below exception occurred while saving the file ")

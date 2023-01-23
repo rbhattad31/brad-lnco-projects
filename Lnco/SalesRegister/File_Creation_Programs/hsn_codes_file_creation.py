@@ -27,10 +27,10 @@ def hsn_codes_file_creation(config_main, hsn_codes_file_dataframe, json_data_lis
     try:
         hsn_codes_new_dataframe.columns = ['HSN Codes', 'GST Rate']
         hsn_codes_new_dataframe[["HSN Codes"]] = hsn_codes_new_dataframe[["HSN Codes"]].fillna('').astype(int, errors='ignore')
-        print("Check GST Rate Column")
-        print(hsn_codes_new_dataframe)
+        # print("Check GST Rate Column")
+        # print(hsn_codes_new_dataframe)
         hsn_codes_new_dataframe[["GST Rate"]] = hsn_codes_new_dataframe[["GST Rate"]].fillna('').astype(float, errors='ignore')
-        print(hsn_codes_new_dataframe)
+        # print(hsn_codes_new_dataframe)
     except Exception as datatype_conversion_exception:
         logging.error("Exception occurred while converting datatypes of vendor file")
         raise datatype_conversion_exception

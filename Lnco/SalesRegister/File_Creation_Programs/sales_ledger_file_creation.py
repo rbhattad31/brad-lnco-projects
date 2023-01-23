@@ -4,7 +4,7 @@ import logging
 
 def sales_ledger_file_creation(config_main, sales_ledger_client_dataframe, json_data_list, filtered_sales_ledger_file_saving_path, filtered_sales_ledger_sheet_name):
     try:
-        sales_ledger_json_data = json_data_list[0]
+        sales_ledger_json_data = json_data_list[3]
         sales_ledger_new_dataframe = pd.DataFrame()
 
         credit_default_name = sales_ledger_json_data['Credit']['default_column_name']
@@ -16,17 +16,23 @@ def sales_ledger_file_creation(config_main, sales_ledger_client_dataframe, json_
         debit_default_name = sales_ledger_json_data['Debit']['default_column_name']
         debit_client_name = sales_ledger_json_data['Debit']['client_column_name']
         sales_ledger_new_dataframe[debit_default_name] = sales_ledger_client_dataframe[debit_client_name]
-        config_main['debit_default_name'] = debit_default_name
+        config_main['gl_account_long_text_default_name'] = debit_default_name
         config_main[debit_default_name] = debit_client_name
+
+        gl_account_long_text_default_name = sales_ledger_json_data['GL_Acct_Long_Text']['default_column_name']
+        gl_account_long_text_client_name = sales_ledger_json_data['GL_Acct_Long_Text']['client_column_name']
+        sales_ledger_new_dataframe[gl_account_long_text_default_name] = sales_ledger_client_dataframe[
+            gl_account_long_text_client_name]
+        config_main['gl_account_long_text_default_name'] = gl_account_long_text_default_name
+        config_main[gl_account_long_text_default_name] = gl_account_long_text_client_name
 
     except Exception as sales_ledger_json_exception:
         logging.error(
             "Exception occurred while getting column names from the JSON data in 'input file configuration' datatable")
         raise sales_ledger_json_exception
     try:
-        sales_ledger_new_dataframe.columns = ['Credit', 'Debit']
+        sales_ledger_new_dataframe.columns = ['Credit', 'Debit', 'G/L Acct Long Text']
         sales_ledger_new_dataframe[['Credit', 'Debit']] = sales_ledger_new_dataframe[['Credit', 'Debit']].fillna(0.0).astype(float, errors='ignore')
-
     except Exception as datatype_conversion_exception:
         logging.error("Exception occurred while converting datatypes of sales ledger file")
         raise datatype_conversion_exception

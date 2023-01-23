@@ -15,12 +15,12 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
                   config_main, earliest_request_row, env_file, db_connection, company_name):
     row = earliest_request_row
     client_id = row[6]
-    print(client_id)
+    print("Client Id is", client_id)
     success_request_status_keyword = config_main['Success_Request_Status']
     fail_request_status_keyword = config_main['Fail_Request_Status']
     db_cursor = db_connection.cursor()
     request_id = row[0]
-    print(request_id)
+    print("Request Id is ", request_id)
     try:
         # read Json string from request
         try:
@@ -39,8 +39,8 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
             logging.debug("bucket sub folder path is {}".format(bucket_sub_folder_path))
 
             mb51_file_path = inputs_json_object['inputs']['MB51']['input_url']
-            print(mb51_file_path)
-            logging.debug("MB 51 file path in aws s3 bucket is {}".format(mb51_file_path))
+            print("MB 51 file path in aws s3 bucket is \n\t{}".format(mb51_file_path))
+            logging.debug("MB 51 file path in aws s3 bucket is \n\t{}".format(mb51_file_path))
 
             mb51_sheet_name = inputs_json_object['inputs']['MB51']['sheet_name']
             print(mb51_sheet_name)
@@ -52,7 +52,7 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
 
             hsn_codes_file_sheet_name = inputs_json_object['inputs']['HSN_Codes']['sheet_name']
             print(hsn_codes_file_sheet_name)
-            logging.debug("Vendor file sheet name is {}".format(hsn_codes_file_sheet_name))
+            logging.debug("HSN Codes file sheet name is {}".format(hsn_codes_file_sheet_name))
 
             sales_register_present_quarter_file_path = \
                 inputs_json_object['inputs']['Sales_Register_Current_Quarter_File']['input_url']
@@ -278,14 +278,17 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
         # create new input files based on column names provided by client
         # get column names from input configuration table -
         # -------------------------------------------------------------------------------
-        mb51_file_id_in_db = env_file('MB51_FILE_ID_IN_DB')
+        mb51_file_id_in_db = env_file('SR_MB51_FILE_ID_IN_DB')
         query_to_get_mb51_column_names = \
             "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(
                 client_id) + " AND `file_id` = " + str(mb51_file_id_in_db)
+
         logging.info(
             "query to get MB51 file column names is: \n\t {}".format(str(query_to_get_mb51_column_names)))
         db_cursor.execute(query_to_get_mb51_column_names)
+        logging.info("query to get MB51 file column names is completed")
         mb51_column_names_json = db_cursor.fetchall()
+        logging.info("")
         mb51_column_names_json_object = json.loads(mb51_column_names_json[0][0])
         logging.info("MB51 file column names data in json format : \n\t {}".format(mb51_column_names_json_object))
         # -------------------------------------------------------------------------------

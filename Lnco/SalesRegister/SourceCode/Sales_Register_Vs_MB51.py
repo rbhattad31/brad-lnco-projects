@@ -177,6 +177,7 @@ def create_sales_register_vs_mb51_sheet(main_config, in_config, sales_present_qu
             merge_pd['Difference'][index] = difference
 
         try:
+            merge_pd.rename(columns={'Billing Qty.': 'Sales Register Billing Quantity', 'Quantity': 'MB51 Billing Quantity'}, inplace=True)
             with pd.ExcelWriter(main_config["Output_File_Path"], engine="openpyxl", mode="a",
                                 if_sheet_exists="replace") as writer:
                 merge_pd.to_excel(writer, sheet_name=main_config[

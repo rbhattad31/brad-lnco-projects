@@ -203,7 +203,7 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
 
         # create new input files based on column names provided by client
         # get column names from input configuration table -
-        mb51_file_id_in_db = env_file('MB51_FILE_ID_IN_DB')
+        mb51_file_id_in_db = env_file('PR_MB51_FILE_ID_IN_DB')
         query_to_get_mb51_column_names = \
             "SELECT `column_names_json` FROM `input_file_configurations` WHERE `user_id` =" + str(
                 client_id) + " AND `file_id` = " + str(mb51_file_id_in_db)

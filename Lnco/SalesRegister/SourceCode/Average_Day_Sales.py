@@ -228,8 +228,8 @@ def average_day_sales(sales_register_df, main_config):
     # print(average_day_sales_pivot_df)
 
     # sorting the Concentration in descending order
-    average_day_sales_pivot_df = average_day_sales_pivot_df.sort_values(by=["Concentration"],
-                                                                        ascending=False)  # descending order
+    # average_day_sales_pivot_df = average_day_sales_pivot_df.sort_values(by=["Concentration"],
+    #                                                                     ascending=False)  # descending order
     # creating a column as remarks
 
     # And for those concentrations greater than 25% and -25% name them as major in remarks column
@@ -285,15 +285,15 @@ def average_day_sales(sales_register_df, main_config):
         cell.number_format = '0.0%'
 
     # Format Header
-    calibri_11_black_bold_font = Font(name="Calibri", size=11, color="000000", bold=True)
+    cambria_11_black_bold_font = Font(name="Cambria", size=11, color="000000", bold=True)
     # print(ascii_lowercase)
     for c in ascii_lowercase:
-        worksheet[c + "3"].font = calibri_11_black_bold_font
+        worksheet[c + "3"].font = cambria_11_black_bold_font
 
     # Header Fill
-    solid_yellow_fill = PatternFill(patternType='solid', fgColor='FFFF00')
+    fill_solid_light_blue = PatternFill(patternType='solid', fgColor='ADD8E6')
     for f in ascii_lowercase:
-        worksheet[f + "3"].fill = solid_yellow_fill
+        worksheet[f + "3"].fill = fill_solid_light_blue
         if f == 'f':
             break
 

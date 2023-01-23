@@ -5,18 +5,18 @@ import logging
 def open_po_file_creation(config_main, open_po_client_dataframe, json_data_list, filtered_open_po_file_saving_path,
                           filtered_open_po_sheet_name):
     try:
-        open_po_json_data = json_data_list[0]
-        open_po_new_dataframe = pd.DataFrame()
+        open_po_json_data = json_data_list[4]
+        open_po_new_dataframe = open_po_client_dataframe
 
         order_date_default_name = open_po_json_data['Order_Date']['default_column_name']
         order_date_client_name = open_po_json_data['Order_Date']['client_column_name']
-        open_po_new_dataframe[order_date_default_name] = open_po_client_dataframe[order_date_client_name]
+        # open_po_new_dataframe[order_date_default_name] = open_po_client_dataframe[order_date_client_name]
         config_main['order_date_default_name'] = order_date_default_name
         config_main[order_date_default_name] = order_date_client_name
 
         po_date_default_name = open_po_json_data['PO_Date']['default_column_name']
         po_date_client_name = open_po_json_data['PO_Date']['client_column_name']
-        open_po_new_dataframe[po_date_default_name] = open_po_client_dataframe[po_date_client_name]
+        # open_po_new_dataframe[po_date_default_name] = open_po_client_dataframe[po_date_client_name]
         config_main['po_date_default_name'] = po_date_default_name
         config_main[po_date_default_name] = po_date_client_name
 
@@ -25,9 +25,10 @@ def open_po_file_creation(config_main, open_po_client_dataframe, json_data_list,
             "Exception occurred while getting column names from the JSON data in 'input file configuration' datatable")
         raise open_po_json_exception
     try:
-        open_po_new_dataframe.columns = ['Order Date', 'PO Date']
-        open_po_new_dataframe[['Order Date', 'PO Date']] = pd.to_datetime(
-            open_po_new_dataframe[['Order Date', 'PO Date']], errors='coerce')
+        # open_po_new_dataframe.columns = ['Order Date', 'PO Date']
+        open_po_new_dataframe.rename(columns={order_date_client_name: 'Order Date', po_date_client_name: 'PO Date'}, inplace=True)
+        open_po_new_dataframe['Order Date'] = pd.to_datetime(open_po_new_dataframe['Order Date'], errors='coerce')
+        open_po_new_dataframe['PO Date'] = pd.to_datetime(open_po_new_dataframe['PO Date'], errors='coerce')
 
     except Exception as datatype_conversion_exception:
         logging.error("Exception occurred while converting datatypes of open po file")

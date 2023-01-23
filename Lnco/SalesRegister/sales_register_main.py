@@ -293,7 +293,7 @@ def process_execution(input_files,
             else:
                 print("MB51 Sheet - The data is not starting from first row ")
                 for index, row in mb51_pd.iterrows():
-                    if row[0] != config_main["HSN_sheet_1st_column_name"]:
+                    if row[0] != config_main["MB51_first_column"]:
                         mb51_pd.drop(index, axis=0, inplace=True)
                     else:
                         break
@@ -332,7 +332,7 @@ def process_execution(input_files,
         # Sales Ledger
         if env_file('SR_VS_SL') == 'YES':
             print("Reading Sales Ledger sheet is started")
-
+            logging.info("Reading Sales Ledger sheet is started")
             print(sales_ledger_file_path)
             sales_ledger_pd = pd.read_excel(sales_ledger_file_path, sales_ledger_sheet_name)
 
@@ -340,6 +340,7 @@ def process_execution(input_files,
                 sales_ledger_pd.loc[:, ~sales_ledger_pd.columns.duplicated(keep='first')]
 
             sales_ledger_pd_columns = sales_ledger_pd.columns
+            # print(sales_ledger_pd_columns)
             if "Credit" in sales_ledger_pd_columns and "Debit" in sales_ledger_pd_columns:
                 print("Sales Ledger Sheet - The data is starting from first row only")
                 pass
@@ -347,8 +348,7 @@ def process_execution(input_files,
             else:
                 print("Sales Ledger Sheet - The data is not starting from first row ")
                 for index, row in sales_ledger_pd.iterrows():
-                    sales_ledger_pd_columns = sales_ledger_pd.columns
-                    if "Credit" not in sales_ledger_pd_columns and "Debit" not in sales_ledger_pd_columns:
+                    if "Credit" not in row.values.tolist() and "Debit" not in row.values.tolist():
                         sales_ledger_pd.drop(index, axis=0, inplace=True)
                     else:
                         break
@@ -359,7 +359,7 @@ def process_execution(input_files,
                 sales_ledger_pd.columns.name = None
             sales_ledger_pd = \
                 sales_ledger_pd.loc[:, ~sales_ledger_pd.columns.duplicated(keep='first')]
-
+            # print(sales_ledger_pd)
             print(
                 "Reading Sales Ledger sheet is complete, creating new input file only with required columns")
             logging.info(
@@ -404,8 +404,7 @@ def process_execution(input_files,
             else:
                 print("Open PO Sheet - The data is not starting from first row ")
                 for index, row in open_po_pd.iterrows():
-                    open_po_pd_columns = open_po_pd.columns
-                    if "Order Date" in open_po_pd_columns and "PO Date" in open_po_pd_columns:
+                    if "Order Date" not in row.values.tolist() and "PO Date" not in row.values.tolist():
                         open_po_pd.drop(index, axis=0, inplace=True)
                     else:
                         break
@@ -416,7 +415,6 @@ def process_execution(input_files,
                 open_po_pd.columns.name = None
             open_po_pd = \
                 open_po_pd.loc[:, ~open_po_pd.columns.duplicated(keep='first')]
-
             print(
                 "Reading Open PO sheet is complete, creating new input file only with required columns")
             logging.info(
@@ -447,6 +445,7 @@ def process_execution(input_files,
                   body=config_main["body_file_not_found"])
         print(notfound_error)
         logging.error("file not found error occurred: \n\t {}".format(notfound_error))
+        logging.exception(notfound_error)
         raise notfound_error
     except ValueError as sheetNotFound_error:
         send_mail(to=config_main["To_Mail_Address"], cc=config_main["CC_Mail_Address"],
@@ -454,7 +453,11 @@ def process_execution(input_files,
                   body=config_main["body_sheet_not_found"])
         print(sheetNotFound_error)
         logging.error("sheet not found error occurred: \n\t {}".format(sheetNotFound_error))
+        logging.exception(sheetNotFound_error)
         raise sheetNotFound_error
+    except Exception as file_creation_exception:
+        logging.exception(file_creation_exception)
+        raise file_creation_exception
 
     print("*******************************************")
     # ------------------------------------------------------------------------------------
@@ -520,6 +523,7 @@ def process_execution(input_files,
             print("select YES/NO for 'type of sale' wise concentration program in env file")
             raise Exception("Error in Env file for 'type of sale' wise concentration program sheet")
     except Exception as e:
+        logging.exception(e)
         print("Exception caught for Process: 'type of sale wise concentration program' Sheet: ", e)
     # ------------------------------------------------------------------------------------
     try:
@@ -686,6 +690,7 @@ def process_execution(input_files,
             print("select YES/NO for Sales Register vs Sales Ledger program in env file")
             raise Exception("Error in Env file for 'Sales Register vs Sales Ledger' sheet")
     except Exception as e:
+        logging.exception(e)
         print("Exception caught for Process: 'Sales Register vs Sales Ledger' Sheet: ", e)
     # ------------------------------------------------------------------------------------
     try:
@@ -699,6 +704,7 @@ def process_execution(input_files,
             print("select YES/NO for  Open PO Reports program in env file")
             raise Exception("Error in Env file for  Open PO Reports sheet")
     except Exception as e:
+        logging.exception(e)
         print("Exception caught for Process:  Open PO Reports Sheet: ", e)
     # ------------------------------------------------------------------------------------
     try:

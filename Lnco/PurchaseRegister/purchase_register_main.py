@@ -204,6 +204,7 @@ def process_execution(input_files,
                   body=config_main["body_file_not_found"])
         print(notfound_error)
         logging.error("file not found error occurred: \n\t {}".format(notfound_error))
+        logging.exception(notfound_error)
         raise notfound_error
     except ValueError as sheetNotFound_error:
         send_mail(to=config_main["To_Mail_Address"], cc=config_main["CC_Mail_Address"],
@@ -211,7 +212,11 @@ def process_execution(input_files,
                   body=config_main["body_sheet_not_found"])
         print(sheetNotFound_error)
         logging.error("sheet not found error occurred: \n\t {}".format(sheetNotFound_error))
+        logging.exception(sheetNotFound_error)
         raise sheetNotFound_error
+    except Exception as exception:
+        logging.exception(exception)
+        raise exception
 
     print("*******************************************")
     print("Executing Comparatives Purchase type code")

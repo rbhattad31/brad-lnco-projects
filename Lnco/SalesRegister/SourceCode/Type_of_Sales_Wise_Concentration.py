@@ -19,7 +19,8 @@ def type_of_sale_wise_concentration(main_config, in_config, present_quarter_pd):
         # Read Sales Register Sheets
 
         read_present_quarter_pd = present_quarter_pd
-        read_present_quarter_pd['Type of Sale'] = read_present_quarter_pd['Doc. Type Text']
+        print(present_quarter_pd)
+        # read_present_quarter_pd['Type of Sale'] = read_present_quarter_pd['Doc. Type Text']
         # column = read_present_quarter_pd.columns.values.tolist()
         # """for x in read_present_quarter_pd['Type of Sale']:
         #     print(x)
@@ -44,7 +45,7 @@ def type_of_sale_wise_concentration(main_config, in_config, present_quarter_pd):
 
         # Check Column Present
         present_quarter_col = read_present_quarter_pd.columns.values.tolist()
-        for col in ['Type of Sale', "Base Price in INR"]:
+        for col in ['Type of sale', "Base Price in INR"]:
             if col not in present_quarter_col:
                 subject = in_config["ColumnMiss_Subject"]
                 body = in_config["ColumnMiss_Body"]
@@ -54,7 +55,7 @@ def type_of_sale_wise_concentration(main_config, in_config, present_quarter_pd):
                 raise BusinessException(col + " Column is missing")
 
         # Filter rows
-        type_of_sale = read_present_quarter_pd[read_present_quarter_pd['Type of Sale'].notna()]
+        type_of_sale = read_present_quarter_pd[read_present_quarter_pd['Type of sale'].notna()]
         price_inr = read_present_quarter_pd[read_present_quarter_pd['Base Price in INR'].notna()]
 
         if len(type_of_sale) == 0:
@@ -74,7 +75,7 @@ def type_of_sale_wise_concentration(main_config, in_config, present_quarter_pd):
 
         # Create Pivot Table Q4
         try:
-            pivot_index = ["Type of Sale"]
+            pivot_index = ["Type of sale"]
             pivot_values = ["Base Price in INR"]
             pivot_sales = pd.pivot_table(read_present_quarter_pd, index=pivot_index, values=pivot_values,
                                          aggfunc=numpy.sum,
@@ -100,35 +101,6 @@ def type_of_sale_wise_concentration(main_config, in_config, present_quarter_pd):
 
         # Get Pivot Column Names
         col_name = pivot_sheet.columns.values.tolist()
-        for index in pivot_sheet.index:
-            # doc_type_text = tcs_rate_check[col_name[0]][index]
-            # print(doc_type_text)
-            if pivot_sheet[col_name[0]][index] == 'Scrap Order':
-                pivot_sheet['Type of Sale'][index] = 'Scrap Sales'
-            elif pivot_sheet[col_name[0]][index] == 'Export Ordr w/o Duty':
-                pivot_sheet['Type of Sale'][index] = 'Export Sales'
-            elif pivot_sheet[col_name[0]][index] == 'Export Order':
-                pivot_sheet['Type of Sale'][index] = 'Export Sales'
-            elif pivot_sheet[col_name[0]][index] == 'Trade Order':
-                pivot_sheet['Type of Sale'][index] = 'Domestic Sales'
-            elif pivot_sheet[col_name[0]][index] == 'Standard Order':
-                pivot_sheet['Type of Sale'][index] = 'Domestic Sales'
-            elif pivot_sheet[col_name[0]][index] == 'Service Order':
-                pivot_sheet['Type of Sale'][index] = 'Domestic Sales'
-            elif pivot_sheet[col_name[0]][index] == 'SEZ Sales order':
-                pivot_sheet['Type of Sale'][index] = 'Domestic Sales'
-            elif pivot_sheet[col_name[0]][index] == 'Asset Sale Order':
-                pivot_sheet['Type of Sale'][index] = 'Sale of Asset'
-            elif pivot_sheet[col_name[0]][index] == 'INTER PLANT SERVICES':
-                pivot_sheet['Type of Sale'][index] = 'Job work services'
-            elif pivot_sheet[col_name[0]][index] == 'PLL Credit Memo Req':
-                pivot_sheet['Type of Sale'][index] = 'Sales return'
-            elif pivot_sheet[col_name[0]][index] == 'Returns':
-                pivot_sheet['Type of Sale'][index] = 'Sales return'
-            elif pivot_sheet[col_name[0]][index] == 'Debit Memo Request':
-                pivot_sheet['Type of Sale'][index] = 'Debit Memo'
-            else:
-                pass
 
         # Delete row of Base price in INR column values as zero
         pivot_sheet.drop(pivot_sheet.index[(pivot_sheet[col_name[1]] == 0)], inplace=True)

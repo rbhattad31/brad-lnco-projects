@@ -224,10 +224,10 @@ def sales_previous_quarter_file_creation(config_main, sales_previous_client_data
         # Below 4 columns are int datatype and converting them from Object to int datatype.
         # and raise exception if contains any data rather than numbers.
         sales_previous_new_dataframe[
-            ["Plant", "Payer", "HSN Code", "Sales Order", "Delivery No.", "Sales Order", "Delivery No.",
+            ["Plant", "Payer", "HSN Code", "Sales Order", "Delivery No.",
              "Billing No."]] = \
             sales_previous_new_dataframe[
-                ["Plant", "Payer", "HSN Code", "Sales Order", "Delivery No.", "Sales Order", "Delivery No.",
+                ["Plant", "Payer", "HSN Code", "Sales Order", "Delivery No.",
                  "Billing No."]].fillna(
                 0).astype(int, errors='raise')
 

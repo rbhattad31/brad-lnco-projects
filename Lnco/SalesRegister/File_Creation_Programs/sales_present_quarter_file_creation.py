@@ -224,8 +224,8 @@ def sales_present_quarter_file_creation(config_main, sales_present_client_datafr
         print(list(sales_present_new_dataframe.columns))
         # Below 4 columns are int datatype and converting them from Object to int datatype.
         # and raise exception if contains any data rather than numbers.
-        sales_present_new_dataframe[["Plant", "Payer", "HSN Code", "Sales Order", "Delivery No.", "Sales Order", "Delivery No.", "Billing No."]] = \
-            sales_present_new_dataframe[["Plant", "Payer", "HSN Code", "Sales Order", "Delivery No.", "Sales Order", "Delivery No.", "Billing No."]].fillna(
+        sales_present_new_dataframe[["Plant", "Payer", "HSN Code", "Sales Order", "Delivery No.", "Billing No."]] = \
+            sales_present_new_dataframe[["Plant", "Payer", "HSN Code", "Sales Order", "Delivery No.", "Billing No."]].fillna(
                 0).astype(int, errors='raise')
 
         # Below 4 datatypes are object when read from excel, converting back to String, raises exception if not suitable datatype is found
@@ -247,6 +247,7 @@ def sales_present_quarter_file_creation(config_main, sales_present_client_datafr
         print("Sales register present quarter datatypes are changed successfully")
     except Exception as datatype_conversion_exception:
         logging.error("Exception occurred while converting datatypes of present quarter sales register input file")
+        logging.exception(datatype_conversion_exception)
         raise datatype_conversion_exception
 
     # create new Excel file in ID folder in Input folder

@@ -65,7 +65,7 @@ def related_parties_transaction(rpt_df, dict_main_config):
             # creating first variance formula
             df_variance = df_min - df_max
             # df_Remarks = "NA", "Minor", "Major"
-            result_df.loc[len(result_df.index)] = [clients, df_min, df_max, df_variance, '']
+            result_df.loc[len(result_df.index)] = [client, df_min, df_max, df_variance, '']
             # result_df = pd.DataFrame(list(zip(clients, df_min, df_max, df_variance)), columns=['Payer Name', 'Min of So Unit Price', 'Max of So unit price', 'Variance', 'Remarks'])
             # print(result_df)
             # print(type(result_df))
