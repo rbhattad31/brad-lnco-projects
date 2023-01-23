@@ -1,8 +1,5 @@
 /Logs/
 
-/PurchaseRegister/Data/Output/audit_requests/
-/PurchaseRegister/Data/Input/audit_requests/
-
 /SalesRegister/Data/
 /SalesRegister/sales register q1.xlsx
 /SalesRegister/HSN_code_summary.xlsx
@@ -10,5 +7,7 @@
 default_log.log
 /SalesRegister/Output.xlsx
 /ENV/env.env
-/Data/
+
+
 /Main/Formatted Sales ledger new.xlsx
+/Data/

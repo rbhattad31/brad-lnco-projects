@@ -24,7 +24,7 @@ from ReusableTasks.send_mail_reusable_task import send_mail
 def audit_process(host, username, password, database, aws_bucket_name, aws_access_key, aws_secret_key,
                   config_main):
     present_working_directory = os.getcwd()
-    env_file = os.path.join(os.path.dirname(present_working_directory), 'ENV', 'env.env')
+    env_file = os.path.join(present_working_directory, 'ENV', 'env.env')
     env_file = Config(RepositoryEnv(env_file))
     default_to_mail_address = env_file('DEFAULT_TO_EMAIL')
     default_cc_mail_address = env_file('DEFAULT_CC_EMAIL')
