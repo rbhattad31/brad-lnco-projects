@@ -11,7 +11,8 @@ from ReusableTasks.send_mail_reusable_task import send_mail
 
 # read env file name from config file
 present_working_directory = os.getcwd()
-env_file_path = os.path.join(os.path.dirname(present_working_directory), 'ENV', 'env.env')
+
+env_file_path = os.path.join(present_working_directory, 'ENV', 'env.env')
 try:
     env_file = Config(RepositoryEnv(env_file_path))
     print("Env file is successfully read")
@@ -34,7 +35,7 @@ log_file_name = env_file('LOG_FILE_NAME_SUFFIX') + '_' + datetime.datetime.now()
 print("log file name is ", log_file_name)
 
 # create log file absolute path
-log_file_path = os.path.join(os.path.dirname(os.getcwd()), 'Logs', log_file_name)
+log_file_path = os.path.join(present_working_directory, 'Logs', log_file_name)
 # log_file_path = os.path.abspath(log_file_path)
 print("log file path is \n\t ", log_file_path)
 
@@ -46,7 +47,7 @@ try:
 
 except Exception as file_exception:
     # least possibility of exception unless memory issue on the server
-    log_file_path = "../default_log.log"
+    log_file_path = "default_log.log"
     print("Error occurred while creating log file with current date time extension")
     print("error is ", file_exception)
     print("Using default log file for logging purpose: \n\t", log_file_path)
@@ -73,15 +74,14 @@ try:
 except Exception as log_file_config_exception:
     print("Exception ", log_file_config_exception, " occurred while setting up log file configuration")
     print("Setting default configuration for logging with default config file")
-    logging.basicConfig(filename='../default_log.log', level=logging_level,
+    logging.basicConfig(filename='default_log.log', level=logging_level,
                         format='%(asctime)s::%(levelname)s::%(message)s')
 
 logging.info("Program Execution is started")
 logging.info("ENV_FILE used for the program: {}".format(env_file_path))
 
 # read config file
-present_working_directory = os.getcwd()
-config_file_path = os.path.join(os.path.dirname(present_working_directory), 'Input', 'Config.xlsx')
+config_file_path = os.path.join(present_working_directory, 'Input', 'Config.xlsx')
 
 config_sheet_name = "Main"
 

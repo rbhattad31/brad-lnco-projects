@@ -1,5 +1,4 @@
 import logging
-from msilib.schema import Font
 from string import ascii_uppercase
 from openpyxl.reader.excel import load_workbook
 from openpyxl.utils import get_column_letter
