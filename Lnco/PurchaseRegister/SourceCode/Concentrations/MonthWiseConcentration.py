@@ -91,6 +91,7 @@ def month_concentration_top_weight(month_concentration_dataframe, main_config):
 
 def month_wise(main_config, in_config, present_quarter_pd):
     try:
+        print(in_config)
         # Read Purchase Register Sheets
         read_present_quarter_pd = present_quarter_pd
 
@@ -200,12 +201,6 @@ def month_wise(main_config, in_config, present_quarter_pd):
         except Exception as File_creation_error:
             logging.error("Exception occurred while creating month wise concentration sheet")
             raise File_creation_error
-
-        try:
-            month_concentration_top_weight(pivot_sheet, main_config)
-        except Exception as month_concentration_top_weight_error:
-            logging.error("Exception occurred while creating month wise concentration top weight table")
-            raise month_concentration_top_weight_error
 
         # Check outfile creation
         if os.path.exists(main_config["Output_File_Path"]):
@@ -318,6 +313,13 @@ def month_wise(main_config, in_config, present_quarter_pd):
         print(wb.sheetnames)
         # Save File
         wb.save(main_config["Output_File_Path"])
+
+        try:
+            month_concentration_top_weight(pivot_sheet, main_config)
+        except Exception as month_concentration_top_weight_error:
+            logging.error("Exception occurred while creating month wise concentration top weight table")
+            raise month_concentration_top_weight_error
+
         return ws
 
     except PermissionError as file_error:
