@@ -214,16 +214,8 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         movement_types_list = [int(item.strip()) for item in movement_types_list]
         # print(movement_types_list)
         mb51_data_with_movement_type = mb51_pd[mb51_pd['Movement type'].isin(movement_types_list)]
-
-        if mb51_data_with_movement_type.shape[0] == 0:
-            send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
-                      subject=in_config["subject_mail"],
-                      body=in_config["Body_mail_MB51_Movement_type_exception"])
-            return "Body_mail_MB51_Movement_type_exception"
-
-
         # print(mb51_data_with_movement_type)
-        print("Creating pivot table on Mb51 after movement types filtered")
+
         pivot2_df = pd.pivot_table(mb51_data_with_movement_type, index=["Material Document"],
                                    values="Qty in unit of entry",
                                    aggfunc=numpy.sum)

@@ -230,6 +230,7 @@ def amount_quantity_percentage(main_config, unit_price_present_previous_merge_pd
 def unit_price_high_low_average(main_config, unit_price_present_previous_merge_pd):
     purchase_remark = main_config["purchase_remark"]
     not_purchase_remark = main_config["not_purchase_remark"]
+    unit_price_present_previous_merge_pd["Remarks"] = unit_price_present_previous_merge_pd["Remarks"].fillna(0).astype(int, errors='ignore')
     unit_price_comparison_columns = unit_price_present_previous_merge_pd.columns.values.tolist()
 
     # the below line creates dataframe with duplicate columns
@@ -260,6 +261,12 @@ def unit_price_high_low_average(main_config, unit_price_present_previous_merge_p
             unit_price_column_total = temp_df[unit_price_column_name].sum()
             number_of_entries_found = len(temp_df.index)
             # print(number_of_entries_found)
+            # print(unit_price_column_total)
+            # print(type(unit_price_column_total))
+            # print(number_of_entries_found)
+            # print(type(number_of_entries_found))
+            if type(unit_price_column_total) == str:
+                continue
             unit_price_average = unit_price_column_total / number_of_entries_found
             # print(unit_price_average)
             temp_df.sort_values(by=unit_price_column_name, axis=0, ascending=False, inplace=True)

@@ -91,7 +91,6 @@ def month_concentration_top_weight(month_concentration_dataframe, main_config):
 
 def month_wise(main_config, in_config, present_quarter_pd):
     try:
-        print(in_config)
         # Read Purchase Register Sheets
         read_present_quarter_pd = present_quarter_pd
 
