@@ -480,7 +480,7 @@ def process_execution(input_files,
         if env_file('CONCENTRATION_MONTH_WISE') == 'YES':
             print("Executing month wise concentration program")
             config_concentration_month_wise = create_sheet_wise_config_dict(
-                sheet_name=config_main["Config_Concentrations_Month_sheetname"])
+                sheet_name=config_main["Config_Sales_Concentrations_Month_sheetname"])
             month_wise_concentration(main_config=config_main, in_config=config_concentration_month_wise,
                                      present_quarter_pd=sales_present_quarter_pd)
 
@@ -496,7 +496,7 @@ def process_execution(input_files,
         if env_file('CONCENTRATION_PLANT_WISE') == 'YES':
             print("Executing plant wise concentration program")
             config_concentration_plant_wise = create_sheet_wise_config_dict(
-                sheet_name=config_main["Config_Concentrations_Plant_sheetname"])
+                sheet_name=config_main["Config_Sales_Concentrations_Plant_sheetname"])
             plant_wise_concentration(main_config=config_main, in_config=config_concentration_plant_wise,
                                      present_quarter_pd=sales_present_quarter_pd)
 

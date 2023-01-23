@@ -57,7 +57,7 @@ def sr_vs_sl(data_of_sales_register, main_config, sales_ledger_new_dataframe):
     # print("mmm")
     # pd_columns_register.columns = pd_columns_register.columns.str.replace('Base Price in INR', 'amount as per sr')
     try:
-        dataframe_to_pivot_table_of_register = dataframe_to_pivot_table_of_register.rename(columns={pd_columns_register[2]: "amount as per sr"})
+        dataframe_to_pivot_table_of_register = dataframe_to_pivot_table_of_register.rename(columns={pd_columns_register[2]: "Amount as per SR"})
         # print(dataframe_to_pivot_table_of_register)
     except Exception as rename_exception:
         exception_message = "exception occurred while renaming a pivot table for sr vs sl report, Hence stopping the bot".format(rename_exception)
@@ -65,7 +65,7 @@ def sr_vs_sl(data_of_sales_register, main_config, sales_ledger_new_dataframe):
         raise sr_vs_sl_Exception(exception_message)
 
     try:
-        sub_total_of_register = dataframe_to_pivot_table_of_register['amount as per sr'].sum()
+        sub_total_of_register = dataframe_to_pivot_table_of_register['Amount as per SR'].sum()
         # print(sub_total_of_register)
     except Exception as sub_total_exception:
         exception_message = " exception occurred while calculating sub total of register, Hence stopping the bot".format(sub_total_exception)
@@ -86,28 +86,28 @@ def sr_vs_sl(data_of_sales_register, main_config, sales_ledger_new_dataframe):
         dataframe_to_pivot_table_of_ledger['G/L Acct Long Text'] == 'Sale of  Scrap', 'net_amount'].iloc[0]
     # print(float_net_amount_sale_scrap)
     dataframe_to_pivot_table_of_register.loc[dataframe_to_pivot_table_of_register[
-                                                 'Doc. Type Text'] == 'Scrap Order', 'amount as per Sales Ledger'] = float_net_amount_sale_scrap
+                                                 'Doc. Type Text'] == 'Scrap Order', 'Amount as per Sales Ledger'] = float_net_amount_sale_scrap
 
     # 2
     float_net_amount_sale_export = dataframe_to_pivot_table_of_ledger.loc[
         dataframe_to_pivot_table_of_ledger['G/L Acct Long Text'] == 'Sales Export', 'net_amount'].iloc[0]
     # print(float_net_amount_sale_export)
     dataframe_to_pivot_table_of_register.loc[dataframe_to_pivot_table_of_register[
-                                                 'Doc. Type Text'] == 'Export Order', 'amount as per Sales Ledger'] = float_net_amount_sale_export
+                                                 'Doc. Type Text'] == 'Export Order', 'Amount as per Sales Ledger'] = float_net_amount_sale_export
 
     # 3
     float_net_amount_sale_job_work_charges = dataframe_to_pivot_table_of_ledger.loc[
         dataframe_to_pivot_table_of_ledger['G/L Acct Long Text'] == 'Sales Job Work Charges', 'net_amount'].iloc[0]
     # print(float_net_amount_sale_job_work_charges)
     dataframe_to_pivot_table_of_register.loc[dataframe_to_pivot_table_of_register[
-                                                 'Doc. Type Text'] == 'Service Order', 'amount as per Sales Ledger'] = float_net_amount_sale_job_work_charges
+                                                 'Doc. Type Text'] == 'Service Order', 'Amount as per Sales Ledger'] = float_net_amount_sale_job_work_charges
 
     # 4
     float_net_amount_sales_domestic = dataframe_to_pivot_table_of_ledger.loc[
         dataframe_to_pivot_table_of_ledger['G/L Acct Long Text'] == 'Sales Domestic', 'net_amount'].iloc[0]
     # print(float_net_amount_sales_domestic)
     dataframe_to_pivot_table_of_register.loc[dataframe_to_pivot_table_of_register[
-                                                 'Doc. Type Text'] == 'Standard Order', 'amount as per Sales Ledger'] = float_net_amount_sales_domestic
+                                                 'Doc. Type Text'] == 'Standard Order', 'Amount as per Sales Ledger'] = float_net_amount_sales_domestic
 
     # 5
     float_net_amount_income_clearing = dataframe_to_pivot_table_of_ledger.loc[
@@ -131,19 +131,19 @@ def sr_vs_sl(data_of_sales_register, main_config, sales_ledger_new_dataframe):
     # 4a
     dataframe_to_pivot_table_of_register.loc[
         dataframe_to_pivot_table_of_register[
-            'Doc. Type Text'] == 'INTER PLANT SERVICES', 'amount as per Sales Ledger'] = sum_of_three_i_s
+            'Doc. Type Text'] == 'INTER PLANT SERVICES', 'Amount as per Sales Ledger'] = sum_of_three_i_s
 
-    total_amount_as_per_sr = dataframe_to_pivot_table_of_register['amount as per sr'].sum()
-    total_amount_as_per_sl = dataframe_to_pivot_table_of_register['amount as per Sales Ledger'].sum()
+    total_amount_as_per_sr = dataframe_to_pivot_table_of_register['Amount as per SR'].sum()
+    total_amount_as_per_sl = dataframe_to_pivot_table_of_register['Amount as per Sales Ledger'].sum()
     # print(total_amount_as_per_sr)
     # print("Amount of ledger")
     # print(total_amount_as_per_sl)
 
-    dataframe_to_pivot_table_of_register["amount as per Sales Ledger"].fillna(0, inplace=True)
+    dataframe_to_pivot_table_of_register["Amount as per Sales Ledger"].fillna(0, inplace=True)
 
     # difference sr - sl
-    amount_as_per_sr = 'amount as per sr'
-    amount_as_per_sales_ledger = 'amount as per Sales Ledger'
+    amount_as_per_sr = 'Amount as per SR'
+    amount_as_per_sales_ledger = 'Amount as per Sales Ledger'
 
     dataframe_to_pivot_table_of_register['Difference'] = dataframe_to_pivot_table_of_register.apply(lambda row: row[amount_as_per_sr] - row[amount_as_per_sales_ledger], axis=1)
     total_difference = dataframe_to_pivot_table_of_register['Difference'].sum()
@@ -187,7 +187,7 @@ def sr_vs_sl(data_of_sales_register, main_config, sales_ledger_new_dataframe):
         worksheet[c + "3"].font = calibri_11_black_bold_font
 
     # Header Fill
-    solid_yellow_fill = PatternFill(patternType='solid', fgColor='FFFF00')
+    solid_yellow_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
     for e in ascii_lowercase:
         worksheet[e + "5"].fill = solid_yellow_fill
         if e == 'e':
