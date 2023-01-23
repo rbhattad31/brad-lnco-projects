@@ -1,4 +1,6 @@
 import sys
+if sys.platform == 'linux':
+    sys.path.insert(0, '/var/www/html/bradlnco/brad-lnco-projects/')
 from Main.process import audit_process
 from decouple import Config, RepositoryEnv
 from ReusableTasks.create_main_config_dictionary import create_main_config_dictionary
