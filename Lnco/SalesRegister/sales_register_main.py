@@ -6,7 +6,7 @@ import os
 import sys
 import logging
 
-from ReusableTasks.send_mail_reusable_task import send_mail, send_mail_with_attachment
+from ReusableTasks.send_mail_reusable_task import send_mail
 
 from SalesRegister.SourceCode.Customer_Wise_Concentration import customer_wise_concentration
 from SalesRegister.SourceCode.Month_Wise_Concentration import month_wise_concentration
@@ -78,7 +78,7 @@ def process_execution(input_files,
         print("Creating directory: ", output_file_folder)
         os.makedirs(output_file_folder)
         print("Directory" + output_file_folder + " is created")
-    output_file_name = company_name.replace(' ', '_') + "_" + str(request_id) + "_Sales_Register_Output.xlsx"
+    output_file_name = company_name.replace(' ', '_') + "_" + str(request_id) + "_Sales_Audit_Report_Output.xlsx"
     output_file_path = os.path.join(output_file_folder, output_file_name)
     print("Output file path is: " + output_file_path)
     config_main['Output_File_Path'] = output_file_path
@@ -185,7 +185,7 @@ def process_execution(input_files,
             else:
                 print("Previous Quarter file - The data is not starting from first row ")
                 for index, row in read_previous_quarter_pd.iterrows():
-                    if row[0] != config_main["purchase_register_1st_column_name"]:
+                    if row[0] != config_main["sales_register_1st_column_name"]:
                         read_previous_quarter_pd.drop(index, axis=0, inplace=True)
                     else:
                         break
@@ -775,18 +775,18 @@ def process_execution(input_files,
     else:
         print("Saved updated config data to an excel file in output folder in the request folder")
     # ------------------------------------------------------------------------------------
-    print("Saved config data to an excel file")
 
     # Bot success mail notification
-    end_to = config_main['To_Mail_Address']
-    end_cc = config_main['CC_Mail_Address']
-    end_subject = config_main['Success_Mail_Subject']
-    end_body = config_main['Success_Mail_Body']
-    send_mail_with_attachment(to=end_to, cc=end_cc, body=end_body, subject=end_subject,
-                              attachment_path=output_file_path)
-    print("Process complete mail notification is sent")
+    # end_to = config_main['To_Mail_Address']
+    # end_cc = config_main['CC_Mail_Address']
+    # end_subject = config_main['Success_Mail_Subject']
+    # end_body = config_main['Success_Mail_Body']
+    # send_mail_with_attachment(to=end_to, cc=end_cc, body=end_body, subject=end_subject,
+    #                           attachment_path=output_file_path)
+    # print("Process complete mail notification is sent")
+    #
+    # print("Bot successfully finished Processing of the sheets")
 
-    print("Bot successfully finished Processing of the sheets")
     return output_file_path
 
 

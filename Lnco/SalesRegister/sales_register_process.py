@@ -10,6 +10,8 @@ from SalesRegister.sales_register_main import process_execution
 import os
 from datetime import datetime
 
+from ReusableTasks.send_mail_reusable_task import send_mail_with_attachment
+
 
 def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
                   config_main, earliest_request_row, env_file, db_connection, company_name):
@@ -38,11 +40,11 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
             bucket_sub_folder_path = inputs_json_object['path']
             logging.debug("bucket sub folder path is {}".format(bucket_sub_folder_path))
 
-            mb51_file_path = inputs_json_object['inputs']['MB51']['input_url']
+            mb51_file_path = inputs_json_object['inputs']['Sales_Register_MB51']['input_url']
             print("MB 51 file path in aws s3 bucket is \n\t{}".format(mb51_file_path))
             logging.debug("MB 51 file path in aws s3 bucket is \n\t{}".format(mb51_file_path))
 
-            mb51_sheet_name = inputs_json_object['inputs']['MB51']['sheet_name']
+            mb51_sheet_name = inputs_json_object['inputs']['Sales_Register_MB51']['sheet_name']
             print(mb51_sheet_name)
             logging.debug("MB 51 sheet name is {}".format(mb51_sheet_name))
 
@@ -140,6 +142,7 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
             print("Request data is not created properly or incomplete...")
             print(input_files_data_extraction_exception)
             logging.critical("Exception occurred during extracting data from Request")
+            logging.exception(input_files_data_extraction_exception)
             logging.critical("Request data is not created properly or incomplete...")
             raise input_files_data_extraction_exception
 
@@ -443,7 +446,15 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
                 logging.info("Updated audit request status as {}".format(success_request_status_keyword))
                 print("status changed to ", success_request_status_keyword)
                 # send mail with output file as attachment , output_file_path
+                end_to = config_main['To_Mail_Address']
+                end_cc = config_main['CC_Mail_Address']
+                end_subject = config_main['Success_Mail_Subject']
+                end_body = config_main['Success_Mail_Body'].format("Sales Audit Report")
+                send_mail_with_attachment(to=end_to, cc=end_cc, body=end_body, subject=end_subject,
+                                          attachment_path=output_file_path)
+                print("Process complete mail notification is sent")
 
+                print("Bot successfully finished Processing of the sheets")
                 print("====================================================================")
             except Exception as datatable_status_success_update_exception:
                 logging.critical("Exception occurred while updating audit request status as {}".format(

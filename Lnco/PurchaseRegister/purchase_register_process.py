@@ -10,6 +10,8 @@ from PurchaseRegister.purchase_register_main import process_execution
 import os
 from datetime import datetime
 
+from ReusableTasks.send_mail_reusable_task import send_mail_with_attachment
+
 
 def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
                   config_main, earliest_request_row, env_file, db_connection, company_name):
@@ -107,6 +109,7 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
             print("Request data is not created properly or incomplete...")
             print(input_files_data_extraction_exception)
             logging.critical("Exception occurred during extracting data from Request")
+            logging.exception(input_files_data_extraction_exception)
             logging.critical("Request data is not created properly or incomplete...")
             raise input_files_data_extraction_exception
 
@@ -334,6 +337,17 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
                 db_connection.commit()
                 logging.info("Updated audit request status as {}".format(success_request_status_keyword))
                 print("status changed to ", success_request_status_keyword)
+                # Bot success mail notification
+
+                end_to = config_main['To_Mail_Address']
+                end_cc = config_main['CC_Mail_Address']
+                end_subject = config_main['Success_Mail_Subject']
+                end_body = config_main['Success_Mail_Body'].format("Purchase Audit Report")
+                send_mail_with_attachment(to=end_to, cc=end_cc, body=end_body, subject=end_subject,
+                                          attachment_path=output_file_path)
+                print("Process complete mail notification is sent")
+
+                print("Bot successfully finished Processing of the sheets")
                 # send mail with output file as attachment , output_file_path
 
                 print("====================================================================")

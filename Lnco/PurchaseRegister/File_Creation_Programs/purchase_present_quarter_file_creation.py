@@ -1,6 +1,5 @@
 import logging
 import pandas as pd
-import openpyxl
 
 
 def purchase_present_quarter_file_creation(config_main, purchase_present_client_dataframe, json_data_list,
@@ -104,6 +103,8 @@ def purchase_present_quarter_file_creation(config_main, purchase_present_client_
         logging.error(
             "Exception occurred while getting column names from the JSON data in 'input file configuration' datatable")
         raise purchase_json_exception
+    else:
+        logging.info("Successfully created new dataframe with required columns from the input file")
 
     try:
         purchase_present_new_dataframe.columns = ['Plant', 'GR Document Number', 'GR Posting Date',
@@ -137,21 +138,24 @@ def purchase_present_quarter_file_creation(config_main, purchase_present_client_
             ["GR Amt.in loc.cur.", "Unit Price", "GR Qty"]].fillna(0).astype(float, errors='ignore')
 
         # print(purchase_present_new_dataframe.dtypes.tolist())
-        logging.info("purchase register previous quarter datatypes are changed successfully ")
-        print("purchase register previous quarter datatypes are changed successfully")
+
     except Exception as datatype_conversion_exception:
         logging.error("Exception occurred while converting datatypes of present quarter purchase register input file")
         raise datatype_conversion_exception
-
+    else:
+        logging.info("purchase register previous quarter datatypes are changed successfully ")
+        print("purchase register previous quarter datatypes are changed successfully")
     # create new Excel file in ID folder in Input folder
     try:
         with pd.ExcelWriter(filtered_purchase_present_file_saving_path, engine="openpyxl") as writer:
             purchase_present_new_dataframe.to_excel(writer, sheet_name=filtered_purchase_present_sheet_name,
                                                     index=False)
-            return [purchase_present_new_dataframe, config_main]
     except Exception as filtered_purchase_present_error:
         logging.error("Exception occurred while creating filtered purchase register present quarter file")
         raise filtered_purchase_present_error
+    else:
+        logging.info("filtered purchase register is saved in Input fodler of the request")
+        return [purchase_present_new_dataframe, config_main]
 
 
 if __name__ == '__main__':

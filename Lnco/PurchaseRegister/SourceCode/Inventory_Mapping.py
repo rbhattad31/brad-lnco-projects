@@ -147,7 +147,7 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         mb51_pd = mb51_pd.loc[:, ~mb51_pd.columns.duplicated(keep='first')]
         print("MB51 file reading is complete, creating new input file only with required columns")
         logging.info(
-            "Reading purchase register present quarter sheet is complete, creating new input file only with required columns")
+            "Reading MB51 sheet is complete, creating new input file only with required columns")
         mb51_folder_path = os.path.dirname(mb51_file_location)
         mb51_file_name = os.path.basename(mb51_file_location).lower()
         filtered_mb51_file_name = "filtered_" + str(mb51_file_name)
@@ -220,7 +220,6 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
                       subject=in_config["subject_mail"],
                       body=in_config["Body_mail_MB51_Movement_type_exception"])
             return "Body_mail_MB51_Movement_type_exception"
-
 
         # print(mb51_data_with_movement_type)
         print("Creating pivot table on Mb51 after movement types filtered")

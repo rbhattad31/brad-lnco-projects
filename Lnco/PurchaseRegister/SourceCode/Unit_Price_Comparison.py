@@ -500,11 +500,15 @@ def create_unit_price(main_config, in_config, present_quarter_pd, previous_quart
         main_config["purchase_remark"] = "Purchased in the current quarter"
         main_config["not_purchase_remark"] = "Not purchased in the current quarter"
         for index in unit_price_present_previous_merge.index:
-            if unit_price_present_previous_merge[columns[6]][index] == 0:
+            if unit_price_present_previous_merge[columns[6]][index] == 0 and unit_price_present_previous_merge[columns[9]][index] != 0:
                 unit_price_present_previous_merge['Remarks'][index] = "Not purchased in the current quarter"
 
-            elif unit_price_present_previous_merge[columns[9]][index] == 0:
-                unit_price_present_previous_merge['Remarks'][index] = "Purchased in the current quarter"
+            elif unit_price_present_previous_merge[columns[6]][index] != 0 and unit_price_present_previous_merge[columns[9]][index] == 0:
+                unit_price_present_previous_merge['Remarks'][index] = "Purchased in the current quarter only"
+            elif unit_price_present_previous_merge[columns[6]][index] == 0 and unit_price_present_previous_merge[columns[9]][index] == 0:
+                unit_price_present_previous_merge['Remarks'][index] = "Not Purchased in both present and previous quarters"
+            elif unit_price_present_previous_merge[columns[6]][index] != 0 and unit_price_present_previous_merge[columns[9]][index] != 0:
+                unit_price_present_previous_merge['Remarks'][index] = "Purchased in both quarters"
             else:
                 pass
 

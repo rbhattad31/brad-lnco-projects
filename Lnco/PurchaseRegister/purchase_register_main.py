@@ -30,7 +30,7 @@ import PurchaseRegister.SourceCode.Unit_Price_Comparison as upc
 import PurchaseRegister.SourceCode.Inventory_Mapping as im
 import PurchaseRegister.SourceCode.SecurityCutoff as sc
 
-from ReusableTasks.send_mail_reusable_task import send_mail, send_mail_with_attachment
+from ReusableTasks.send_mail_reusable_task import send_mail
 
 from ReusableTasks.create_sheet_wise_config_dictionary import create_sheet_wise_config_dict
 
@@ -66,7 +66,7 @@ def process_execution(input_files,
         print("Creating directory: ", output_file_path)
         os.makedirs(output_file_path)
         print("Directory" + output_file_path + " is created")
-    output_file_name = company_name.replace(' ', '_') + "_" + str(request_id) + "_Purchase_Register_Output.xlsx"
+    output_file_name = company_name.replace(' ', '_') + "_" + str(request_id) + "_Purchase_Audit_Report_Output.xlsx"
     output_file_path = os.path.join(output_file_path, output_file_name)
     print("Output file path is: " + output_file_path)
     config_main['Output_File_Path'] = output_file_path
@@ -133,11 +133,14 @@ def process_execution(input_files,
         logging.info(
             "Reading purchase register present quarter sheet is complete, creating new input file only with required columns")
         purchase_register_present_quarter_folder_path = os.path.dirname(purchase_register_present_quarter_file_path)
+        logging.info("purchase_register_present_quarter_folder_path: \n\t ", purchase_register_present_quarter_folder_path)
         purchase_register_present_quarter_file_name = os.path.basename(
             purchase_register_present_quarter_file_path).lower()
         filtered_purchase_present_file_name = "filtered_" + str(purchase_register_present_quarter_file_name)
+        logging.info("filtered_purchase_present_file_name: \n\t", filtered_purchase_present_file_name)
         filtered_purchase_present_file_saving_path = os.path.join(purchase_register_present_quarter_folder_path,
                                                                   filtered_purchase_present_file_name)
+        logging.info("filtered_purchase_present_file_saving_path \n\t", filtered_purchase_present_file_saving_path)
         filtered_purchase_present_sheet_name = present_quarter_sheet_name
 
         purchase_present_quarter_file_creation_output = purchase_present_quarter_file_creation(config_main,
@@ -655,16 +658,16 @@ def process_execution(input_files,
         print("Saved updated config data to an excel file in output folder in the request folder")
     # ------------------------------------------------------------------------------------
 
-    # Bot success mail notification
-    end_to = config_main['To_Mail_Address']
-    end_cc = config_main['CC_Mail_Address']
-    end_subject = config_main['Success_Mail_Subject']
-    end_body = config_main['Success_Mail_Body']
-    send_mail_with_attachment(to=end_to, cc=end_cc, body=end_body, subject=end_subject,
-                              attachment_path=output_file_path)
-    print("Process complete mail notification is sent")
-
-    print("Bot successfully finished Processing of the sheets")
+    # # Bot success mail notification
+    # end_to = config_main['To_Mail_Address']
+    # end_cc = config_main['CC_Mail_Address']
+    # end_subject = config_main['Success_Mail_Subject']
+    # end_body = config_main['Success_Mail_Body']
+    # send_mail_with_attachment(to=end_to, cc=end_cc, body=end_body, subject=end_subject,
+    #                           attachment_path=output_file_path)
+    # print("Process complete mail notification is sent")
+    #
+    # print("Bot successfully finished Processing of the sheets")
     return output_file_path
 
 

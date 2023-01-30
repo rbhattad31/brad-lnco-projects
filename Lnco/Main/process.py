@@ -114,21 +114,24 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
             # if count = 1 then
             # update the audit request database entries except present request id as failed with error message
 
-        to_in_progress_request_found = default_to_mail_address
-        print(to_in_progress_request_found)
-        cc_in_progress_request_found = default_cc_mail_address
-        print(cc_in_progress_request_found)
-        subject_in_progress_request_found = config_main['subject_in_progress_request_found']
-        print(subject_in_progress_request_found)
-        body_in_progress_request_found = config_main['body_in_progress_request_found']
-        print(body_in_progress_request_found)
-        send_mail(to_in_progress_request_found, cc_in_progress_request_found,
-                  subject_in_progress_request_found, body_in_progress_request_found)
-        logging.info("Notification mail has been sent")
+        # to_in_progress_request_found = default_to_mail_address
+        # print(to_in_progress_request_found)
+        # cc_in_progress_request_found = default_cc_mail_address
+        # print(cc_in_progress_request_found)
+        # subject_in_progress_request_found = config_main['subject_in_progress_request_found']
+        # print(subject_in_progress_request_found)
+        # body_in_progress_request_found = config_main['body_in_progress_request_found']
+        # print(body_in_progress_request_found)
+        # send_mail(to_in_progress_request_found, cc_in_progress_request_found,
+        #           subject_in_progress_request_found, body_in_progress_request_found)
+        # logging.info("Notification mail has been sent")
         print(
             "Already 'in progress' requests are found, sent notification mail to the user and stopping the execution..")
         logging.info(
             "Already 'in progress' requests are found, sent notification mail to the user and stopping the execution..")
+
+        print("Already 'in progress' requests are found so stopping the bot execution..")
+        logging.info("Already 'in progress' requests are found so stopping the bot execution..")
         sys.exit("Already In progress requests found in the datatable, aborting the program execution")
 
     # read audit requests table using cursor
@@ -318,10 +321,6 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
         start_to = config_main['To_Mail_Address']
         start_cc = config_main['CC_Mail_Address']
         start_subject = config_main['Start_Mail_Subject']
-        start_body = config_main['Start_Mail_Body']
-        send_mail(to=start_to, cc=start_cc, body=start_body, subject=start_subject)
-        print("Process start mail notification is sent")
-        logging.info("Process start mail notification is sent")
 
         print(earliest_request_row)
         inputs_string = earliest_request_row[1]
@@ -331,15 +330,25 @@ def audit_process(host, username, password, database, aws_bucket_name, aws_acces
         sales_register_keyword = config_main['sales_register_keyword_in_json']
         if purchase_register_keyword in inputs_string:
             print("The processing request is identified as Purchase register request")
+            start_body = config_main['Start_Mail_Body'].format("Purchase Audit Report")
+            send_mail(to=start_to, cc=start_cc, body=start_body, subject=start_subject)
+            print("Process start mail notification is sent")
+            logging.info("Process start mail notification is sent")
             purchase_register_process.audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
                                                     config_main, earliest_request_row, env_file,
                                                     db_connection, company_name
                                                     )
         elif sales_register_keyword in inputs_string:
             print("The processing request is identified as Sales register request")
+            start_body = config_main['Start_Mail_Body'].format("Sales Audit Report")
+            send_mail(to=start_to, cc=start_cc, body=start_body, subject=start_subject)
+            print("Process start mail notification is sent")
+            logging.info("Process start mail notification is sent")
             sales_register_process.audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
                                                  config_main, earliest_request_row, env_file, db_connection,
                                                  company_name)
+        else:
+            pass
     except Exception as request_process_exception:
         print(str(request_process_exception))
 
