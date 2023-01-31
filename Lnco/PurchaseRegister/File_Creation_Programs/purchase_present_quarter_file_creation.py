@@ -154,7 +154,7 @@ def purchase_present_quarter_file_creation(config_main, purchase_present_client_
         logging.error("Exception occurred while creating filtered purchase register present quarter file")
         raise filtered_purchase_present_error
     else:
-        logging.info("filtered purchase register is saved in Input fodler of the request")
+        logging.info("filtered purchase register is saved in Input folder of the request")
         return [purchase_present_new_dataframe, config_main]
 
 

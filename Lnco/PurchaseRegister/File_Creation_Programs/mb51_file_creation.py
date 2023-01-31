@@ -23,6 +23,8 @@ def mb51_file_creation(mb51_client_dataframe, json_data_list, filtered_mb51_file
     except Exception as mb51_json_exception:
         logging.error(
             "Exception occurred while getting column names from the JSON data in 'input file configuration' datatable")
+        logging.exception(mb51_json_exception)
+
         raise mb51_json_exception
     try:
         mb51_new_dataframe.columns = ["Material Document", "Qty in unit of entry", "Movement type"]

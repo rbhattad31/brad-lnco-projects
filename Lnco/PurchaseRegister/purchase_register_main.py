@@ -133,14 +133,14 @@ def process_execution(input_files,
         logging.info(
             "Reading purchase register present quarter sheet is complete, creating new input file only with required columns")
         purchase_register_present_quarter_folder_path = os.path.dirname(purchase_register_present_quarter_file_path)
-        logging.info("purchase_register_present_quarter_folder_path: \n\t ", purchase_register_present_quarter_folder_path)
+        logging.info("purchase_register_present_quarter_folder_path: \n\t {}".format(purchase_register_present_quarter_folder_path))
         purchase_register_present_quarter_file_name = os.path.basename(
             purchase_register_present_quarter_file_path).lower()
         filtered_purchase_present_file_name = "filtered_" + str(purchase_register_present_quarter_file_name)
-        logging.info("filtered_purchase_present_file_name: \n\t", filtered_purchase_present_file_name)
+        logging.info("filtered_purchase_present_file_name: \n\t{}".format(filtered_purchase_present_file_name))
         filtered_purchase_present_file_saving_path = os.path.join(purchase_register_present_quarter_folder_path,
                                                                   filtered_purchase_present_file_name)
-        logging.info("filtered_purchase_present_file_saving_path \n\t", filtered_purchase_present_file_saving_path)
+        logging.info("filtered_purchase_present_file_saving_path \n\t{}".format(filtered_purchase_present_file_saving_path))
         filtered_purchase_present_sheet_name = present_quarter_sheet_name
 
         purchase_present_quarter_file_creation_output = purchase_present_quarter_file_creation(config_main,
