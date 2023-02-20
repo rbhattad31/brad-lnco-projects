@@ -5,7 +5,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill
 from string import ascii_uppercase
 from openpyxl.utils import get_column_letter
-from ReusableTasks.send_mail_reusable_task import send_mail
+from Lnco.ReusableTasks.send_mail_reusable_task import send_mail
 
 
 class BusinessException(Exception):
@@ -162,27 +162,37 @@ def same_material_domestic(dict_main_config, dict_in_config, sales_present_quart
             min_unit_price = same_material_domestic_df[col_name[3]][index]
             max_unit_price = same_material_domestic_df[col_name[4]][index]
 
-            float_variance = min_unit_price - max_unit_price
+            float_variance = max_unit_price - min_unit_price
 
             same_material_domestic_df['Variance'][index] = float_variance
 
+        same_material_domestic_df['Variance %'] = ''
         col_name = same_material_domestic_df.columns.values.tolist()
-        same_material_domestic_df['Concentration'] = ''
-        pd.options.mode.chained_assignment = None
-        total_variance = same_material_domestic_df[col_name[5]].sum()
-        # print(total_variance)
         for index in same_material_domestic_df.index:
-            float_variance = same_material_domestic_df[col_name[5]][index]
-            if float_variance == 0:
-                concentration = 0
-            else:
-                concentration = float_variance / total_variance
+            float_variance = same_material_domestic_df['Variance'][index]
+            min_unit_price = same_material_domestic_df[col_name[3]][index]
 
-            same_material_domestic_df['Concentration'][index] = concentration
+            float_variance = float_variance / min_unit_price
+
+            same_material_domestic_df['Variance %'][index] = float_variance
+
+        # col_name = same_material_domestic_df.columns.values.tolist()
+        # same_material_domestic_df['Concentration'] = ''
+        # pd.options.mode.chained_assignment = None
+        # total_variance = same_material_domestic_df[col_name[5]].sum()
+        # # print(total_variance)
+        # for index in same_material_domestic_df.index:
+        #     float_variance = same_material_domestic_df[col_name[5]][index]
+        #     if float_variance == 0:
+        #         concentration = 0
+        #     else:
+        #         concentration = float_variance / total_variance
+        #
+        #     same_material_domestic_df['Concentration'][index] = concentration
+
         col_name = same_material_domestic_df.columns.values.tolist()
         same_material_domestic_df.sort_values(by=col_name[6], axis=0, ascending=False, inplace=True)
 
-        col_name = same_material_domestic_df.columns.values.tolist()
         same_material_domestic_df['Remarks'] = ''
         # print(same_material_domestic_df)
         same_material_domestic_df.reset_index(inplace=True)

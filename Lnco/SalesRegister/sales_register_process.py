@@ -3,14 +3,14 @@ import boto3
 import json
 import logging
 
-from ReusableTasks.downloadFilesFromS3Bucket import download_files_from_s3
-from ReusableTasks.UploadFilesToS3Bucket import upload_file
-from SalesRegister.sales_register_main import process_execution
+from Lnco.ReusableTasks.downloadFilesFromS3Bucket import download_files_from_s3
+from Lnco.ReusableTasks.UploadFilesToS3Bucket import upload_file
+from Lnco.SalesRegister.sales_register_main import process_execution
 
 import os
 from datetime import datetime
 
-from ReusableTasks.send_mail_reusable_task import send_mail_with_attachment
+from Lnco.ReusableTasks.send_mail_reusable_task import send_mail_with_attachment
 
 
 def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
@@ -147,19 +147,30 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
             raise input_files_data_extraction_exception
 
         try:
-            print("downloading MB51 file from AWS S3 Bucket")
-            logging.info("downloading MB51 file from AWS S3 Bucket")
-            mb51_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name, prefix_name=mb51_file_path,
-                                                          aws_access_key_id=aws_access_key,
-                                                          aws_secret_access_key=aws_secret_key,
-                                                          request_id=request_id
-                                                          )
-            print("MB51 file is downloaded...")
-            logging.info("MB51 file is downloaded...")
-            print("mb51 file path: ", mb51_file_saved_path)
-            logging.info("mb51 file path is {}".format(mb51_file_saved_path))
-            config_main['mb51_file_saved_path'] = mb51_file_saved_path
-            # update the path in config and save it in output id folder
+            if env_file('SR_VS_MB51') == 'YES':
+                print("downloading MB51 file from AWS S3 Bucket")
+                logging.info("downloading MB51 file from AWS S3 Bucket")
+                mb51_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name, prefix_name=mb51_file_path,
+                                                              aws_access_key_id=aws_access_key,
+                                                              aws_secret_access_key=aws_secret_key,
+                                                              request_id=request_id
+                                                              )
+                print("MB51 file is downloaded...")
+                logging.info("MB51 file is downloaded...")
+                print("mb51 file path: ", mb51_file_saved_path)
+                logging.info("mb51 file path is {}".format(mb51_file_saved_path))
+                config_main['mb51_file_saved_path'] = mb51_file_saved_path
+                # update the path in config and save it in output id folder
+            elif env_file('SR_VS_MB51') == 'NO':
+                print("Skipped Downloading MB51 File as 'Sales Register Vs MB51' program execution is disabled")
+                logging.warning("Skipped Downloading MB51 File as 'Sales Register Vs MB51' program execution is disabled")
+                mb51_file_saved_path = None
+                logging.info("mb51 file path is {}".format(mb51_file_saved_path))
+                config_main['mb51_file_saved_path'] = mb51_file_saved_path
+            else:
+                mb51_file_saved_path = None
+                logging.info("mb51 file path is {}".format(mb51_file_saved_path))
+                config_main['mb51_file_saved_path'] = mb51_file_saved_path
 
         except Exception as mb51_file_download_exception:
             logging.critical("Exception occurred while downloading mb51 file from AWS s3 bucket")
@@ -217,19 +228,28 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
 
         print("--------------------------------------------------------------------")
         try:
-            print("downloading HSN Codes file from AWS S3 Bucket")
-            logging.info("downloading HSN Codes file from AWS S3 Bucket")
-            hsn_codes_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name,
-                                                               prefix_name=hsn_codes_file_path,
-                                                               aws_access_key_id=aws_access_key,
-                                                               aws_secret_access_key=aws_secret_key,
-                                                               request_id=request_id
-                                                               )
-            print("HSN Codes file is downloaded...")
-            logging.info("HSN Codes file is downloaded...")
-            print("HSN Codes file path: ", hsn_codes_file_saved_path)
-            logging.info("HSN Codes file path: {}".format(hsn_codes_file_saved_path))
-            config_main['HSN_codes_file_saved_path'] = hsn_codes_file_saved_path
+            if env_file('GST_RATE_CHECK') == 'YES':
+                print("downloading HSN Codes file from AWS S3 Bucket")
+                logging.info("downloading HSN Codes file from AWS S3 Bucket")
+                hsn_codes_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name,
+                                                                   prefix_name=hsn_codes_file_path,
+                                                                   aws_access_key_id=aws_access_key,
+                                                                   aws_secret_access_key=aws_secret_key,
+                                                                   request_id=request_id
+                                                                   )
+                print("HSN Codes file is downloaded...")
+                logging.info("HSN Codes file is downloaded...")
+                print("HSN Codes file path: ", hsn_codes_file_saved_path)
+                logging.info("HSN Codes file path: {}".format(hsn_codes_file_saved_path))
+                config_main['HSN_codes_file_saved_path'] = hsn_codes_file_saved_path
+            elif env_file('GST_RATE_CHECK') == 'NO':
+                print("Skipped Downloading HSN File as GST RATE CHECK program execution is disabled")
+                logging.warning("Skipped Downloading HSN File as GST RATE CHECK program execution is disabled")
+                hsn_codes_file_saved_path = None
+                config_main['HSN_codes_file_saved_path'] = hsn_codes_file_saved_path
+            else:
+                hsn_codes_file_saved_path = None
+                config_main['HSN_codes_file_saved_path'] = hsn_codes_file_saved_path
 
         except Exception as hsn_codes_file_save_exception:
             logging.critical("Exception occurred while downloading HSN Codes file from AWS s3 bucket")
@@ -237,19 +257,31 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
 
         print("--------------------------------------------------------------------")
         try:
-            print("downloading Sales Ledger file from AWS S3 Bucket")
-            logging.info("downloading Sales Ledger file from AWS S3 Bucket")
-            sales_ledger_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name,
-                                                                  prefix_name=sales_ledger_file_path,
-                                                                  aws_access_key_id=aws_access_key,
-                                                                  aws_secret_access_key=aws_secret_key,
-                                                                  request_id=request_id
-                                                                  )
-            print("Sales Ledger file is downloaded...")
-            logging.info("Sales Ledger file is downloaded...")
-            print("Sales Ledger file path: ", sales_ledger_file_saved_path)
-            logging.info("Sales Ledger file path: {}".format(sales_ledger_file_saved_path))
-            config_main['sales_ledger_file_saved_path'] = sales_ledger_file_saved_path
+            if env_file('SR_VS_SL') == 'YES':
+                print("downloading Sales Ledger file from AWS S3 Bucket")
+                logging.info("downloading Sales Ledger file from AWS S3 Bucket")
+                sales_ledger_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name,
+                                                                      prefix_name=sales_ledger_file_path,
+                                                                      aws_access_key_id=aws_access_key,
+                                                                      aws_secret_access_key=aws_secret_key,
+                                                                      request_id=request_id
+                                                                      )
+                print("Sales Ledger file is downloaded...")
+                logging.info("Sales Ledger file is downloaded...")
+                print("Sales Ledger file path: ", sales_ledger_file_saved_path)
+                logging.info("Sales Ledger file path: {}".format(sales_ledger_file_saved_path))
+                config_main['sales_ledger_file_saved_path'] = sales_ledger_file_saved_path
+            elif env_file('SR_VS_SL') == 'NO':
+                print("Skipped Downloading Sales Ledger File as 'Sales Register Vs Sales Ledger' program execution is disabled")
+                logging.warning(
+                    "Skipped Downloading Sales Ledger File as 'Sales Register Vs Sales Ledger' program execution is disabled")
+                sales_ledger_file_saved_path = None
+                logging.info("Sales Ledger file path: {}".format(sales_ledger_file_saved_path))
+                config_main['sales_ledger_file_saved_path'] = sales_ledger_file_saved_path
+            else:
+                sales_ledger_file_saved_path = None
+                logging.info("Sales Ledger file path: {}".format(sales_ledger_file_saved_path))
+                config_main['sales_ledger_file_saved_path'] = sales_ledger_file_saved_path
 
         except Exception as sales_ledger_file_save_exception:
             logging.critical("Exception occurred while downloading sales ledger file from AWS s3 bucket")
@@ -258,19 +290,30 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
         print("--------------------------------------------------------------------")
 
         try:
-            print("downloading Open PO file from AWS S3 Bucket")
-            logging.info("downloading Open PO file from AWS S3 Bucket")
-            open_po_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name,
-                                                             prefix_name=open_po_file_path,
-                                                             aws_access_key_id=aws_access_key,
-                                                             aws_secret_access_key=aws_secret_key,
-                                                             request_id=request_id
-                                                             )
-            print("Open PO file is downloaded...")
-            logging.info("Open PO file is downloaded...")
-            print("Open PO file path: ", open_po_file_saved_path)
-            logging.info("Open PO file path: {}".format(open_po_file_saved_path))
-            config_main['open_po_file_saved_path'] = open_po_file_saved_path
+            if env_file('OPEN_PO') == 'YES':
+                print("downloading Open PO file from AWS S3 Bucket")
+                logging.info("downloading Open PO file from AWS S3 Bucket")
+                open_po_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name,
+                                                                 prefix_name=open_po_file_path,
+                                                                 aws_access_key_id=aws_access_key,
+                                                                 aws_secret_access_key=aws_secret_key,
+                                                                 request_id=request_id
+                                                                 )
+                print("Open PO file is downloaded...")
+                logging.info("Open PO file is downloaded...")
+                print("Open PO file path: ", open_po_file_saved_path)
+                logging.info("Open PO file path: {}".format(open_po_file_saved_path))
+                config_main['open_po_file_saved_path'] = open_po_file_saved_path
+            elif env_file('OPEN_PO') == 'NO':
+                print("Skipped Downloading OPEN PO File as 'Open PO' program execution is disabled")
+                logging.warning("Skipped Downloading OPEN PO File as 'Open PO' program execution is disabled")
+                open_po_file_saved_path = None
+                logging.info("Open PO file path: {}".format(open_po_file_saved_path))
+                config_main['open_po_file_saved_path'] = open_po_file_saved_path
+            else:
+                open_po_file_saved_path = None
+                logging.info("Open PO file path: {}".format(open_po_file_saved_path))
+                config_main['open_po_file_saved_path'] = open_po_file_saved_path
 
         except Exception as open_po_file_save_exception:
             logging.critical("Exception occurred while downloading open po file from AWS s3 bucket")

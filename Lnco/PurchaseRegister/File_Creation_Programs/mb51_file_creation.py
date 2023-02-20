@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+import gc
 
 
 def mb51_file_creation(mb51_client_dataframe, json_data_list, filtered_mb51_file_saving_path, filtered_mb51_sheet_name):
@@ -40,6 +41,11 @@ def mb51_file_creation(mb51_client_dataframe, json_data_list, filtered_mb51_file
         logging.info("Changed Datatypes of Columns in MB51")
     # create new Excel file in ID folder in Input folder
     try:
+        logging.info("saving Filtered MB51 file in input folder of the request")
+        print("saving Filtered MB51 file in output folder of the request")
+        gc.collect()
+        print("Garbage collection done for saving file for clearing up space.")
+
         with pd.ExcelWriter(filtered_mb51_file_saving_path, engine="openpyxl") as writer:
             mb51_new_dataframe.to_excel(writer, sheet_name=filtered_mb51_sheet_name, index=False)
 
@@ -47,7 +53,7 @@ def mb51_file_creation(mb51_client_dataframe, json_data_list, filtered_mb51_file
         logging.error("Exception occurred while creating filtered purchase register previous quarter file")
         raise filtered_mb51_error
     else:
-        logging.info("Successfully saved Filtered MB51 file in output folder of the request")
+        logging.info("Successfully saved Filtered MB51 file in input folder of the request")
         return mb51_new_dataframe
 
 

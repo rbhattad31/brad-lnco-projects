@@ -18,10 +18,10 @@ class BusinessException(Exception):
     pass
 
 
-def vendor_and_material(main_config, in_config, sales_register_present_quarter_pd, sales_register_previous_quarter_pd):
+def vendor_and_material(main_config, in_config, present_quarter_pd, previous_quarter_path):
     try:
 
-        sales_register_data = sales_register_present_quarter_pd
+        sales_register_data = present_quarter_pd
         # print(Excel_data)
         # Fetch To Address
         to_address = main_config["To_Mail_Address"]
@@ -148,7 +148,28 @@ def vendor_and_material(main_config, in_config, sales_register_present_quarter_p
         # Q3 Pivot Excel_data = pd.read_excel(main_config["InputFilePath"], sheet_name=main_config[
         # "PreviousQuarterSheetName"], skiprows=in_config["Skiprow_Q3"])
 
-        sales_register_data = sales_register_previous_quarter_pd
+        sales_register_data = pd.read_excel(previous_quarter_path)
+        # print(Excel_data)
+        sales_register_data = sales_register_data.loc[:, ~sales_register_data.columns.duplicated(keep='first')]
+        columns = sales_register_data.columns
+        if main_config["sales_register_1st_column_name"] in columns and \
+                main_config["sales_register_2nd_column_name"] in columns:
+            print("Previous quarter q4 - The data is starting from first row only")
+            pass
+
+        else:
+            print("Previous quarter q4 - The data is not starting from first row ")
+            for index, row in sales_register_data.iterrows():
+                if row[0] != main_config["sales_register_1st_column_name"]:
+                    sales_register_data.drop(index, axis=0, inplace=True)
+                else:
+                    break
+            new_header = sales_register_data.iloc[0]
+            sales_register_data = sales_register_data[1:]
+            sales_register_data.columns = new_header
+            sales_register_data.reset_index(drop=True, inplace=True)
+            sales_register_data.columns.name = None
+        sales_register_data = sales_register_data.loc[:, ~sales_register_data.columns.duplicated(keep='first')]
         # Check Exception
         if sales_register_data.shape[0] == 0:
             subject = in_config["EmptyInput_Subject1"]
@@ -289,147 +310,79 @@ def vendor_and_material(main_config, in_config, sales_register_present_quarter_p
         pd.options.mode.chained_assignment = None
         for index in vendor_and_material.index:
             if (vendor_and_material[columns[4]][index] == 0) & (vendor_and_material[columns[7]][index] != 0):
-                vendor_and_material['Nature of Product'][index] = "no values in current quarter"
+                vendor_and_material['Nature of Product'][index] = "No values in Q1"
             elif (vendor_and_material[columns[4]][index] != 0) & (vendor_and_material[columns[7]][index] == 0):
                 vendor_and_material['Nature of Product'][index] = "New product"
             elif (vendor_and_material[columns[4]][index] != 0) & (vendor_and_material[columns[7]][index] != 0):
                 vendor_and_material['Nature of Product'][index] = "Common product"
             elif (vendor_and_material[columns[4]][index] == 0) & (vendor_and_material[columns[7]][index] == 0):
-                vendor_and_material['Nature of Product'][index] = "no values in both quarters"
+                vendor_and_material['Nature of Product'][index] = "No data in Q1 & Q4"
             else:
                 pass
 
-        # 11.In Column “ L “,name it as “ Increase / Decease in amount “ and apply formula =+F3-I3
-        # i.e , = current quarter base piece in Inr – previous quarter base price in inr
+        vendor_and_material['Amount1'] = ""
+        pd.options.mode.chained_assignment = None
 
-        vendor_and_material['Increase / Decrease in amount'] = ""
-        columns = vendor_and_material.columns.values.tolist()
         for index in vendor_and_material.index:
-            current_quarter_base_price_in_inr = vendor_and_material[columns[4]][index]
-            previous_quarter_base_price_in_inr = vendor_and_material[columns[7]][index]
-            vendor_and_material['Increase / Decrease in amount'][index] = current_quarter_base_price_in_inr - previous_quarter_base_price_in_inr
+            quantity = vendor_and_material[columns[4]][index]
+            # print(qty_q1)
+            qty_q4 = vendor_and_material[columns[7]][index]
+            # print(qty_q4)
+            unit_price_q4 = vendor_and_material[columns[9]][index]
+            # print(unit_price_q4)
+            Amount = (+(quantity - qty_q4)) * unit_price_q4
+            # print(Amount)
+            vendor_and_material['Amount1'][index] = Amount
 
-        # 12.in column “M” name it as “Increase/decrease in qty” “ and apply formula =+E4-H4
-        # Ie, = current quarter billing qty – previous quarter billing qty
-        vendor_and_material['Increase/decrease in qty'] = ""
         columns = vendor_and_material.columns.values.tolist()
+        vendor_and_material['%1'] = ""
+        pd.options.mode.chained_assignment = None
         for index in vendor_and_material.index:
-            current_quarter_billing_qty = vendor_and_material[columns[3]][index]
-            previous_quarter_billing_qty = vendor_and_material[columns[6]][index]
-            vendor_and_material['Increase/decrease in qty'][index] = current_quarter_billing_qty - previous_quarter_billing_qty
+            qty_amount = vendor_and_material[columns[10]][index]
+            # print(qty_amount)
+            price_INR_q4 = vendor_and_material[columns[7]][index]
+            # print(price_INR_q4)
+            if price_INR_q4 == 0:
+                percentage = 0
 
-        # 13. in column “N” name it as “Increase/ decerase in unit price” and apply formula =+G3-J3
-        # Ie, = current quarterunit price – previous quarter unit price
-        vendor_and_material['Increase/ decrease in unit price'] = ""
+            else:
+                percentage = (qty_amount / price_INR_q4)
+            vendor_and_material['%1'][index] = percentage
+
+        vendor_and_material['Amount'] = ""
+        pd.options.mode.chained_assignment = None
+        for index in vendor_and_material.index:
+            unit_price_q1 = vendor_and_material[columns[5]][index]
+
+            # print(unit_price_q1)
+            unit_price_q4 = vendor_and_material[columns[8]][index]
+            # print(unit_price_q4)
+            quantity = vendor_and_material[columns[3]][index]
+            # print(qty_q1)
+
+            Amount = (+(unit_price_q1 - unit_price_q4)) * quantity
+            # print(Amount)
+            vendor_and_material['Amount'][index] = Amount
+
         columns = vendor_and_material.columns.values.tolist()
-        print(columns)
+        vendor_and_material['%'] = ""
+        pd.options.mode.chained_assignment = None
         for index in vendor_and_material.index:
-            current_quarter_unit_price = vendor_and_material[columns[5]][index]
-            previous_quarter_unit_price = vendor_and_material[columns[8]][index]
-            vendor_and_material['Increase/ decrease in unit price'][index] = current_quarter_unit_price - previous_quarter_unit_price
-
-        # 14. in column “O” name it as “ In amount due to qty” and apply formula =+M3*J3
-        # Ie, = “Increase/decrease in qty”*previous quarter unit price
-        vendor_and_material["In amount due to qty"] = ""
-        columns = vendor_and_material.columns.values.tolist()
-        for index in vendor_and_material.index:
-            increase_or_decrease_in_quantity = vendor_and_material['Increase/decrease in qty'][index]
-            previous_quarter_unit_price = vendor_and_material[columns[8]][index]
-            vendor_and_material['In amount due to qty'][index] = increase_or_decrease_in_quantity * previous_quarter_unit_price
-
-        # 15. in column “P” name it as “Qty%” and apply formula =+O3/L3
-        # Ie, = In amount due to qty/ “Increase/decrease in amount”
-        vendor_and_material["Qty%"] = ""
-        columns = vendor_and_material.columns.values.tolist()
-        for index in vendor_and_material.index:
-            in_amount_due_to_quantity = vendor_and_material['In amount due to qty'][index]
-            increase_or_decrease_in_quantity = vendor_and_material['Increase / Decrease in amount'][index]
-            vendor_and_material['Qty%'][index] = in_amount_due_to_quantity / increase_or_decrease_in_quantity
-
-        # 16. in column “Q” name it as “In amount due to price” and apply formula =+N3*E3
-        # Ie, = “Increase/ decrease in unit price”*current quarter Billing Qty
-        vendor_and_material["In amount due to price"] = ""
-        columns = vendor_and_material.columns.values.tolist()
-        for index in vendor_and_material.index:
-            increase_or_decrease_in_unit_price = vendor_and_material['Increase/ decrease in unit price'][index]
-            current_quarter_billing_quantity = vendor_and_material[columns[3]][index]
-            vendor_and_material['In amount due to price'][index] = increase_or_decrease_in_unit_price * current_quarter_billing_quantity
-
-        # 17. in column “R” name it as “Price %” and apply formula =+Q3/L3
-        # Ie,= In amount due to price/ Increase/decrease in amount
-        vendor_and_material["Price %"] = ""
-        columns = vendor_and_material.columns.values.tolist()
-        for index in vendor_and_material.index:
-            in_amount_due_to_price = vendor_and_material['In amount due to price'][index]
-            increase_or_decrease_in_amount = vendor_and_material['Increase / Decrease in amount'][index]
-            vendor_and_material['Price %'][index] = in_amount_due_to_price / increase_or_decrease_in_amount
-
-        # ------------------------------------------------------------------------
-        # vendor_and_material['Amount1'] = ""
-        # pd.options.mode.chained_assignment = None
-        #
-        # for index in vendor_and_material.index:
-        #     quantity = vendor_and_material[columns[4]][index]
-        #     # print(qty_q1)
-        #     qty_q4 = vendor_and_material[columns[7]][index]
-        #     # print(qty_q4)
-        #     unit_price_q4 = vendor_and_material[columns[9]][index]
-        #     # print(unit_price_q4)
-        #     Amount = (+(quantity - qty_q4)) * unit_price_q4
-        #     # print(Amount)
-        #     vendor_and_material['Amount1'][index] = Amount
-        #
-        # columns = vendor_and_material.columns.values.tolist()
-        # vendor_and_material['%1'] = ""
-        # pd.options.mode.chained_assignment = None
-        # for index in vendor_and_material.index:
-        #     qty_amount = vendor_and_material[columns[10]][index]
-        #     # print(qty_amount)
-        #     price_INR_q4 = vendor_and_material[columns[7]][index]
-        #     # print(price_INR_q4)
-        #     if price_INR_q4 == 0:
-        #         percentage = 0
-        #
-        #     else:
-        #         percentage = (qty_amount / price_INR_q4)
-        #     vendor_and_material['%1'][index] = percentage
-        #
-        # vendor_and_material['Amount'] = ""
-        # pd.options.mode.chained_assignment = None
-        # for index in vendor_and_material.index:
-        #     unit_price_q1 = vendor_and_material[columns[5]][index]
-        #
-        #     # print(unit_price_q1)
-        #     unit_price_q4 = vendor_and_material[columns[8]][index]
-        #     # print(unit_price_q4)
-        #     quantity = vendor_and_material[columns[3]][index]
-        #     # print(qty_q1)
-        #
-        #     Amount = (+(unit_price_q1 - unit_price_q4)) * quantity
-        #     # print(Amount)
-        #     vendor_and_material['Amount'][index] = Amount
-        #
-        # columns = vendor_and_material.columns.values.tolist()
-        # vendor_and_material['%'] = ""
-        # pd.options.mode.chained_assignment = None
-        # for index in vendor_and_material.index:
-        #     amount_q1 = vendor_and_material[columns[12]][index]
-        #     # print(amount_q1)
-        #     price_INR_q4 = vendor_and_material[columns[7]][index]
-        #     # print(price_INR_q4)
-        #     if price_INR_q4 == 0:
-        #         percentage = 0
-        #     else:
-        #         percentage = amount_q1 / price_INR_q4
-        #     vendor_and_material['%'][index] = percentage
+            amount_q1 = vendor_and_material[columns[12]][index]
+            # print(amount_q1)
+            price_INR_q4 = vendor_and_material[columns[7]][index]
+            # print(price_INR_q4)
+            if price_INR_q4 == 0:
+                percentage = 0
+            else:
+                percentage = amount_q1 / price_INR_q4
+            vendor_and_material['%'][index] = percentage
 
         # print(vendor_and_material)
 
         #  Rename Columns
 
         # print(vendor_and_material)
-        # -----------------------------------------------------------------------------
-
         vendor_and_material = vendor_and_material.rename(
             columns={columns[3]: "Sum of Billing Qty."})
         # print(vendor_and_material)
@@ -444,10 +397,10 @@ def vendor_and_material(main_config, in_config, sales_register_present_quarter_p
             columns={columns[7]: "Sum of Base Price in INR"})
         vendor_and_material = vendor_and_material.rename(
             columns={columns[8]: "Unit Price"})
-        # vendor_and_material = vendor_and_material.rename(
-        #     columns={columns[10]: "Amount"})
-        # vendor_and_material = vendor_and_material.rename(
-        #     columns={columns[11]: "%"})
+        vendor_and_material = vendor_and_material.rename(
+            columns={columns[10]: "Amount"})
+        vendor_and_material = vendor_and_material.rename(
+            columns={columns[11]: "%"})
 
         # print(vendor_and_material)
         try:
@@ -469,34 +422,34 @@ def vendor_and_material(main_config, in_config, sales_register_present_quarter_p
         ws = wb[main_config["Output_VendorAndMaterial_Comparison_sheetname"]]
 
         cell = ws['D2']
-        cell.value = 'Current Quarter'
+        cell.value = 'Current Quarter Q1'
         ws.merge_cells('D2:F2')
         cell.alignment = Alignment(horizontal='center', vertical='center')
         cell = ws['G2']
-        cell.value = 'Previous Quarter'
+        cell.value = 'Previous Quarter Q4'
         ws.merge_cells('G2:I2')
         cell.alignment = Alignment(horizontal='center', vertical='center')
-        # cell = ws['K2']
-        # cell.value = 'Qty variance'
-        # ws.merge_cells('K2:L2')
-        # cell.alignment = Alignment(horizontal='center', vertical='center')
-        # cell = ws['M2']
-        # cell.value = 'Price variance'
-        # ws.merge_cells('M2:N2')
-        # cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell = ws['K2']
+        cell.value = 'Qty variance'
+        ws.merge_cells('K2:L2')
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell = ws['M2']
+        cell.value = 'Price variance'
+        ws.merge_cells('M2:N2')
+        cell.alignment = Alignment(horizontal='center', vertical='center')
 
         cambria_12_bold_black_font = Font(name="Cambria", size=12, bold=True, color="000000")
         ws['D2'].font = cambria_12_bold_black_font
         ws['G2'].font = cambria_12_bold_black_font
-        # ws['K2'].font = cambria_12_bold_black_font
-        # ws['M2'].font = cambria_12_bold_black_font
+        ws['K2'].font = cambria_12_bold_black_font
+        ws['M2'].font = cambria_12_bold_black_font
         fill_pattern = PatternFill(patternType="solid", fgColor="ADD8E6")
         ws['D2'].fill = fill_pattern
         ws['G2'].fill = fill_pattern
 
         fill_pattern = PatternFill(patternType="solid", fgColor="FFFF00")
-        # ws['K2'].fill = fill_pattern
-        # ws['M2'].fill = fill_pattern
+        ws['K2'].fill = fill_pattern
+        ws['M2'].fill = fill_pattern
 
         for cell in ws["D"]:
             cell.number_format = "#,##"
@@ -513,16 +466,10 @@ def vendor_and_material(main_config, in_config, sales_register_present_quarter_p
         for cell in ws["K"]:
             cell.number_format = "#,##"
         for cell in ws["L"]:
-            cell.number_format = "#,##"
+            cell.number_format = "0%"
         for cell in ws["M"]:
             cell.number_format = "#,##"
         for cell in ws["N"]:
-            cell.number_format = "#,##"
-        for cell in ws["O"]:
-            cell.number_format = "0%"
-        for cell in ws["P"]:
-            cell.number_format = "#,##"
-        for cell in ws["Q"]:
             cell.number_format = "0%"
 
         Full_range = "A3:" + get_column_letter(ws.max_column) + str(ws.max_row)
@@ -535,31 +482,26 @@ def vendor_and_material(main_config, in_config, sales_register_present_quarter_p
         fill_pattern = PatternFill(patternType="solid", fgColor="ADD8E6")
         for c in ascii_uppercase:
             ws[c + "3"].fill = fill_pattern
-            if c == "Q":
+            if c == "N":
                 break
 
         for c in ascii_uppercase:
             column_length = max(len(str(cell.value)) for cell in ws[c])
             ws.column_dimensions[c].width = column_length * 1.25
-            if c == 'Q':
+            if c == 'N':
                 break
         ws['D1'] = '=SUBTOTAL(9,D4:D' + str(ws.max_row) + ')'
         ws['E1'] = '=SUBTOTAL(9,E4:E' + str(ws.max_row) + ')'
         ws['G1'] = '=SUBTOTAL(9,G4:G' + str(ws.max_row) + ')'
         ws['H1'] = '=SUBTOTAL(9,H4:H' + str(ws.max_row) + ')'
-        # ws['K1'] = '=SUBTOTAL(9,K4:K' + str(ws.max_row) + ')'
-        # ws['M1'] = '=SUBTOTAL(9,M4:M' + str(ws.max_row) + ')'
-        # # ws['L1'] = ws['K1'] / ws['H1']
-        # ws['L1'] = '=K1/H1'
-        # ws['N1'] = "=M1/H1"
+        ws['K1'] = '=SUBTOTAL(9,K4:K' + str(ws.max_row) + ')'
+        ws['M1'] = '=SUBTOTAL(9,M4:M' + str(ws.max_row) + ')'
+        # ws['L1'] = ws['K1'] / ws['H1']
+        ws['L1'] = '=K1/H1'
+        ws['N1'] = "=M1/H1"
         # sheet['D3'] = '=C4/3'
         # ws['L1'] = '=SUBTOTAL(9,k1:H1' + str(ws.max_column) + ')'
         # ws['N1'] = '=SUBTOTAL(9,N4:N' + str(ws.max_row) + ')'
-        # 18.do subtotals for column O,Q ie for “ in amount due to qty” , “in amount due to price”
-        # =SUBTOTAL(9,COLUMN RANGE)
-        ws['N1'] = '=SUBTOTAL(9,N4:O' + str(ws.max_row) + ')'
-        ws['P1'] = '=SUBTOTAL(9,P4:Q' + str(ws.max_row) + ')'
-
 
         # Save File
         print(wb.sheetnames)

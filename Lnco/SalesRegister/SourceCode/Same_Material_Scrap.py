@@ -6,7 +6,7 @@ from openpyxl.styles import Font, PatternFill
 from string import ascii_uppercase
 from openpyxl.utils import get_column_letter
 import os
-from ReusableTasks.send_mail_reusable_task import send_mail
+from Lnco.ReusableTasks.send_mail_reusable_task import send_mail
 
 
 class BusinessException(Exception):
@@ -133,24 +133,35 @@ def same_material_scrap(dict_main_config, dict_in_config, sales_present_quarter_
             min_unit_price = same_material_scrap_df[col_name[3]][index]
             max_unit_price = same_material_scrap_df[col_name[4]][index]
 
-            variance = min_unit_price - max_unit_price
+            variance = max_unit_price - min_unit_price
 
             same_material_scrap_df['Variance'][index] = variance
 
+        same_material_scrap_df['Variance %'] = ''
         col_name = same_material_scrap_df.columns.values.tolist()
-        same_material_scrap_df['Concentration'] = ''
-        pd.options.mode.chained_assignment = None
-        total_variance = same_material_scrap_df[col_name[5]].sum()
-        # print(total_variance)
-        # variance formula for index
         for index in same_material_scrap_df.index:
-            variance = same_material_scrap_df[col_name[5]][index]
-            if variance == 0:
-                concentration = 0
-            else:
-                concentration = variance / total_variance
+            float_variance = same_material_scrap_df['Variance'][index]
+            min_unit_price = same_material_scrap_df[col_name[3]][index]
 
-            same_material_scrap_df['Concentration'][index] = concentration
+            float_variance = float_variance / min_unit_price
+
+            same_material_scrap_df['Variance %'][index] = float_variance
+
+        # col_name = same_material_scrap_df.columns.values.tolist()
+        # same_material_scrap_df['Concentration'] = ''
+        # pd.options.mode.chained_assignment = None
+        # total_variance = same_material_scrap_df[col_name[5]].sum()
+        # # print(total_variance)
+        # # variance formula for index
+        # for index in same_material_scrap_df.index:
+        #     variance = same_material_scrap_df[col_name[5]][index]
+        #     if variance == 0:
+        #         concentration = 0
+        #     else:
+        #         concentration = variance / total_variance
+        #
+        #     same_material_scrap_df['Concentration'][index] = concentration
+
         col_name = same_material_scrap_df.columns.values.tolist()
         same_material_scrap_df.sort_values(by=col_name[6], axis=0, ascending=False, inplace=True)
 

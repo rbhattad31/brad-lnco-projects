@@ -212,8 +212,8 @@ def average_day_sales(sales_register_df, main_config):
         logging.error("Below exception occurred while calculating sum of 'average sales for day' column")
         raise average_day_sales_Exception(exception_message)
 
-    average_day_sales_pivot_df["Variance"] = average_day_sales_pivot_df[
-                                                 "Base Price in INR"] - float_average_sales_for_day  # average
+    average_day_sales_pivot_df["Variance"] = float_average_sales_for_day - average_day_sales_pivot_df["Base Price in INR"]
+
     try:
         float_variance_sum = average_day_sales_pivot_df["Variance"].sum()
         # print(float_variance_sum)
@@ -224,22 +224,18 @@ def average_day_sales(sales_register_df, main_config):
             "Below exception occurred while creating year column from billing date that ay be due to values other than dates")
         raise average_day_sales_Exception(exception_message)
 
-    average_day_sales_pivot_df["Concentration"] = average_day_sales_pivot_df["Variance"] / float_variance_sum
+    average_day_sales_pivot_df["Variance %"] = average_day_sales_pivot_df["Variance"] / float_average_sales_for_day
     # print(average_day_sales_pivot_df)
 
-    # sorting the Concentration in descending order
-    # average_day_sales_pivot_df = average_day_sales_pivot_df.sort_values(by=["Concentration"],
-    #                                                                     ascending=False)  # descending order
     # creating a column as remarks
 
-    # And for those concentrations greater than 25% and -25% name them as major in remarks column
+    # And for those variance % greater than 25% and -25% name them as major in remarks column
     positive_threshold_percentage = main_config['average_day_sales_threshold_percentage'] / 100
     negative_threshold_percentage = main_config['average_day_sales_threshold_percentage'] / (-100)
     remarks = main_config['average_day_sales_remarks_keyword']
     average_day_sales_pivot_df["Remarks"] = ''
     for index, row in average_day_sales_pivot_df.iterrows():
-        # print(row['Concentration'])
-        if row['Concentration'] >= positive_threshold_percentage or row['Concentration'] <= \
+        if row["Variance %"] >= positive_threshold_percentage or row["Variance %"] <= \
                 negative_threshold_percentage:
             average_day_sales_pivot_df.at[index, 'Remarks'] = remarks
 
@@ -286,31 +282,20 @@ def average_day_sales(sales_register_df, main_config):
 
     # Format Header
     cambria_11_black_bold_font = Font(name="Cambria", size=11, color="000000", bold=True)
-    # print(ascii_lowercase)
-    for c in ascii_lowercase:
-        worksheet[c + "3"].font = cambria_11_black_bold_font
 
     # Header Fill
     fill_solid_light_blue = PatternFill(patternType='solid', fgColor='ADD8E6')
-    for f in ascii_lowercase:
-        worksheet[f + "3"].fill = fill_solid_light_blue
-        if f == 'f':
+    for c in ascii_lowercase:
+        worksheet[c + "3"].font = cambria_11_black_bold_font
+        worksheet[c + "3"].fill = fill_solid_light_blue
+        worksheet.column_dimensions[c].width = 35
+        if c == 'f':
             break
 
     thin = Side(border_style="thin", color='000000')
     for row in worksheet.iter_rows(min_row=3, min_col=1, max_row=worksheet.max_row, max_col=6):
         for cell in row:
             cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
-
-        # Set Width
-
-    # worksheet.column_dimensions[c].width = 25
-    worksheet.column_dimensions['A'].width = 12
-    worksheet.column_dimensions['B'].width = 16
-    worksheet.column_dimensions['C'].width = 19
-    worksheet.column_dimensions['D'].width = 12
-    worksheet.column_dimensions['E'].width = 13
-    worksheet.column_dimensions['F'].width = 8
 
     print(workbook.sheetnames)
     workbook.save(output_file_path)

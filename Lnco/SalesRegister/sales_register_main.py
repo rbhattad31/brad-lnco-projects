@@ -6,40 +6,40 @@ import os
 import sys
 import logging
 
-from ReusableTasks.send_mail_reusable_task import send_mail
+from Lnco.ReusableTasks.send_mail_reusable_task import send_mail
 
-from SalesRegister.SourceCode.Customer_Wise_Concentration import customer_wise_concentration
-from SalesRegister.SourceCode.Month_Wise_Concentration import month_wise_concentration
-from SalesRegister.SourceCode.Plant_Wise_Concentration import plant_wise_concentration
-from SalesRegister.SourceCode.Type_of_Sales_Wise_Concentration import type_of_sale_wise_concentration
-from SalesRegister.SourceCode.Sales_Register_Vs_MB51 import create_sales_register_vs_mb51_sheet
-from SalesRegister.SourceCode.Product_Mix_Comparison import product_mix_comparison
-from SalesRegister.SourceCode.Vendor_And_Material import Vendor_And_Material
+from Lnco.SalesRegister.SourceCode.Customer_Wise_Concentration import customer_wise_concentration
+from Lnco.SalesRegister.SourceCode.Month_Wise_Concentration import month_wise_concentration
+from Lnco.SalesRegister.SourceCode.Plant_Wise_Concentration import plant_wise_concentration
+from Lnco.SalesRegister.SourceCode.Type_of_Sales_Wise_Concentration import type_of_sale_wise_concentration
+from Lnco.SalesRegister.SourceCode.Sales_Register_Vs_MB51 import create_sales_register_vs_mb51_sheet
+from Lnco.SalesRegister.SourceCode.Product_Mix_Comparison import product_mix_comparison
+from Lnco.SalesRegister.SourceCode.Vendor_And_Material import vendor_and_material
 
-from SalesRegister.SourceCode.gst_rate_check import gst_rate_check
-from SalesRegister.SourceCode.TCS_Rate_Check import tcs_rate_check
-from SalesRegister.SourceCode.Average_Day_Sales import average_day_sales
-from SalesRegister.SourceCode.Related_parties_transaction import related_parties_transaction
+from Lnco.SalesRegister.SourceCode.gst_rate_check import gst_rate_check
+from Lnco.SalesRegister.SourceCode.TCS_Rate_Check import tcs_rate_check
+from Lnco.SalesRegister.SourceCode.Average_Day_Sales import average_day_sales
+from Lnco.SalesRegister.SourceCode.Related_parties_transaction import related_parties_transaction
 
-from SalesRegister.SourceCode.Same_Material_Scrap import same_material_scrap
-from SalesRegister.SourceCode.Same_Material_Domestic import same_material_domestic
+from Lnco.SalesRegister.SourceCode.Same_Material_Scrap import same_material_scrap
+from Lnco.SalesRegister.SourceCode.Same_Material_Domestic import same_material_domestic
 
-from SalesRegister.SourceCode.Customer_specific import customer_specific
-from SalesRegister.SourceCode.Sales_Register_vs_Sales_Ledger import sr_vs_sl
-from SalesRegister.SourceCode.open_po_reports import open_po_reports
+from Lnco.SalesRegister.SourceCode.Customer_specific import customer_specific
+from Lnco.SalesRegister.SourceCode.Sales_Register_vs_Sales_Ledger import sr_vs_sl
+from Lnco.SalesRegister.SourceCode.open_po_reports import open_po_reports
 
-from SalesRegister.SourceCode.sequence_check import sequence_check
-from SalesRegister.SourceCode.Cash_Discount import cash_discount
+from Lnco.SalesRegister.SourceCode.sequence_check import sequence_check
+from Lnco.SalesRegister.SourceCode.Cash_Discount import cash_discount
 
-from SalesRegister.File_Creation_Programs.sales_present_quarter_file_creation import sales_present_quarter_file_creation
-from SalesRegister.File_Creation_Programs.sales_previous_quarter_file_creation import \
+from Lnco.SalesRegister.File_Creation_Programs.sales_present_quarter_file_creation import sales_present_quarter_file_creation
+from Lnco.SalesRegister.File_Creation_Programs.sales_previous_quarter_file_creation import \
     sales_previous_quarter_file_creation
-from SalesRegister.File_Creation_Programs.hsn_codes_file_creation import hsn_codes_file_creation
-from SalesRegister.File_Creation_Programs.mb51_file_creation import mb51_file_creation
-from SalesRegister.File_Creation_Programs.sales_ledger_file_creation import sales_ledger_file_creation
-from SalesRegister.File_Creation_Programs.open_po_file_creation import open_po_file_creation
+from Lnco.SalesRegister.File_Creation_Programs.hsn_codes_file_creation import hsn_codes_file_creation
+from Lnco.SalesRegister.File_Creation_Programs.mb51_file_creation import mb51_file_creation
+from Lnco.SalesRegister.File_Creation_Programs.sales_ledger_file_creation import sales_ledger_file_creation
+from Lnco.SalesRegister.File_Creation_Programs.open_po_file_creation import open_po_file_creation
 
-from ReusableTasks.create_sheet_wise_config_dictionary import create_sheet_wise_config_dict
+from Lnco.ReusableTasks.create_sheet_wise_config_dictionary import create_sheet_wise_config_dict
 
 
 def process_execution(input_files,
@@ -214,13 +214,16 @@ def process_execution(input_files,
                                                      json_data_list,
                                                      filtered_sales_previous_file_saving_path,
                                                      filtered_sales_previous_sheet_name)
-            read_previous_quarter_pd = sales_previous_quarter_file_creation_output[0]
+            sales_previous_quarter_pd = sales_previous_quarter_file_creation_output[0]
             config_main = sales_previous_quarter_file_creation_output[1]
 
             logging.info("new sales register previous quarter file is created in input folder in request ID folder")
             print("new sales register previous quarter file is created in input folder in request ID folder")
             print("Reading Sales register previous quarter sheet is completed")
             print("Reading Sales register files is Completed")
+        else:
+            sales_previous_quarter_pd = pd.DataFrame()
+
         # --------------------------------------------------------------------------------------------------
         if env_file('GST_RATE_CHECK') == 'YES':
             print("Reading HSN Codes summary sheet is started")
@@ -562,9 +565,9 @@ def process_execution(input_files,
             print("Executing Vendor and Material Comparison program")
             config_vendor_material_comparison = create_sheet_wise_config_dict(
                 sheet_name=config_main["Config_VendorAndMaterial_Comparison_sheetname"])
-            Vendor_And_Material(main_config=config_main, in_config=config_vendor_material_comparison,
-                                present_quarter_pd=sales_present_quarter_pd,
-                                previous_quarter_path=sales_register_previous_quarter_file_path)
+            vendor_and_material(main_config=config_main, in_config=config_vendor_material_comparison,
+                                sales_register_present_quarter_pd=sales_present_quarter_pd,
+                                sales_register_previous_quarter_pd=sales_previous_quarter_pd)
 
         elif env_file('VENDOR_AND_MATERIAL_COMPARISON') == 'NO':
             print("Vendor and Material comparison program is skipped as per env file")

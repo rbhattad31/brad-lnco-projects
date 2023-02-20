@@ -47,7 +47,7 @@ def related_parties_transaction(rpt_df, dict_main_config):
 
     # creating columns in excel
     result_df = pd.DataFrame(
-        columns=['Payer Name', 'Min of So Unit Price', 'Max of So unit price', 'Variance', 'Remarks'])
+        columns=['Payer Name', 'Min of So Unit Price', 'Max of So unit price', 'Variance', 'Variance %','Remarks'])
     try:
 
         for client in list_rpt_payers:
@@ -63,9 +63,10 @@ def related_parties_transaction(rpt_df, dict_main_config):
             df_max = df_rpt_payer['So Unit Price'].max()
             # print("df_max: ", df_max)
             # creating first variance formula
-            df_variance = df_min - df_max
+            df_variance = df_max - df_min
             # df_Remarks = "NA", "Minor", "Major"
-            result_df.loc[len(result_df.index)] = [client, df_min, df_max, df_variance, '']
+            df_variance_percentage = df_variance / df_min
+            result_df.loc[len(result_df.index)] = [client, df_min, df_max, df_variance, df_variance_percentage, '']
             # result_df = pd.DataFrame(list(zip(clients, df_min, df_max, df_variance)), columns=['Payer Name', 'Min of So Unit Price', 'Max of So unit price', 'Variance', 'Remarks'])
             # print(result_df)
             # print(type(result_df))
@@ -120,25 +121,26 @@ def related_parties_transaction(rpt_df, dict_main_config):
         cell.number_format = "#,###,##"
     for cell in worksheet['C']:
         cell.number_format = "#,###,##"
-    # for cell in worksheet['D']:
-    # cell.number_format = "#,###,##"
+    for cell in worksheet['D']:
+        cell.number_format = "#,###,##"
+    for cell in worksheet['E']:
+        cell.number_format = "0%"
 
     # Format Header
     calibre_11_black_bold = Font(name="Calibre", size=11, color="000000", bold=True)
-    for c in ascii_lowercase:
-        worksheet[c + "1"].font = calibre_11_black_bold
+
     # Header Fill
     solid_light_blue_fill = PatternFill(patternType='solid', fgColor='ADD8E6')
     for c in ascii_lowercase:
+        worksheet[c + "1"].font = calibre_11_black_bold
         worksheet[c + "1"].fill = solid_light_blue_fill
-        if c == 'e':
-            break
-    # Set Width
-    for c in ascii_lowercase:
         worksheet.column_dimensions[c].width = 35
+        if c == 'f':
+            break
+
     # applying border
     black_thin_border = Side(border_style="thin", color='000000')
-    for row in worksheet.iter_rows(min_row=1, min_col=1, max_row=worksheet.max_row, max_col=5):
+    for row in worksheet.iter_rows(min_row=1, min_col=1, max_row=worksheet.max_row, max_col=6):
         for cell in row:
             cell.border = Border(top=black_thin_border, left=black_thin_border, right=black_thin_border,
                                  bottom=black_thin_border)
