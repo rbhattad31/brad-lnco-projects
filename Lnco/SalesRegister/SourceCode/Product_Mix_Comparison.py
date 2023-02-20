@@ -33,7 +33,7 @@ def product_mix_comparison(main_config, in_config, present_quarter_pd):
 
         # Check Column Present
         present_quarter_col = read_present_quarter_pd.columns.values.tolist()
-        for col in ["Product Type Descp.", "Billing Qty.", "Base Price in INR"]:
+        for col in ["Material Type Descri", "Billing Qty.", "Base Price in INR"]:
             if col not in present_quarter_col:
                 subject = in_config["ColumnMiss_Subject"]
                 body = in_config["ColumnMiss_Body"]
@@ -43,7 +43,7 @@ def product_mix_comparison(main_config, in_config, present_quarter_pd):
                 raise BusinessException(col + " Column is missing")
 
         # Filter rows
-        product_type_descp = read_present_quarter_pd[read_present_quarter_pd['Product Type Descp.'].notna()]
+        product_type_descp = read_present_quarter_pd[read_present_quarter_pd['Material Type Descri'].notna()]
         billing_qty = read_present_quarter_pd[read_present_quarter_pd['Billing Qty.'].notna()]
         price_inr = read_present_quarter_pd[read_present_quarter_pd['Base Price in INR'].notna()]
 
@@ -70,8 +70,8 @@ def product_mix_comparison(main_config, in_config, present_quarter_pd):
 
         # Create Pivot Table Sales Register
         try:
-            read_present_quarter_pd[["Product Type Descp."]] = read_present_quarter_pd[["Product Type Descp."]].fillna('')
-            pivot_index = ["Product Type Descp."]
+            read_present_quarter_pd[["Material Type Descri"]] = read_present_quarter_pd[["PMaterial Type Descri"]].fillna('')
+            pivot_index = ["Material Type Descri"]
             pivot_values = ["Billing Qty.", "Base Price in INR"]
             product_mix_pivot_df = pd.pivot_table(read_present_quarter_pd, index=pivot_index, values=pivot_values,
                                                   aggfunc=numpy.sum,

@@ -66,12 +66,19 @@ def sales_previous_quarter_file_creation(config_main, sales_previous_client_data
         config_main['billing_qty_default_name'] = billing_qty_default_name
         config_main[billing_qty_default_name] = billing_qty_client_name
 
-        product_type_descp_default_name = sales_columns_json_data['Product_Type_Descp']['default_column_name']
-        product_type_descp_client_name = sales_columns_json_data['Product_Type_Descp']['client_column_name']
-        sales_previous_new_dataframe[product_type_descp_default_name] = sales_previous_client_dataframe[
-            product_type_descp_client_name]
-        config_main['product_type_descp_default_name'] = product_type_descp_default_name
-        config_main[product_type_descp_default_name] = product_type_descp_client_name
+        # product_type_descp_default_name = sales_columns_json_data['Product_Type_Descp']['default_column_name']
+        # product_type_descp_client_name = sales_columns_json_data['Product_Type_Descp']['client_column_name']
+        # sales_previous_new_dataframe[product_type_descp_default_name] = sales_previous_client_dataframe[
+        #     product_type_descp_client_name]
+        # config_main['product_type_descp_default_name'] = product_type_descp_default_name
+        # config_main[product_type_descp_default_name] = product_type_descp_client_name
+
+        material_type_descp_default_name = sales_columns_json_data['Material_Type_Descri']['default_column_name']
+        material_type_descp_client_name = sales_columns_json_data['Material_Type_Descri']['client_column_name']
+        sales_previous_new_dataframe[material_type_descp_default_name] = sales_previous_new_dataframe[
+            material_type_descp_client_name]
+        config_main['material_type_descp_default_name'] = material_type_descp_default_name
+        config_main[material_type_descp_default_name] = material_type_descp_client_name
 
         payer_default_name = sales_columns_json_data['Payer']['default_column_name']
         payer_client_name = sales_columns_json_data['Payer']['client_column_name']
@@ -180,7 +187,7 @@ def sales_previous_quarter_file_creation(config_main, sales_previous_client_data
         sales_previous_new_dataframe.columns = ['Billing Date', 'Doc. Type Text', 'Plant',
                                                'Base Price in INR', 'Payer Name',
                                                'Material No.',
-                                               'Material Description', 'Billing Qty.', 'Product Type Descp.', 'Payer',
+                                               'Material Description', 'Billing Qty.', 'Material Type Descri', 'Payer',
                                                'Ref.Doc.No.', 'CGST Value', 'SGST Value', 'IGST Value', 'JTCS Value',
                                                'Grand Total Value(IN', 'HSN Code', 'Sales Order',
                                                'Delivery No.', 'Billing No.',
@@ -233,10 +240,10 @@ def sales_previous_quarter_file_creation(config_main, sales_previous_client_data
 
         # Below 4 datatypes are object when read from excel, converting back to String, raises exception if not suitable datatype is found
         sales_previous_new_dataframe[
-            ["Doc. Type Text", "Payer Name", "Material No.", "Material Description", "Product Type Descp.",
+            ["Doc. Type Text", "Payer Name", "Material No.", "Material Description", "Material Type Descri",
              "Ref.Doc.No.", "PO. No."]] = \
             sales_previous_new_dataframe[
-                ["Doc. Type Text", "Payer Name", "Material No.", "Material Description", "Product Type Descp.",
+                ["Doc. Type Text", "Payer Name", "Material No.", "Material Description", "Material Type Descri",
                  "Ref.Doc.No.", "PO. No."]].astype(str, errors='raise')
 
         # Gr amount in loc cur & Unit price - float datatype and can have nan values, replace them with 0
