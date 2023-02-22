@@ -66,8 +66,8 @@ def sales_present_quarter_file_creation(config_main, sales_present_client_datafr
         config_main['billing_qty_default_name'] = billing_qty_default_name
         config_main[billing_qty_default_name] = billing_qty_client_name
 
-        material_type_descp_default_name = sales_columns_json_data['Material_Type_Descri']['default_column_name']
-        material_type_descp_client_name = sales_columns_json_data['Material_Type_Descri']['client_column_name']
+        material_type_descp_default_name = sales_columns_json_data['Material_Type_Description']['default_column_name']
+        material_type_descp_client_name = sales_columns_json_data['Material_Type_Description']['client_column_name']
         sales_present_new_dataframe[material_type_descp_default_name] = sales_present_client_dataframe[
             material_type_descp_client_name]
         config_main['material_type_descp_default_name'] = material_type_descp_default_name

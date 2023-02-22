@@ -557,6 +557,10 @@ def vendor_and_material(main_config, in_config, sales_register_present_quarter_p
         # ws['N1'] = '=SUBTOTAL(9,N4:N' + str(ws.max_row) + ')'
         # 18.do subtotals for column O,Q ie for “ in amount due to qty” , “in amount due to price”
         # =SUBTOTAL(9,COLUMN RANGE)
+        ws['K1'] = '=SUBTOTAL(9,K4:K' + str(ws.max_row) + ')'
+        ws['L1'] = '=SUBTOTAL(9,L4:L' + str(ws.max_row) + ')'
+        ws['M1'] = '=SUBTOTAL(9,M4:M' + str(ws.max_row) + ')'
+
         ws['N1'] = '=SUBTOTAL(9,N4:O' + str(ws.max_row) + ')'
         ws['P1'] = '=SUBTOTAL(9,P4:Q' + str(ws.max_row) + ')'
 

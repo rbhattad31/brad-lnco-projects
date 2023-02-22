@@ -164,7 +164,7 @@ def process_execution(input_files,
         logging.info("new sales register present quarter file is created in input folder in request ID folder")
         print("Reading Sales register present quarter sheet is completed")
         # -----------------------------------------------------------------------------------------------
-        if env_file('VENDOR_AND_MATERIAL_COMPARISON') == 'YES':
+        if env_file('VENDOR_AND_MATERIAL_COMPARISON') == 'YES' or env_file('PRODUCT_MIX_COMPARISON') == 'YES':
             print("Reading Sales register previous quarter sheet is started")
             logging.info("Reading Sales register previous quarter sheet is started")
             # reading previous quarter sheet
@@ -550,7 +550,7 @@ def process_execution(input_files,
             config_product_mix_comparison = create_sheet_wise_config_dict(
                 sheet_name=config_main["Config_Product_Mix_Comparison_sheetname"])
             product_mix_comparison(main_config=config_main, in_config=config_product_mix_comparison,
-                                   present_quarter_pd=sales_present_quarter_pd)
+                                   present_quarter_pd=sales_present_quarter_pd, previous_quarter_pd=sales_previous_quarter_pd)
 
         elif env_file('PRODUCT_MIX_COMPARISON') == 'NO':
             print("Product mix comparison program is skipped as per env file")

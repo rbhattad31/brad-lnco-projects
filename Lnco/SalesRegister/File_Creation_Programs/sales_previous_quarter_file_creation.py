@@ -73,9 +73,9 @@ def sales_previous_quarter_file_creation(config_main, sales_previous_client_data
         # config_main['product_type_descp_default_name'] = product_type_descp_default_name
         # config_main[product_type_descp_default_name] = product_type_descp_client_name
 
-        material_type_descp_default_name = sales_columns_json_data['Material_Type_Descri']['default_column_name']
-        material_type_descp_client_name = sales_columns_json_data['Material_Type_Descri']['client_column_name']
-        sales_previous_new_dataframe[material_type_descp_default_name] = sales_previous_new_dataframe[
+        material_type_descp_default_name = sales_columns_json_data['Material_Type_Description']['default_column_name']
+        material_type_descp_client_name = sales_columns_json_data['Material_Type_Description']['client_column_name']
+        sales_previous_new_dataframe[material_type_descp_default_name] = sales_previous_client_dataframe[
             material_type_descp_client_name]
         config_main['material_type_descp_default_name'] = material_type_descp_default_name
         config_main[material_type_descp_default_name] = material_type_descp_client_name

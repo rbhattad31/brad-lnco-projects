@@ -22,28 +22,30 @@ def customer_specific(sales_register_df, dict_config_main):
     try:
         # # Keep only duplicate rows
         sales_register_filtered_df.sort_values("Material Description", inplace=True)
+
+        # drop all the entries which are having unique material description
         duplicate_series = sales_register_filtered_df['Material Description'].duplicated(keep=False)
         sr_material_description_duplicates_pd = sales_register_filtered_df[duplicate_series]
+
+        # drop all the duplicates of 3 columns
+        sr_material_description_duplicates_pd["Payer Name"] = sr_material_description_duplicates_pd["Payer Name"].str.title()
+        sr_material_description_duplicates_pd = sr_material_description_duplicates_pd.drop_duplicates(
+            subset=["Material No.", "Material Description", "Payer Name"], keep='first')
 
         # # Keep the entries which are having same material number and material description
         # Get unique values in materials description
         list_material_description_values = sr_material_description_duplicates_pd['Material Description'].tolist()
         list_material_description_unique_values = list(set(list_material_description_values))
-        # print(list_material_description_unique_values)
+
         # for each material description, get the count of unique values in material No. Column
         # if the count is not equal to one, delete all entries with the material description
         for material_description in list_material_description_unique_values:
-            # print(material_description)
             material_description_filtered_pd = sr_material_description_duplicates_pd[sr_material_description_duplicates_pd['Material Description'] == material_description]
-            # print(material_description_filtered_pd)
             list_material_number_values = material_description_filtered_pd['Material No.'].tolist()
             list_material_number_unique_values = list(set(list_material_number_values))
-            # print(list_material_number_unique_values)
-            if len(list_material_number_unique_values) != 1:
-                # print("deleted")
-                # print(sr_material_description_duplicates_pd)
+            # delete all entries of material description if rows are having multiple material numbers or single entry
+            if len(list_material_number_unique_values) != 1 or len(material_description_filtered_pd.index) == 1:
                 sr_material_description_duplicates_pd = sr_material_description_duplicates_pd[sr_material_description_duplicates_pd['Material Description'] != material_description]
-                # print(sr_material_description_duplicates_pd)
                 continue
 
         # sr_duplicates_filtered_df = sales_register_filtered_df.drop_duplicates(keep='first')
