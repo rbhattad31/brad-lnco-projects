@@ -282,9 +282,11 @@ def vendor_and_material(main_config, in_config, sales_register_present_quarter_p
         vendor_and_material = vendor_and_material.replace(numpy.nan, 0, regex=True)
 
         columns = vendor_and_material.columns.values.tolist()
+        print(columns)
         vendor_and_material = vendor_and_material.drop(columns=["index"])
         vendor_and_material.sort_values(by=columns[1], axis=0, ascending=True, inplace=False)
-
+        columns = vendor_and_material.columns.values.tolist()
+        print(columns)
         vendor_and_material['Nature of Product'] = ""
         pd.options.mode.chained_assignment = None
         for index in vendor_and_material.index:
