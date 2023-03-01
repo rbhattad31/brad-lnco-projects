@@ -2,6 +2,9 @@ import logging
 import pandas as pd
 
 
+# here only reading previous quarter data in pandas is fine, no need to update
+# config as in present quarter new file creation method
+
 def purchase_previous_quarter_file_creation(purchase_previous_client_dataframe, json_data_list,
                                             filtered_purchase_previous_file_saving_path,
                                             filtered_purchase_previous_sheet_name):
@@ -121,10 +124,13 @@ def purchase_previous_quarter_file_creation(purchase_previous_client_dataframe, 
         with pd.ExcelWriter(filtered_purchase_previous_file_saving_path, engine="openpyxl") as writer:
             purchase_previous_new_dataframe.to_excel(writer, sheet_name=filtered_purchase_previous_sheet_name,
                                                      index=False)
-            return purchase_previous_new_dataframe
     except Exception as filtered_purchase_previous_error:
         logging.error("Exception occurred while creating filtered purchase register previous quarter file")
         raise filtered_purchase_previous_error
+    else:
+        logging.info("filtered purchase register previous quarter file is saved in Input folder of the request")
+        print("filtered purchase register previous quarter file is saved in Input folder of the request")
+        return purchase_previous_new_dataframe
 
 
 if __name__ == '__main__':

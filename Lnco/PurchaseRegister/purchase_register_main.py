@@ -6,33 +6,32 @@ import pandas as pd
 import os.path
 import os
 import sys
-from decouple import Config, RepositoryEnv
 
 from Lnco.PurchaseRegister.File_Creation_Programs.purchase_present_quarter_file_creation import purchase_present_quarter_file_creation
 from Lnco.PurchaseRegister.File_Creation_Programs.purchase_previous_quarter_file_creation import purchase_previous_quarter_file_creation
 
 import Lnco.PurchaseRegister.SourceCode.Comparatives.Purchase_type_wise_comparatives as ptcomp
-import PurchaseRegister.SourceCode.Comparatives.Month_Wise_comparatives as mwcomp
-import PurchaseRegister.SourceCode.Comparatives.Plant_wise_comparatives as pwcomp
-import PurchaseRegister.SourceCode.Comparatives.DomImp_wise_sheet_comparatives as dicomp
-import PurchaseRegister.SourceCode.Comparatives.VendorTypeWiseComparatives as vtwc
+import Lnco.PurchaseRegister.SourceCode.Comparatives.Month_Wise_comparatives as mwcomp
+import Lnco.PurchaseRegister.SourceCode.Comparatives.Plant_wise_comparatives as pwcomp
+import Lnco.PurchaseRegister.SourceCode.Comparatives.DomImp_wise_sheet_comparatives as dicomp
+import Lnco.PurchaseRegister.SourceCode.Comparatives.VendorTypeWiseComparatives as vtwc
 
-import PurchaseRegister.SourceCode.Concentrations.PurchaseTypeWiseConcentration as ptconc
-import PurchaseRegister.SourceCode.Concentrations.MonthWiseConcentration as mwconc
-import PurchaseRegister.SourceCode.Concentrations.PlantWiseConcentration as pwconc
-import PurchaseRegister.SourceCode.Concentrations.DomAndImportConcentration as diconc
-import PurchaseRegister.SourceCode.Concentrations.VendorWiseConcentration as vwc
+import Lnco.PurchaseRegister.SourceCode.Concentrations.PurchaseTypeWiseConcentration as ptconc
+import Lnco.PurchaseRegister.SourceCode.Concentrations.MonthWiseConcentration as mwconc
+import Lnco.PurchaseRegister.SourceCode.Concentrations.PlantWiseConcentration as pwconc
+import Lnco.PurchaseRegister.SourceCode.Concentrations.DomAndImportConcentration as diconc
+import Lnco.PurchaseRegister.SourceCode.Concentrations.VendorWiseConcentration as vwc
 
-import PurchaseRegister.SourceCode.DuplicationofVendorNumbers as duplication
-import PurchaseRegister.SourceCode.averagedaypurchase as averagedaypurchase
-import PurchaseRegister.SourceCode.SameMaterialPurchasesfromDVDP as smpdvdp
-import PurchaseRegister.SourceCode.Unit_Price_Comparison as upc
-import PurchaseRegister.SourceCode.Inventory_Mapping as im
-import PurchaseRegister.SourceCode.SecurityCutoff as sc
+import Lnco.PurchaseRegister.SourceCode.DuplicationofVendorNumbers as duplication
+import Lnco.PurchaseRegister.SourceCode.averagedaypurchase as averagedaypurchase
+import Lnco.PurchaseRegister.SourceCode.SameMaterialPurchasesfromDVDP as smpdvdp
+import Lnco.PurchaseRegister.SourceCode.Unit_Price_Comparison as upc
+import Lnco.PurchaseRegister.SourceCode.Inventory_Mapping as im
+import Lnco.PurchaseRegister.SourceCode.SecurityCutoff as sc
 
-from ReusableTasks.send_mail_reusable_task import send_mail
+from Lnco.ReusableTasks.send_mail_reusable_task import send_mail
 
-from ReusableTasks.create_sheet_wise_config_dictionary import create_sheet_wise_config_dict
+from Lnco.ReusableTasks.create_sheet_wise_config_dictionary import create_sheet_wise_config_dict
 
 
 def process_execution(input_files,
@@ -153,7 +152,7 @@ def process_execution(input_files,
         config_main = purchase_present_quarter_file_creation_output[1]
 
         logging.info("new purchase register present quarter file is created in input folder in request ID folder")
-
+        print("-------------------------------------------------------------")
         # reading previous quarter sheet
         print("Reading previous quarter sheet")
         logging.info("Reading previous quarter sheet")
@@ -195,11 +194,13 @@ def process_execution(input_files,
                                                                    filtered_purchase_previous_file_name)
         filtered_purchase_previous_sheet_name = previous_quarter_sheet_name
 
+        # here only reading previous quarter data in pandas is fine, no need to update config as in present quarter new file creation method
         read_previous_quarter_pd = purchase_previous_quarter_file_creation(read_previous_quarter_pd, json_data_list,
                                                                            filtered_purchase_previous_file_saving_path,
                                                                            filtered_purchase_previous_sheet_name)
         logging.info("new purchase register previous quarter file is created in input folder in request ID folder")
         print("new purchase register previous quarter file is created in input folder in request ID folder")
+
     except FileNotFoundError as notfound_error:
         send_mail(to=config_main["To_Mail_Address"], cc=config_main["CC_Mail_Address"],
                   subject=config_main["subject_file_not_found"],

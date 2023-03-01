@@ -143,8 +143,8 @@ def purchase_present_quarter_file_creation(config_main, purchase_present_client_
         logging.error("Exception occurred while converting datatypes of present quarter purchase register input file")
         raise datatype_conversion_exception
     else:
-        logging.info("purchase register previous quarter datatypes are changed successfully ")
-        print("purchase register previous quarter datatypes are changed successfully")
+        logging.info("purchase register present quarter datatypes are changed successfully ")
+        print("purchase register present quarter datatypes are changed successfully")
     # create new Excel file in ID folder in Input folder
     try:
         with pd.ExcelWriter(filtered_purchase_present_file_saving_path, engine="openpyxl") as writer:
@@ -154,7 +154,8 @@ def purchase_present_quarter_file_creation(config_main, purchase_present_client_
         logging.error("Exception occurred while creating filtered purchase register present quarter file")
         raise filtered_purchase_present_error
     else:
-        logging.info("filtered purchase register is saved in Input folder of the request")
+        logging.info("filtered purchase register present quarter file is saved in Input folder of the request")
+        print("filtered purchase register present quarter file is saved in Input folder of the request")
         return [purchase_present_new_dataframe, config_main]
 
 

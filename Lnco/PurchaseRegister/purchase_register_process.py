@@ -3,14 +3,14 @@ import boto3
 import json
 import logging
 
-from ReusableTasks.downloadFilesFromS3Bucket import download_files_from_s3
-from ReusableTasks.UploadFilesToS3Bucket import upload_file
-from PurchaseRegister.purchase_register_main import process_execution
+from Lnco.ReusableTasks.downloadFilesFromS3Bucket import download_files_from_s3
+from Lnco.ReusableTasks.UploadFilesToS3Bucket import upload_file
+from Lnco.PurchaseRegister.purchase_register_main import process_execution
 
 import os
 from datetime import datetime
 
-from ReusableTasks.send_mail_reusable_task import send_mail_with_attachment
+from Lnco.ReusableTasks.send_mail_reusable_task import send_mail_with_attachment
 
 
 def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
@@ -112,25 +112,32 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
             logging.exception(input_files_data_extraction_exception)
             logging.critical("Request data is not created properly or incomplete...")
             raise input_files_data_extraction_exception
+        if env_file('Inventory_Mapping') == 'YES':
+            try:
+                print("downloading MB51 file from AWS S3 Bucket")
+                logging.info("downloading MB51 file from AWS S3 Bucket")
+                mb51_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name, prefix_name=mb51_file_path,
+                                                              aws_access_key_id=aws_access_key,
+                                                              aws_secret_access_key=aws_secret_key,
+                                                              request_id=request_id
+                                                              )
 
-        try:
-            print("downloading MB51 file from AWS S3 Bucket")
-            logging.info("downloading MB51 file from AWS S3 Bucket")
-            mb51_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name, prefix_name=mb51_file_path,
-                                                          aws_access_key_id=aws_access_key,
-                                                          aws_secret_access_key=aws_secret_key,
-                                                          request_id=request_id
-                                                          )
-            print("MB51 file is downloaded...")
-            logging.info("MB51 file is downloaded...")
-            print("mb51 file path: ", mb51_file_saved_path)
-            logging.info("mb51 file path is {}".format(mb51_file_saved_path))
-            config_main['mb51_file_saved_path'] = mb51_file_saved_path
-            # update the path in config and save it in output id folder
-
-        except Exception as mb51_file_download_exception:
-            logging.critical("Exception occurred while downloading mb51 file from AWS s3 bucket")
-            raise mb51_file_download_exception
+            except Exception as mb51_file_download_exception:
+                logging.critical("Exception occurred while downloading mb51 file from AWS s3 bucket")
+                raise mb51_file_download_exception
+            else:
+                print("MB51 file is downloaded...")
+                logging.info("MB51 file is downloaded...")
+                print("mb51 file path: ", mb51_file_saved_path)
+                logging.info("mb51 file path is {}".format(mb51_file_saved_path))
+                config_main['mb51_file_saved_path'] = mb51_file_saved_path
+                # update the path in config and save it in output id folder
+        elif env_file('Inventory_Mapping') == 'NO':
+            mb51_file_saved_path = None
+            print("MB51 file download is skipped as Inventory Mapping process is disabled in the env file")
+        else:
+            print("select YES/NO for Inventory_Mapping process in env file")
+            raise Exception("Error in Env file setting for Inventory_Mapping process to execute it or not")
 
         print("--------------------------------------------------------------------")
 
@@ -183,25 +190,33 @@ def audit_process(aws_bucket_name, aws_access_key, aws_secret_key,
             raise purchase_register_previous_quarter_save_exception
 
         print("--------------------------------------------------------------------")
-        try:
-            print("downloading Vendor file from AWS S3 Bucket")
-            logging.info("downloading Vendor file from AWS S3 Bucket")
-            vendor_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name,
-                                                            prefix_name=vendor_file_path,
-                                                            aws_access_key_id=aws_access_key,
-                                                            aws_secret_access_key=aws_secret_key,
-                                                            request_id=request_id
-                                                            )
-            print("Vendor file is downloaded...")
-            logging.info("Vendor file is downloaded...")
-            print("Vendor file path: ", vendor_file_saved_path)
-            logging.info("Vendor file path: {}".format(vendor_file_saved_path))
-            config_main['vendor_file_saved_path'] = vendor_file_saved_path
+        if env_file('duplication_of_vendor') == 'YES':
+            try:
+                print("downloading Vendor file from AWS S3 Bucket")
+                logging.info("downloading Vendor file from AWS S3 Bucket")
+                vendor_file_saved_path = download_files_from_s3(bucket_name=aws_bucket_name,
+                                                                prefix_name=vendor_file_path,
+                                                                aws_access_key_id=aws_access_key,
+                                                                aws_secret_access_key=aws_secret_key,
+                                                                request_id=request_id
+                                                                )
 
-        except Exception as vendor_file_save_exception:
-            logging.critical("Exception occurred while downloading Vendor file from AWS s3 bucket")
-            raise vendor_file_save_exception
+            except Exception as vendor_file_save_exception:
+                logging.critical("Exception occurred while downloading Vendor file from AWS s3 bucket")
+                raise vendor_file_save_exception
 
+            else:
+                print("Vendor file is downloaded...")
+                logging.info("Vendor file is downloaded...")
+                print("Vendor file path: ", vendor_file_saved_path)
+                logging.info("Vendor file path: {}".format(vendor_file_saved_path))
+                config_main['vendor_file_saved_path'] = vendor_file_saved_path
+        elif env_file('duplication_of_vendor') == 'NO':
+            vendor_file_saved_path = None
+            print("Vendor file download is skipped as duplication of vendor process is disabled in the env file")
+        else:
+            print("select YES/NO for duplication_of_vendor process in env file")
+            raise Exception("Error in Env file setting for duplication of vendor process to execute it or not")
         print("--------------------------------------------------------------------")
 
         # create new input files based on column names provided by client

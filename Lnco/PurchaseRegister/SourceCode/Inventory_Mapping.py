@@ -6,9 +6,9 @@ import os
 from openpyxl.styles import Font, PatternFill
 from string import ascii_uppercase
 
-from ReusableTasks.send_mail_reusable_task import send_mail
+from Lnco.ReusableTasks.send_mail_reusable_task import send_mail
 
-from PurchaseRegister.File_Creation_Programs.mb51_file_creation import mb51_file_creation
+from Lnco.PurchaseRegister.File_Creation_Programs.mb51_file_creation import mb51_file_creation
 
 
 class BusinessException(Exception):
@@ -30,6 +30,8 @@ def inventory_mapping_business_exception(inventory_mapping_file, main_config):
     except Exception as File_creation_error:
         logging.error("Exception occurred while creating inventory mapping business exceptions sheet")
         raise File_creation_error
+    else:
+        logging.info("Successfully saved Inventory mapping exception scenario")
 
     # Opening and Reading Output File.
     workbook = openpyxl.load_workbook(main_config["Output_File_Path"])
@@ -63,7 +65,8 @@ def inventory_mapping_business_exception(inventory_mapping_file, main_config):
         cell.number_format = '0.0%'
 
     if len(inventory_mapping_business_exception_pd.index) == 0:
-        message = "NOTE: No entries found in Inventory Mapping that have Variance > {0}%".format(main_config['Inventory_mapping_exception_percentage'])
+        message = "NOTE: No entries found in Inventory Mapping that have Variance > {0}%".format(
+            main_config['Inventory_mapping_exception_percentage'])
         worksheet.merge_cells('A1:E1')
         worksheet['A1'] = message
 
@@ -76,21 +79,20 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
                                    json_data_list):
     try:
         # Reading Purchase register File
-        # read_excel_data = pd.read_excel(in_config["ExcelPath1"], sheet_name=in_config["Sheet_Name1"], skiprows=6)
-        read_excel_data = present_quarter_pd
-        read_excel_data = read_excel_data.loc[:, ~read_excel_data.columns.duplicated(keep='first')]
+        # present_quarter_pd = pd.read_excel(in_config["ExcelPath1"], sheet_name=in_config["Sheet_Name1"], skiprows=6)
+        present_quarter_pd = present_quarter_pd.loc[:, ~present_quarter_pd.columns.duplicated(keep='first')]
 
-        # print(read_excel_data.head(5))
+        # print(present_quarter_pd.head(5))
         # Check Exception
-        if read_excel_data.shape[0] == 0:
+        if present_quarter_pd.shape[0] == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
                       subject=in_config["subject_mail"],
                       body=in_config["Body_mail"])
             raise BusinessException("Sheet is empty")
 
-        purchase_sheet_col = read_excel_data.columns.values.tolist()
+        present_purchase_sheet_col = present_quarter_pd.columns.values.tolist()
         for col in ["GR Document Number", "GR Qty"]:
-            if col not in purchase_sheet_col:
+            if col not in present_purchase_sheet_col:
                 subject = in_config["Purchase_ColumnMiss_Subject"]
                 body = in_config["Purchase_ColumnMiss_Body"]
                 body = body.replace("ColumnName +", col)
@@ -99,8 +101,8 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
                           body=body)
                 raise BusinessException(col + " Column is missing")
         # Filter Rows
-        gr_document_number_pd = read_excel_data[read_excel_data['GR Document Number'].notna()]
-        gr_qty_pd = read_excel_data[read_excel_data['GR Qty'].notna()]
+        gr_document_number_pd = present_quarter_pd[present_quarter_pd['GR Document Number'].notna()]
+        gr_qty_pd = present_quarter_pd[present_quarter_pd['GR Qty'].notna()]
 
         if len(gr_document_number_pd) == 0:
             send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
@@ -116,12 +118,12 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         else:
             pass
 
-        read_excel_data = read_excel_data[['GR Document Number', 'GR Qty']]
+        present_quarter_pd = present_quarter_pd[['GR Document Number', 'GR Qty']]
 
-        pivot1_df = pd.pivot_table(read_excel_data, index=["GR Document Number"],
-                                   values="GR Qty",
-                                   aggfunc=numpy.sum)
-        pivot1_df.reset_index()
+        present_quarter_pivot_df = pd.pivot_table(present_quarter_pd, index=["GR Document Number"],
+                                                  values="GR Qty",
+                                                  aggfunc=numpy.sum)
+        present_quarter_pivot_df.reset_index()
 
         # Reading MB 51 File
         mb51_pd = pd.read_excel(mb51_file_location, mb51_sheet_name)
@@ -153,8 +155,12 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         filtered_mb51_file_name = "filtered_" + str(mb51_file_name)
         filtered_purchase_present_file_saving_path = os.path.join(mb51_folder_path, filtered_mb51_file_name)
         filtered_purchase_present_sheet_name = mb51_sheet_name
-        mb51_pd = mb51_file_creation(mb51_pd, json_data_list, filtered_purchase_present_file_saving_path,
-                                     filtered_purchase_present_sheet_name)
+        mb51_file_creation_output = mb51_file_creation(main_config, mb51_pd, json_data_list,
+                                                       filtered_purchase_present_file_saving_path,
+                                                       filtered_purchase_present_sheet_name)
+        mb51_pd = mb51_file_creation_output[0]
+        main_config = mb51_file_creation_output[1]
+
         logging.info("new mb51 filtered file is created in input folder in request ID folder")
 
         # print(mb51_pd.head(5))
@@ -223,17 +229,19 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
 
         # print(mb51_data_with_movement_type)
         print("Creating pivot table on Mb51 after movement types filtered")
-        pivot2_df = pd.pivot_table(mb51_data_with_movement_type, index=["Material Document"],
-                                   values="Qty in unit of entry",
-                                   aggfunc=numpy.sum)
-        pivot2_df = pivot2_df.reset_index()
-        pivot2_df = pivot2_df.rename(columns={'Material Document': 'GR Document Number'})
-        pivot1_df = pivot1_df.reset_index()
-        # print(pivot1_df)
-        # print(pivot2_df)
+        mb51_pivot_df = pd.pivot_table(mb51_data_with_movement_type, index=["Material Document"],
+                                       values="Qty in unit of entry",
+                                       aggfunc=numpy.sum)
+        mb51_pivot_df = mb51_pivot_df.reset_index()
+        mb51_pivot_df = mb51_pivot_df.rename(columns={'Material Document': 'GR Document Number'})
+        present_quarter_pivot_df = present_quarter_pivot_df.reset_index()
+        # print(present_quarter_pivot_df)
+        # print(mb51_pivot_df)
+        print(len(present_quarter_pivot_df.index))
+        print(len(mb51_pivot_df.index))
 
         # Merging 2 Pivots
-        merge_pd = pd.merge(pivot1_df, pivot2_df, how="outer", on=["GR Document Number"]).fillna(0)
+        merge_pd = pd.merge(present_quarter_pivot_df, mb51_pivot_df, how="left", on=["GR Document Number"]).fillna(0)
         # print(merge_pd)
 
         columns_list = merge_pd.columns.values.tolist()
@@ -345,14 +353,6 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         print(wb.sheetnames)
         wb.save(main_config["Output_File_Path"])
 
-        try:
-            inventory_mapping_business_exception(inventory_mapping_file, main_config)
-        except Exception as inventory_mapping_business_exception_error:
-            print("Exception occurred while creating inventory mapping business exception entries sheet: \n {0}".format(
-                inventory_mapping_business_exception_error))
-
-        return create_inventory_mapping_sheet
-
     # Excepting Errors here
     except FileNotFoundError as notfound_error:
         send_mail(to=main_config["To_Mail_Address"], cc=main_config["CC_Mail_Address"],
@@ -406,6 +406,17 @@ def create_inventory_mapping_sheet(main_config, in_config, present_quarter_pd, m
         print("Please close the file")
         logging.exception(file_error)
         return file_error
+
+    try:
+        inventory_mapping_business_exception(inventory_mapping_file, main_config)
+    except Exception as inventory_mapping_business_exception_error:
+        print("Exception occurred while creating inventory mapping business exception entries sheet: \n {0}".format(
+                inventory_mapping_business_exception_error))
+        logging.error("Exception occurred while creating inventory mapping business exception entries sheet: \n {0}".format(
+                inventory_mapping_business_exception_error))
+    else:
+        print("Successfully created Inventory mapping Business Exception sheet")
+        logging.info("Successfully created Inventory mapping Business Exception sheet")
 
 
 if __name__ == "__main__":

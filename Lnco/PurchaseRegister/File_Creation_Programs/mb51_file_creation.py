@@ -3,23 +3,31 @@ import logging
 import gc
 
 
-def mb51_file_creation(mb51_client_dataframe, json_data_list, filtered_mb51_file_saving_path, filtered_mb51_sheet_name):
+def mb51_file_creation(config_main, mb51_client_dataframe, json_data_list, filtered_mb51_file_saving_path, filtered_mb51_sheet_name):
     try:
         mb51_json_data = json_data_list[0]
         mb51_new_dataframe = pd.DataFrame()
         material_document_default_name = mb51_json_data['Material_Document']['default_column_name']
         material_document_client_name = mb51_json_data['Material_Document']['client_column_name']
         mb51_new_dataframe[material_document_default_name] = mb51_client_dataframe[material_document_client_name]
+        config_main['material_document_default_name'] = material_document_default_name
+        config_main[material_document_default_name] = material_document_client_name
 
         quantity_in_unit_of_entry_default_name = mb51_json_data['Qty_in_unit_of_entry']['default_column_name']
         quantity_in_unit_of_entry_client_name = mb51_json_data['Qty_in_unit_of_entry']['client_column_name']
         mb51_new_dataframe[quantity_in_unit_of_entry_default_name] = mb51_client_dataframe[
             quantity_in_unit_of_entry_client_name]
 
+        config_main['quantity_in_unit_of_entry_default_name'] = quantity_in_unit_of_entry_default_name
+        config_main[quantity_in_unit_of_entry_default_name] = quantity_in_unit_of_entry_client_name
+
         # Movement type
         movement_type_default_name = "Movement type"
         movement_type_client_name = "Movement type"
         mb51_new_dataframe[movement_type_default_name] = mb51_client_dataframe[movement_type_client_name]
+
+        config_main['movement_type_default_name'] = movement_type_default_name
+        config_main[movement_type_default_name] = movement_type_client_name
 
     except Exception as mb51_json_exception:
         logging.error(
@@ -54,7 +62,8 @@ def mb51_file_creation(mb51_client_dataframe, json_data_list, filtered_mb51_file
         raise filtered_mb51_error
     else:
         logging.info("Successfully saved Filtered MB51 file in input folder of the request")
-        return mb51_new_dataframe
+        print("Successfully saved Filtered MB51 file in input folder of the request")
+        return [mb51_new_dataframe, config_main]
 
 
 if __name__ == '__main__':
